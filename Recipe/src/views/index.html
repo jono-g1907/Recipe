@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Recipe Hub – Home</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <header>
+      <img src="/logo.png" alt="Recipe Hub Logo" width="96" height="96" />
+      <h1>Welcome, <%= username %>!</h1>
+      <p>Your ID is <strong><%= id %></strong></p>
+    </header>
+
+    <nav>
+      <h2>Go to:</h2>
+      <ul>
+        <li><a href="/api/recipes-31477046">Recipes (list)</a></li>
+        <li><a href="/api/inventory-31477046">Inventory (list)</a></li>
+        <li><a href="/api/recipes/search-31477046?q=oats">Search Recipes</a></li>
+        <li><a href="/api/recipes/suggest-31477046?minMatch=0.5">Suggest From Inventory</a></li>
+        <li><a href="/api/inventory/alerts-31477046">Inventory Alerts</a></li>
+      </ul>
+    </nav>
+
+    <section>
+      <p>Try an error page: <a href="/invalid.html">Invalid Data Page</a>, or a 404 by visiting any unknown path.</p>
+    </section>
+  </body>
+</html>
