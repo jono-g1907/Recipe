@@ -1,8 +1,3 @@
-diff --git a/src/views/recipes.html b/src/views/recipes.html
-new file mode 100644
---- /dev/null
- b/src/views/recipes.html
-@@
 <!doctype html>
 <html lang="en">
   <head>
@@ -37,14 +32,14 @@ new file mode 100644
         </tr>
       </thead>
       <tbody>
-        <% for (var i = 0; i < records.length; i) { var r = records[i]; %>
+        <% for (var i = 0; i < records.length; i++) { var r = records[i]; %>
           <tr>
             <td><%= r.recipeId %></td>
             <td><%= r.title %></td>
             <td>
               <% if (Array.isArray(r.ingredients)) { %>
                 <ul style="margin:0; padding-left:18px">
-                  <% for (var j=0;j<r.ingredients.length;j){ var ing=r.ingredients[j]; %>
+                  <% for (var j = 0; j < r.ingredients.length; j++) { var ing = r.ingredients[j]; %>
                     <li><%= ing.ingredientName %> — <%= ing.quantity %> <%= ing.unit %></li>
                   <% } %>
                 </ul>
@@ -53,7 +48,7 @@ new file mode 100644
             <td>
               <% if (Array.isArray(r.instructions)) { %>
                 <ol style="margin:0; padding-left:18px">
-                  <% for (var k=0;k<r.instructions.length;k){ %>
+                  <% for (var k = 0; k < r.instructions.length; k++) { %>
                     <li><%= r.instructions[k] %></li>
                   <% } %>
                 </ol>
@@ -79,9 +74,9 @@ new file mode 100644
     </table>
 
     <script>
-      (function(){
-        var appId = '<%= JSON.stringify(appId) %>';
-        function del(id){
+      (function () {
+        var appId = <%= JSON.stringify(appId) %>;
+        function del(id) {
           if (!confirm('Delete recipe ' + id + '?')) return;
           fetch('/api/recipes/' + encodeURIComponent(id) + '-' + appId, { method: 'DELETE' })
             .then(function(r){
@@ -91,8 +86,8 @@ new file mode 100644
             .catch(function(){ alert('Network error'); });
         }
         var btns = document.getElementsByClassName('deleteBtn');
-        for (var i=0;i<btns.length;i){
-          btns[i].addEventListener('click', function(e){
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].addEventListener('click', function (e) {
             var id = e.target.getAttribute('data-id');
             del(id);
           });
