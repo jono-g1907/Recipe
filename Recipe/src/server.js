@@ -17,11 +17,10 @@ app.set('view engine', 'html');
 
 // serve static files
 app.use(express.static(path.join(__dirname, 'images')));
-app.use(express.static(path.join(__dirname, 'views')));
 app.use(express.static(path.join(__dirname, 'css')));
 
 
-// runs before any static files
+// render the home page with dynamic values
 app.get('/', function (req, res) {
   res.render('index.html', {
     username: 'Jonathan Gan',
