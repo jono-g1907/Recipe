@@ -2,26 +2,102 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Recipe Hub – Home</title>
-    <link rel="stylesheet" href="style.css" />
+    <title>Recipe Hub – Dashboard</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
   </head>
-  <body>
-    <header>
-      <img src="/logo.png" alt="Recipe Hub Logo" width="96" height="96" />
-      <h1>Welcome, <%= username %>!</h1>
-      <p>Your ID is <strong><%= id %></strong></p>
-    </header>
-
-    <nav>
-      <h2>Go to:</h2>
-      <ul>
-        <li><a href="/recipes-list">Recipes</a></li>
-        <li><a href="/add-recipe">Add Recipe</a></li>
-        <li><a href="/delete-recipe">Delete Recipe</a></li>
-        <li><a href="/add-inventory">Add Inventory</a></li>
-        <li><a href="/inventory-dashboard">Inventory</a></li>
-        <li><a href="/delete-inventory">Delete Inventory</a></li>
-      </ul>
+  <body style="margin:0;">
+    <nav class="navbar navbar-expand bg-primary navbar-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">Recipe Hub</a>
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="/inventory-dashboard">Inventory</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">HD Tasks</a></li>
+        </ul>
+        <span class="navbar-text">Welcome, <%= username %> (ID: <%= id %>)</span>
+      </div>
     </nav>
+
+    <div class="container py-4">
+      <div class="text-center mb-4">
+        <h1>Recipe Hub</h1>
+        <p>Your Personal Meal Planning Assistant</p>
+        <p>Welcome back, <%= username %> (Student ID: <%= id %>)</p>
+      </div>
+
+      <h2 class="text-center mb-3">Your Recipe Hub at a Glance</h2>
+      <div class="row text-center mb-4">
+        <div class="col-md-3 mb-3">
+          <div class="bg-primary text-white p-3 rounded">
+            <p class="mb-1">Total Recipes</p>
+            <h3 class="mb-0"><%= totalRecipes %></h3>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="bg-success text-white p-3 rounded">
+            <p class="mb-1">Inventory Items</p>
+            <h3 class="mb-0"><%= totalInventory %></h3>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="bg-info text-white p-3 rounded">
+            <p class="mb-1">Cuisine Types</p>
+            <h3 class="mb-0"><%= cuisineCount %></h3>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="bg-warning p-3 rounded">
+            <p class="mb-1">Inventory Value</p>
+            <h3 class="mb-0">$<%= inventoryValue.toFixed(2) %></h3>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="text-center mb-3">Quick Actions</h2>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h3 class="card-title">Recipe Actions</h3>
+              <ul class="list-unstyled mb-0">
+                <li><a href="/recipes-list">All Recipes</a></li>
+                <li><a href="/add-recipe">Add New Recipe</a></li>
+                <li><a href="/delete-recipe">Delete Recipe</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h3 class="card-title">Inventory Actions</h3>
+              <ul class="list-unstyled mb-0">
+                <li><a href="/add-inventory">Add Inventory Item</a></li>
+                <li><a href="/inventory-dashboard">Inventory List</a></li>
+                <li><a href="/delete-inventory">Delete Inventory</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h3 class="card-title">HD Tasks</h3>
+              <ul class="list-unstyled mb-0">
+                <li><a href="#">Filter Recipes</a></li>
+                <li><a href="#">Recipe Search</a></li>
+                <li><a href="#">Smart Lists</a></li>
+                <li><a href="#">Recipe Integration</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="text-center mt-4">
+        <p>Recipe Hub – FTT2095 Assignment 1</p>
+      </footer>
+    </div>
   </body>
 </html>
+
