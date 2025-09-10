@@ -13,6 +13,9 @@
   </head>
   <body>
     <div class="container">
+      <% if (typeof msg !== 'undefined' && msg) { %>
+        <div class="alert alert-success"><%= msg %></div>
+      <% } %>
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
           <a class="btn btn-outline-secondary" href="/">Home</a>
@@ -88,7 +91,6 @@
         if (!id) return;
         if (!confirm('Delete recipe ' + id + '?')) return;
 
-        // routing table requires ID in the path: /api/recipes/:recipeId-31477046
         fetch('/api/recipes/' + encodeURIComponent(id) + '-31477046', {
           method: 'DELETE'
         }).then(function (res) {

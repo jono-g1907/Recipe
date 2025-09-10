@@ -48,8 +48,45 @@ app.get('/recipes-list', function (req, res) {
   for (let i = 0; i < store.recipes.length; i++) {
     recipes.push(store.recipes[i].toJSON());
   }
-  res.render('recipes-list.html', { recipes: recipes });
+  const msg = '';
+  if (req.query.deleted) msg = 'Deleted recipe ' + req.query.deleted;
+  res.render('recipes-list.html', { recipes: recipes, msg: msg });
 });
+
+// show delete recipe form
+app.get('/delete-recipe', function (req, res) {
+  var error = req.query.error || '';
+  var lastId = req.query.lastId || '';
+  res.render('delete-recipe.html', { error: error, lastId: lastId });
+});
+
+// handle delete recipe form POST
+app.post('/delete-recipe', function (req, res) {
+  var id = (req.body.recipeId || '').trim();
+  if (!id) {
+    // stay on form and show message
+    return res.render('delete-recipe.html', { error: 'recipeId is required', lastId: '' });
+  }
+
+  var store = require('./store');
+  var foundIndex = -1;
+  for (var i = 0; i < store.recipes.length; i++) {
+    if (store.recipes[i].recipeId === id) {
+      foundIndex = i;
+      break;
+    }
+  }
+
+  if (foundIndex === -1) {
+    // if not found, stay on form with error + keep what they typed
+    return res.render('delete-recipe.html', { error: 'Recipe not found', lastId: id });
+  }
+
+  // delete and redirect to list with a success message
+  store.recipes.splice(foundIndex, 1);
+  return res.redirect(302, '/recipes-list?deleted=' + encodeURIComponent(id));
+});
+
 
 // handle the add recipe form POST, do simple parsing then validate
 app.post('/add-recipe', function (req, res, next) {
