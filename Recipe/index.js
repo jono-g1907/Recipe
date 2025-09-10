@@ -22,7 +22,6 @@ module.exports = {
   Location: Location,
   Recipe: Recipe,
   InventoryItem: InventoryItem,
-  DataStore: DataStore,
   ValidationError: ValidationError,
   SEEDS: {
     ME,
@@ -40,4 +39,3 @@ if (require.main === module) {
     console.log('\nInventory');
     console.log(lib.SEEDS.INVENTORY_SEED);
   }
-  

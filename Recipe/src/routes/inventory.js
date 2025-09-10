@@ -27,6 +27,16 @@ function findInventoryById(id) {
 
 const INVENTORY_BASE = '/inventory-' + APP_ID;
 
+// list inventory items
+router.get(INVENTORY_BASE, function (req, res) {
+  const items = [];
+  for (let i = 0; i < store.inventory.length; i++) {
+    items.push(store.inventory[i].toJSON());
+  }
+  return res.json({ items: items, page: 1, total: items.length });
+});
+
+
 // create inventory item
 router.post(INVENTORY_BASE, function (req, res, next) {
   try {
@@ -83,6 +93,19 @@ router.patch('/inventory/:inventoryId/adjust-' + APP_ID, function (req, res, nex
     }
     return next(err);
   }
+});
+
+// delete inventory item
+router.delete('/inventory/:inventoryId-' + APP_ID, function (req, res) {
+  var id = req.params.inventoryId;
+  var list = store.inventory;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].inventoryId === id) {
+      list.splice(i, 1);
+      return res.status(204).send();
+    }
+  }
+  return res.status(404).json({ error: 'Inventory item not found' });
 });
 
 module.exports = router;

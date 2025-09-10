@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <title>Delete Inventory Item</title>
+    <link href="/bootstrap.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="album py-5">
+      <div class="container">
+
+        <a class="btn btn-primary" href="/">Home</a>
+        <a class="btn btn-secondary" href="/inventory-dashboard">Inventory Dashboard</a>
+
+        <h3 class="my-3">Delete Inventory Item</h3>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+
+        <form action="/delete-inventory" method="POST">
+          <div class="mb-3">
+            <label class="form-label">Inventory ID</label>
+            <input class="form-control" type="text" name="inventoryId" required placeholder="I-31477046-003"
+                   value="<%= (typeof lastId !== 'undefined' && lastId) ? lastId : '' %>" />
+            <div class="form-text">Enter the exact inventoryId to remove (example: I-31477046-003)</div>
+          </div>
+
+          <button class="btn btn-danger" type="submit">Delete</button>
+        </form>
+
+      </div>
+    </div>
+  </body>
+</html>
