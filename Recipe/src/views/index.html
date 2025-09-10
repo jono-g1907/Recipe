@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Recipe Hub – Home</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <img src="/logo.png" alt="Recipe Hub Logo" width="96" height="96" />
+      <h1>Welcome, <%= username %>!</h1>
+      <p>Your ID is <strong><%= id %></strong></p>
+    </header>
+
+    <nav>
+      <h2>Go to:</h2>
+      <ul>
+        <li><a href="/recipes-list">Recipes</a></li>
+        <li><a href="/add-recipe">Add Recipe</a></li>
+        <li><a href="/delete-recipe">Delete Recipe</a></li>
+        <li><a href="/add-inventory">Add Inventory</a></li>
+        <li><a href="/inventory-dashboard">Inventory</a></li>
+        <li><a href="/delete-inventory">Delete Inventory</a></li>
+      </ul>
+    </nav>
+  </body>
+</html>

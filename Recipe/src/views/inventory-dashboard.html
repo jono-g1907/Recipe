@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <title>Inventory – Dashboard</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
+    <style>
+      body { padding: 2rem; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .status-badge { padding: 0.2rem 0.45rem; border-radius: 0.35rem; font-size: 12px; }
+      .status-expired { background: #f8d7da; color: #842029; }
+      .status-soon { background: #fff3cd; color: #664d03; }
+      .status-ok { background: #d1e7dd; color: #0f5132; }
+      .status-unknown { background: #e2e3e5; color: #41464b; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="btn-group">
+          <a class="btn btn-outline-secondary" href="/">Home</a>
+          <a class="btn btn-primary" href="/add-inventory">Add Inventory</a>
+          <a class="btn btn-danger" href="/delete-inventory">Delete Inventory</a>
+        </div>
+        <div>
+          <form class="d-flex" method="get" action="/inventory-dashboard">
+            <label class="me-2">Group by</label>
+            <select class="form-select form-select-sm me-2" name="group">
+              <option value="location" <%= groupBy === 'location' ? 'selected' : '' %>>Location</option>
+              <option value="category" <%= groupBy === 'category' ? 'selected' : '' %>>Category</option>
+            </select>
+            <button class="btn btn-sm btn-secondary" type="submit">Apply</button>
+          </form>
+        </div>
+      </div>
+
+      <% if (typeof msg !== 'undefined' && msg) { %>
+        <div class="alert alert-success"><%= msg %></div>
+      <% } %>
+
+      <div class="alert alert-info mb-3">
+        <strong>Total inventory value:</strong>
+        $<span class="mono"><%= (Math.round(totalValue * 100) / 100).toFixed(2) %></span>
+      </div>
+
+      <% 
+        // render one table per group
+        var groupKeys = Object.keys(groups);
+        if (groupKeys.length === 0) { %>
+          <div class="alert alert-warning">No inventory items yet. Add some to see them here.</div>
+      <% } %>
+
+      <% for (var gi = 0; gi < groupKeys.length; gi++) { 
+           var gkey = groupKeys[gi];
+           var bucket = groups[gkey] || { items: [], value: 0 };
+      %>
+        <h4 class="mt-4">
+          <%= (groupBy === 'location' ? 'Location: ' : 'Category: ') + gkey %>
+          <small class="text-muted">— Items: <%= bucket.items.length %> —
+            Value: $<span class="mono"><%= (Math.round(bucket.value * 100) / 100).toFixed(2) %></span>
+          </small>
+        </h4>
+
+        <div class="table-responsive mb-4">
+          <table class="table table-striped table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Ingredient</th>
+                <th class="mono">Qty</th>
+                <th>Unit</th>
+                <th>Category</th>
+                <th>Purchase</th>
+                <th>Expires</th>
+                <th class="mono">Days Left</th>
+                <th>Status</th>
+                <th>Location</th>
+                <th class="mono">Cost ($)</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+            <% for (var i = 0; i < bucket.items.length; i++) {
+                 var r = bucket.items[i];
+                 var badgeClass = 'status-unknown', statusText = 'Unknown';
+                 if (r.expiryStatus === 'expired') { badgeClass = 'status-expired'; statusText = 'Expired'; }
+                 else if (r.expiryStatus === 'soon') { badgeClass = 'status-soon'; statusText = 'Soon'; }
+                 else if (r.expiryStatus === 'ok') { badgeClass = 'status-ok'; statusText = 'OK'; }
+            %>
+              <tr>
+                <td class="mono"><%= r.inventoryId %></td>
+                <td><%= r.userId %></td>
+                <td><%= r.ingredientName %></td>
+                <td class="mono"><%= r.quantity %></td>
+                <td><%= r.unit %></td>
+                <td><%= r.category || '' %></td>
+                <td class="mono"><%= r.purchaseDate || '' %></td>
+                <td class="mono"><%= r.expirationDate || '' %></td>
+                <td class="mono"><%= (r.daysLeft === null ? '' : r.daysLeft) %></td>
+                <td><span class="status-badge <%= badgeClass %>"><%= statusText %></span></td>
+                <td><%= r.location %></td>
+                <td class="mono"><%= (Number.isFinite(Number(r.cost)) ? Number(r.cost).toFixed(2) : '') %></td>
+                <td class="mono"><%= r.createdDate || '' %></td>
+                <td>
+                  <button class="btn btn-sm btn-danger" onclick="deleteInventory('<%= r.inventoryId %>')">Delete</button>
+                </td>
+              </tr>
+            <% } %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+
+    <script>
+      function deleteInventory(id) {
+        if (!id) return;
+        if (!confirm('Delete inventory item ' + id + '?')) return;
+
+        fetch('/api/inventory/' + encodeURIComponent(id) + '-<%= appId %>', {
+          method: 'DELETE'
+        }).then(function (res) {
+          if (res.status === 204) {
+            // keep current grouping selection by reloading the same URL
+            location.reload();
+          } else {
+            alert('Could not delete (status ' + res.status + ')');
+          }
+        }).catch(function () {
+          alert('Network error while deleting');
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <title>Add New Recipe</title>
+    <link href="/bootstrap.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="album py-5">
+      <div class="container">
+
+        <a class="btn btn-primary" href="/">Home</a>
+        <a class="btn btn-primary" href="/recipes-list">View Recipes</a>
+
+        <h3 class="my-3">Add New Recipe</h3>
+
+        <form action="/add-recipe" method="POST">
+          <div class="mb-3">
+            <label class="form-label">Recipe ID</label>
+            <input class="form-control" type="text" name="recipeId" required placeholder="R-31477046-004" />
+            <div class="form-text">Must be unique (example: R-31477046-004)</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input class="form-control" type="text" name="title" required />
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Meal Type</label>
+              <select class="form-select" name="mealType" required>
+                <option value="">-- choose --</option>
+                <option>Breakfast</option>
+                <option>Lunch</option>
+                <option>Dinner</option>
+                <option>Snack</option>
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Difficulty</label>
+              <select class="form-select" name="difficulty" required>
+                <option value="">-- choose --</option>
+                <option>Easy</option>
+                <option>Medium</option>
+                <option>Hard</option>
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Prep Time (mins)</label>
+              <input class="form-control" type="number" name="prepTime" min="1" step="1" required />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Cuisine Type</label>
+              <input class="form-control" type="text" name="cuisineType" />
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Servings</label>
+              <input class="form-control" type="number" name="servings" min="1" step="1" required />
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Created Date</label>
+              <input class="form-control" type="date" name="createdDate" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Chef</label>
+            <input class="form-control" type="text" name="chef" required placeholder="YourName-31477046" />
+            <div class="form-text">Format like: FirstLast-31477046</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Ingredients</label>
+            <textarea class="form-control" name="ingredientsText" rows="6" required
+              placeholder="One per line, like:
+Rolled Oats | 60 | g
+Milk | 250 | ml
+Whey Protein | 30 | g"></textarea>
+            <div class="form-text">Each line: <code>name | quantity | unit</code></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Instructions</label>
+            <textarea class="form-control" name="instructionsText" rows="6" required
+              placeholder="One step per line"></textarea>
+          </div>
+
+          <button class="btn btn-success" type="submit">Create Recipe</button>
+        </form>
+        <script>
+          (function () {
+            const APP_ID = '31477046';
+        
+            const form = document.querySelector('form');
+            const recipeIdInput = form.querySelector('input[name="recipeId"]');
+            const ingredientsInput = form.querySelector('textarea[name="ingredientsText"]');
+        
+            function toTrimmed(str) {
+              if (typeof str !== 'string') return '';
+              return str.trim();
+            }
+        
+            function validateIngredients() {
+              // clear old message first
+              ingredientsInput.setCustomValidity('');
+        
+              const text = ingredientsInput.value || '';
+              const lines = text.split(/\r?\n/);
+              let ok = true;
+        
+              for (let i = 0; i < lines.length; i++) {
+                const line = toTrimmed(lines[i]);
+                if (!line) continue;
+        
+                // allow spaces around |
+                const parts = line.split('|');
+                if (parts.length !== 3) { ok = false; break; }
+        
+                const name = toTrimmed(parts[0]);
+                const qtyStr = toTrimmed(parts[1]);
+                const unit = toTrimmed(parts[2]);
+                const qty = Number(qtyStr);
+        
+                if (!name || !Number.isFinite(qty) || qty <= 0 || !unit) { ok = false; break; }
+              }
+        
+              if (!ok) {
+                ingredientsInput.setCustomValidity('Ingredients must be "name | quantity | unit" with a positive quantity.');
+              }
+              return ok;
+            }
+        
+            // duplicate check
+            function checkDuplicateId(cb) {
+              // clear old message first 
+              recipeIdInput.setCustomValidity('');
+        
+              const wantId = toTrimmed(recipeIdInput.value);
+              if (!wantId) { cb(false); return; }
+        
+              const xhr = new XMLHttpRequest();
+              xhr.open('GET', '/api/recipes-' + APP_ID, true);
+              xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                  let isDup = false;
+        
+                  if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                      const data = JSON.parse(xhr.responseText || '{}');
+                      const list = (data && data.recipes) ? data.recipes : [];
+                      for (let i = 0; i < list.length; i++) {
+                        const r = list[i];
+                        if (r && r.recipeId === wantId) { isDup = true; break; }
+                      }
+                    } catch (e) {}
+                  }
+        
+                  if (isDup) {
+                    recipeIdInput.setCustomValidity('Recipe ID already exists.');
+                  } else {
+                    recipeIdInput.setCustomValidity('');
+                  }
+        
+                  cb(isDup);
+                }
+              };
+              try { xhr.send(); } catch (e) { cb(false); }
+            }
+        
+            // clear and validate ingredients as the user types so message doesn't stick
+            ingredientsInput.addEventListener('input', function () {
+              validateIngredients();
+              if (typeof ingredientsInput.reportValidity === 'function') {
+                ingredientsInput.reportValidity();
+              }
+            });
+        
+            // clear duplicate id error while typing so it doesn't stick
+            recipeIdInput.addEventListener('input', function () {
+              recipeIdInput.setCustomValidity('');
+              if (typeof recipeIdInput.reportValidity === 'function') {
+                recipeIdInput.reportValidity();
+              }
+            });
+        
+            // check duplicate id when the user leaves the field
+            recipeIdInput.addEventListener('blur', function () {
+              checkDuplicateId(function () {
+                if (typeof recipeIdInput.reportValidity === 'function') {
+                  recipeIdInput.reportValidity();
+                }
+              });
+            });
+        
+            // validate ingredients, then check duplicate id, then submit
+            form.addEventListener('submit', function (e) {
+              e.preventDefault();
+        
+              recipeIdInput.setCustomValidity('');
+              validateIngredients();
+        
+              checkDuplicateId(function () {
+                if (form.checkValidity()) {
+                  form.submit();
+                } else {
+                  if (typeof form.reportValidity === 'function') {
+                    form.reportValidity();
+                  } else {
+                    const firstInvalid = form.querySelector(':invalid');
+                    if (firstInvalid) firstInvalid.focus();
+                  }
+                }
+              });
+            });
+          })();
+        </script>        
+      </div>
+    </div>
+  </body>
+</html>
