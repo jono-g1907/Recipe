@@ -44,27 +44,25 @@ app.get('/add-recipe', function (req, res) {
 // recipes table page
 app.get('/recipes-list', function (req, res) {
   const store = require('./store');
-  const rows = [];
+  const recipes = [];
   for (let i = 0; i < store.recipes.length; i++) {
-    rows.push(store.recipes[i].toJSON());
+    recipes.push(store.recipes[i].toJSON());
   }
-  res.render('recipes-list.html', { rows: rows });
+  res.render('recipes-list.html', { recipes: recipes });
 });
 
 // handle the add recipe form POST, do simple parsing then validate
-app.post('/add-recipe', function (req, res) {
+app.post('/add-recipe', function (req, res, next) {
   try {
     // pull simple fields
     const payload = {};
-    payload.recipeID = (req.body.recipeID || '').trim();
+    payload.recipeId = (req.body.recipeId || '').trim();
     payload.title = (req.body.title || '').trim();
-    payload.ingredients = (req.body.ingredients || '').trim();
-    payload.instructions = (req.body.instructions || '').trim();
     payload.mealType = (req.body.mealType || '').trim();
     payload.cuisineType = (req.body.cuisineType || '').trim();
-    payload.prepTime = Number(req.body.prepTime || '').trim();
+    payload.prepTime = Number((req.body.prepTime || '').trim());
     payload.difficulty = (req.body.difficulty || '').trim();
-    payload.servings = Number(req.body.servings || '').trim();
+    payload.servings = Number((req.body.servings || '').trim());
     payload.chef = (req.body.chef || '').trim();
     payload.createdDate = (req.body.createdDate || '').trim();
 
@@ -77,7 +75,7 @@ app.post('/add-recipe', function (req, res) {
       if (!line) continue;
       const parts = line.split('|');
       const name = (parts[0] || '').trim();
-      const quantity = Number(parts[1] || '').trim();
+      const quantity = Number((parts[1] || '').trim());
       const unit = (parts[2] || '').trim();
       ingredients.push({
         ingredientName: name,
@@ -112,7 +110,7 @@ app.post('/add-recipe', function (req, res) {
     store.recipes.push(rec);
     
     // redirect to the recipe list
-    res.redirect(302, '/recipes_list');
+    res.redirect(302, '/recipes-list');
   } catch (err) {
     return next(err);
   }
