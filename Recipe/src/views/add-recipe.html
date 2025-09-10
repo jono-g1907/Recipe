@@ -1,200 +1,98 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <title>Add Recipe</title>
-    <link rel="stylesheet" href="/style.css" />
-    <style>
-      .row { margin-bottom: 6px; }
-      .group { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
-      label { display:inline-block; width:140px; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { border: 1px solid #eee; padding: 6px; vertical-align: top; }
-      .error { color:#b00020; }
-      button { cursor: pointer; }
-    </style>
-   </head>
+    <title>Add New Recipe</title>
+    <link href="/bootstrap.min.css" rel="stylesheet" />
+  </head>
   <body>
-    <p><a href="/">Home</a> | <a href="/recipes">Recipe List</a></p>
-    <h1>Add a New Recipe</h1>
-    <div id="errors" class="error"></div>
+    <div class="album py-5">
+      <div class="container">
 
-    <form id="recipeForm">
-      <div class="group">
-        <div class="row"><label>Recipe ID*</label><input name="recipeId" required /></div>
-        <div class="row"><label>Title*</label><input name="title" required /></div>
-        <div class="row">
-          <label>Meal Type*</label>
-          <select name="mealType" required>
-            <option value="">-- choose --</option>
-            <option>Breakfast</option>
-            <option>Lunch</option>
-            <option>Dinner</option>
-            <option>Snack</option>
-          </select>
-        </div>
-        <div class="row"><label>Cuisine Type</label><input name="cuisineType" /></div>
-        <div class="row"><label>Prep Time (min)*</label><input name="prepTime" type="number" min="1" required /></div>
-        <div class="row">
-          <label>Difficulty*</label>
-          <select name="difficulty" required>
-            <option value="">-- choose --</option>
-            <option>Easy</option>
-            <option>Medium</option>
-            <option>Hard</option>
-          </select>
-        </div>
-        <div class="row"><label>Servings*</label><input name="servings" type="number" min="1" required /></div>
-        <div class="row"><label>Chef*</label><input name="chef" required /></div>
-        <div class="row"><label>Created Date</label><input name="createdDate" type="date" /></div>
+        <a class="btn btn-primary" href="/">Home</a>
+        <a class="btn btn-secondary" href="/api/recipes-31477046">View Recipe List (JSON)</a>
+
+        <h3 class="my-3">Add New Recipe</h3>
+
+        <form action="/add-recipe" method="POST">
+          <div class="mb-3">
+            <label class="form-label">Recipe ID</label>
+            <input class="form-control" type="text" name="recipeId" required placeholder="R-31477046-004" />
+            <div class="form-text">Must be unique (example: R-31477046-004)</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input class="form-control" type="text" name="title" required />
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Meal Type</label>
+              <select class="form-select" name="mealType" required>
+                <option value="">-- choose --</option>
+                <option>Breakfast</option>
+                <option>Lunch</option>
+                <option>Dinner</option>
+                <option>Snack</option>
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Difficulty</label>
+              <select class="form-select" name="difficulty" required>
+                <option value="">-- choose --</option>
+                <option>Easy</option>
+                <option>Medium</option>
+                <option>Hard</option>
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Prep Time (mins)</label>
+              <input class="form-control" type="number" name="prepTime" min="1" step="1" required />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Cuisine Type</label>
+              <input class="form-control" type="text" name="cuisineType" />
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Servings</label>
+              <input class="form-control" type="number" name="servings" min="1" step="1" required />
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Created Date</label>
+              <input class="form-control" type="date" name="createdDate" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Chef</label>
+            <input class="form-control" type="text" name="chef" required placeholder="YourName-31477046" />
+            <div class="form-text">Format like: FirstLast-31477046</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Ingredients</label>
+            <textarea class="form-control" name="ingredientsText" rows="6" required
+              placeholder="One per line, like:
+Rolled Oats | 60 | g
+Milk | 250 | ml
+Whey Protein | 30 | g"></textarea>
+            <div class="form-text">Each line: <code>name | quantity | unit</code></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Instructions</label>
+            <textarea class="form-control" name="instructionsText" rows="6" required
+              placeholder="One step per line"></textarea>
+          </div>
+
+          <button class="btn btn-success" type="submit">Create Recipe</button>
+        </form>
+
       </div>
-
-      <div class="group">
-        <h3>Ingredients* (add at least one)</h3>
-        <table id="ingredientsTable">
-          <thead><tr><th>Name</th><th>Quantity</th><th>Unit</th><th>Action</th></tr></thead>
-          <tbody>
-            <tr>
-              <td><input name="ingredientName" /></td>
-              <td><input name="quantity" type="number" step="any" min="0.0001" /></td>
-              <td><input name="unit" /></td>
-              <td><button type="button" class="removeIng">Remove</button></td>
-            </tr>
-          </tbody>
-        </table>
-        <p><button type="button" id="addIng"> Add Ingredient</button></p>
-      </div>
-
-      <div class="group">
-        <h3>Instructions* (add at least one step)</h3>
-        <table id="stepsTable">
-          <thead><tr><th>Step</th><th>Action</th></tr></thead>
-          <tbody>
-            <tr>
-              <td><input name="step" style="width:98%" /></td>
-              <td><button type="button" class="removeStep">Remove</button></td>
-            </tr>
-          </tbody>
-        </table>
-        <p><button type="button" id="addStep"> Add Step</button></p>
-      </div>
-
-      <p><button type="submit">Submit Recipe</button></p>
-    </form>
-
-    <script>
-      // helpers 
-      function text(v){ return (typeof v === 'string') ? v.trim() : ''; }
-      function num(v){ var n = Number(v); return isFinite(n) ? n : NaN; }
-
-      document.getElementById('addIng').addEventListener('click', function () {
-        var tbody = document.querySelector('#ingredientsTable tbody');
-        var tr = document.createElement('tr');
-        tr.innerHTML = '<td><input name="ingredientName"/></td>' +
-           '<td><input name="quantity" type="number" step="any" min="0.0001"/></td>' +
-           '<td><input name="unit"/></td>' +
-           '<td><button type="button" class="removeIng">Remove</button></td>';
-        tbody.appendChild(tr);
-      });
-
-      document.getElementById('ingredientsTable').addEventListener('click', function(e){
-        if (e.target && e.target.className === 'removeIng') {
-          var row = e.target.closest('tr');
-          if (row && row.parentNode.children.length > 1) row.remove();
-        }
-      });
-
-      document.getElementById('addStep').addEventListener('click', function () {
-        var tbody = document.querySelector('#stepsTable tbody');
-        var tr = document.createElement('tr');
-        tr.innerHTML = '<td><input name="step" style="width:98%"/></td>' +
-           '<td><button type="button" class="removeStep">Remove</button></td>';
-        tbody.appendChild(tr);
-      });
-
-      document.getElementById('stepsTable').addEventListener('click', function(e){
-        if (e.target && e.target.className === 'removeStep') {
-          var row = e.target.closest('tr');
-          if (row && row.parentNode.children.length > 1) row.remove();
-        }
-      });
-
-      document.getElementById('recipeForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        var errBox = document.getElementById('errors');
-        errBox.textContent = '';
-
-        var f = e.target;
-        var payload = {
-          recipeId: text(f.recipeId.value),
-          title: text(f.title.value),
-          mealType: text(f.mealType.value),
-          cuisineType: text(f.cuisineType.value),
-          prepTime: num(f.prepTime.value),
-          difficulty: text(f.difficulty.value),
-          servings: num(f.servings.value),
-          chef: text(f.chef.value)
-        };
-        if (f.createdDate.value) payload.createdDate = f.createdDate.value;
-
-        // collect ingredients (non-empty rows only)
-        var ingRows = document.querySelectorAll('#ingredientsTable tbody tr');
-        var ingredients = [];
-        for (var i = 0; i < ingRows.length; i) {
-          var cells = ingRows[i].querySelectorAll('input');
-          var name = text(cells[0].value);
-          var qty = num(cells[1].value);
-          var unit = text(cells[2].value);
-          if (name || isFinite(qty) || unit) {
-            ingredients.push({ ingredientName: name, quantity: qty, unit: unit });
-          }
-        }
-        payload.ingredients = ingredients;
-
-        // collect steps (non-empty only)
-        var stepRows = document.querySelectorAll('#stepsTable tbody tr input[name="step"]');
-        var steps = [];
-        for (var j = 0; j < stepRows.length; j) {
-          var s = text(stepRows[j].value);
-          if (s) steps.push(s);
-        }
-        payload.instructions = steps;
-
-        // basic checks
-        var errs = [];
-        if (!payload.recipeId) errs.push('recipeId is required');
-        if (!payload.title) errs.push('title is required');
-        if (!payload.mealType) errs.push('mealType is required');
-        if (!isFinite(payload.prepTime) || payload.prepTime <= 0) errs.push('prepTime must be > 0');
-        if (!payload.difficulty) errs.push('difficulty is required');
-        if (!isFinite(payload.servings) || payload.servings <= 0) errs.push('servings must be > 0');
-        if (!payload.chef) errs.push('chef is required');
-        if (!payload.ingredients.length) errs.push('add at least one ingredient');
-        if (!payload.instructions.length) errs.push('add at least one step');
-
-        if (errs.length) {
-          errBox.innerHTML = errs.join('<br/>');
-          return;
-        }
-
-        // submit to API
-        var url = '/api/recipes-' + '<%= JSON.stringify(appId) %>';
-        fetch(url, {
-          method: 'POST',   
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).then(function (r) {
-          if (r.status === 201) {
-            window.location.href = '/recipes';
-          } else {
-            return r.json().then(function (j) {
-              errBox.textContent = (j && j.error) ? (j.error + (j.details ? (': ' + j.details.join(', ')) : '')) : 'Error';
-            }).catch(function(){ errBox.textContent = 'Error'; });
-          }
-        }).catch(function () {
-          errBox.textContent = 'Network error';
-        });
-      });
-    </script>
+    </div>
   </body>
 </html>

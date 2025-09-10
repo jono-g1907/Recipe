@@ -20,16 +20,6 @@ function findRecipeById(id) {
 // base path including id
 const RECIPES_BASE = '/recipes-' + APP_ID;
 
-// list all recipes
-router.get(RECIPES_BASE, function (req, res) {
-    const items = [];
-    for (let i = 0; i < store.recipes.length; i++) {
-      items.push(store.recipes[i].toJSON());
-    }
-    return res.json({ items: items, page: 1, total: items.length });
-});
-
-
 // create a recipe
 router.post(RECIPES_BASE, function (req, res, next) {
   try {
@@ -78,19 +68,27 @@ router.patch('/recipes/:recipeId-' + APP_ID, function (req, res, next) {
   }
 });
 
+// list all recipes
+router.get(RECIPES_BASE, function (req, res) {
+  const list = store.recipes;
+  const items = [];
+  for (let i = 0; i < list.length; i++) {
+    items.push(list[i].toJSON());
+  }
+  return res.json({ recipes: items, page: 1, total: items.length });
+});
+
 // delete a recipe
 router.delete('/recipes/:recipeId-' + APP_ID, function (req, res) {
-    const id = req.params.recipeId;
-    const list = store.recipes;
-    let idx = -1;
-    for (let i = 0; i < list.length; i++) {
-      if (list[i].recipeId === id) { idx = i; break; }
+  const id = req.params.recipeId;
+  const list = store.recipes;
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].recipeId === id) {
+      list.splice(i, 1);
+      return res.status(204).send();
     }
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Recipe not found' });
-    }
-    list.splice(idx, 1);
-    return res.status(204).end();
-  });
+  }
+  return res.status(404).json({ error: 'Recipe not found' });
+});
 
 module.exports = router;

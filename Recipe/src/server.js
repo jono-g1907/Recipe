@@ -3,16 +3,20 @@ const express = require('express');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/error');
 const apiRouter = require('./routes');
-const constants = require('./lib/constants');
-const store = require('./store');
 
 const app = express();
 app.set('port', 8080);
 
 // parse json bodies for api
 app.use(express.json());
-// also allow simple html forms if needed
+
+// parse urlencoded bodies for api
 app.use(express.urlencoded({ extended: true }));
+
+// serve bootstrap locally
+app.use('/bootstrap', express.static(
+  path.join(__dirname, '../node_modules/bootstrap/dist/css/bootstrap.min.css')
+));
 
 // configure ejs to render html files
 app.set('views', path.join(__dirname, 'views'));
@@ -32,23 +36,89 @@ app.get('/', function (req, res) {
   });
 });
 
-// add recipe form 
+// show add recipe form
 app.get('/add-recipe', function (req, res) {
-    res.render('add-recipe.html', { appId: constants.APP_ID });
-  });
-  
-  // recipes table 
-  app.get('/recipes', function (req, res) {
-    // turn model instances into plain objects for rendering
-    const records = [];
-    for (let i = 0; i < store.recipes.length; i++) {
-      records.push(store.recipes[i].toJSON());
-    }
-    res.render('recipes.html', { records: records, appId: constants.APP_ID });
-  });
-  
+  res.render('add-recipe.html');
+});
 
-// allow plain html files in views but don't auto-serve index.html
+// recipes table page
+app.get('/recipes-list', function (req, res) {
+  const store = require('./store');
+  const rows = [];
+  for (let i = 0; i < store.recipes.length; i++) {
+    rows.push(store.recipes[i].toJSON());
+  }
+  res.render('recipes-list.html', { rows: rows });
+});
+
+// handle the add recipe form POST, do simple parsing then validate
+app.post('/add-recipe', function (req, res) {
+  try {
+    // pull simple fields
+    const payload = {};
+    payload.recipeID = (req.body.recipeID || '').trim();
+    payload.title = (req.body.title || '').trim();
+    payload.ingredients = (req.body.ingredients || '').trim();
+    payload.instructions = (req.body.instructions || '').trim();
+    payload.mealType = (req.body.mealType || '').trim();
+    payload.cuisineType = (req.body.cuisineType || '').trim();
+    payload.prepTime = Number(req.body.prepTime || '').trim();
+    payload.difficulty = (req.body.difficulty || '').trim();
+    payload.servings = Number(req.body.servings || '').trim();
+    payload.chef = (req.body.chef || '').trim();
+    payload.createdDate = (req.body.createdDate || '').trim();
+
+    // parse ingredients entered as one per line: name | quantity | unit
+    const ingText = req.body.ingredientsText || '';
+    const ingLines = ingText.split('\n');
+    const ingredients = [];
+    for (let i = 0; i < ingLines.length; i++) {
+      const line = ingLines[i].trim();
+      if (!line) continue;
+      const parts = line.split('|');
+      const name = (parts[0] || '').trim();
+      const quantity = Number(parts[1] || '').trim();
+      const unit = (parts[2] || '').trim();
+      ingredients.push({
+        ingredientName: name,
+        quantity: quantity,
+        unit: unit
+      });
+    }
+    payload.ingredients = ingredients;
+
+    // parse instructions entered as one per line
+    const insText = req.body.instructionsText || '';
+    const insLines = insText.split('\n');
+    const instructions = [];
+    for (let i = 0; i < insLines.length; i++) {
+      const line = insLines[i].trim();
+      if (line) instructions.push(line);
+    }
+    payload.instructions = instructions;
+
+    // create and store
+    const Recipe = require('./models/Recipe');
+    const ValidationError = require('./errors/ValidationError');
+    const store = require('./store');
+
+    const rec = new Recipe(payload);
+    for (let j = 0; j < store.recipes.length; j++) {
+      if (store.recipes[j].recipeId === rec.recipeId) {
+        throw new ValidationError(['recipeId already exists']);
+      }
+    }
+
+    store.recipes.push(rec);
+    
+    // redirect to the recipe list
+    res.redirect(302, '/recipes_list');
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// allow plain html files in views (invalid.html, 404.html) BUT don't auto-serve index.html
 app.use(express.static(path.join(__dirname, 'views'), { index: false }));
 
 // mount api

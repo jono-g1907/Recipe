@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <title>Recipes – List</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
+    <style>
+      body { padding: 2rem; }
+      table { font-size: 14px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      td pre { margin: 0; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <a class="btn btn-outline-secondary" href="/">Home</a>
+          <a class="btn btn-primary" href="/add-recipe">Add Recipe</a>
+        </div>
+        <small class="text-muted">Total: <%= recipes ? recipes.length : 0 %></small>
+      </div>
+
+      <% if (!recipes || recipes.length === 0) { %>
+        <div class="alert alert-info">No recipes yet. Try adding one.</div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Recipe ID</th>
+                <th>Title</th>
+                <th>Meal Type</th>
+                <th>Cuisine</th>
+                <th class="mono">Prep (mins)</th>
+                <th>Difficulty</th>
+                <th class="mono">Servings</th>
+                <th>Chef</th>
+                <th>Created</th>
+                <th>Ingredients</th>
+                <th>Instructions</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+            <% for (let i = 0; i < recipes.length; i++) { 
+                 const r = recipes[i];
+                 // make plain text for arrays
+                 let ingLines = [];
+                 if (Array.isArray(r.ingredients)) {
+                   for (let j = 0; j < r.ingredients.length; j++) {
+                     const ing = r.ingredients[j] || {};
+                     ingLines.push((ing.ingredientName || '') + ' ' + (ing.quantity || '') + ' ' + (ing.unit || ''));
+                   }
+                 }
+                 let stepLines = [];
+                 if (Array.isArray(r.instructions)) {
+                   for (let k = 0; k < r.instructions.length; k++) {
+                     if (r.instructions[k]) stepLines.push((k+1) + '. ' + r.instructions[k]);
+                   }
+                 }
+            %>
+              <tr>
+                <td class="mono"><%= r.recipeId %></td>
+                <td><%= r.title %></td>
+                <td><%= r.mealType %></td>
+                <td><%= r.cuisineType %></td>
+                <td class="mono"><%= r.prepTime %></td>
+                <td><%= r.difficulty %></td>
+                <td class="mono"><%= r.servings %></td>
+                <td><%= r.chef %></td>
+                <td class="mono"><%= r.createdDate %></td>
+                <td><pre><%= ingLines.join('\n') %></pre></td>
+                <td><pre><%= stepLines.join('\n') %></pre></td>
+                <td>
+                  <button class="btn btn-sm btn-danger" onclick="deleteRecipe('<%= r.recipeId %>')">Delete</button>
+                </td>
+              </tr>
+            <% } %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+
+    <script>
+      function deleteRecipe(id) {
+        if (!id) return;
+        if (!confirm('Delete recipe ' + id + '?')) return;
+
+        // routing table requires ID in the path: /api/recipes/:recipeId-31477046
+        fetch('/api/recipes/' + encodeURIComponent(id) + '-31477046', {
+          method: 'DELETE'
+        }).then(function (res) {
+          if (res.status === 204) {
+            location.reload();
+          } else {
+            alert('Could not delete (status ' + res.status + ')');
+          }
+        }).catch(function () {
+          alert('Network error while deleting');
+        });
+      }
+    </script>
+  </body>
+</html>
