@@ -92,6 +92,62 @@ Whey Protein | 30 | g"></textarea>
           <button class="btn btn-success" type="submit">Create Recipe</button>
         </form>
 
+        <script>
+          // client-side validation for unique recipe ID and ingredient format
+          (function () {
+            const APP_ID = '31477046';
+            const form = document.querySelector('form');
+            const recipeIdInput = form.querySelector('input[name="recipeId"]');
+            const ingredientsInput = form.querySelector('textarea[name="ingredientsText"]');
+
+            form.addEventListener('submit', async function (e) {
+              e.preventDefault();
+
+              // reset custom validity messages
+              recipeIdInput.setCustomValidity('');
+              ingredientsInput.setCustomValidity('');
+
+              // duplicate recipe id check via API
+              try {
+                const res = await fetch('/api/recipes-' + APP_ID);
+                if (res.ok) {
+                  const data = await res.json();
+                  const ids = (data.recipes || []).map(r => r.recipeId);
+                  if (ids.indexOf(recipeIdInput.value.trim()) !== -1) {
+                    recipeIdInput.setCustomValidity('Recipe ID already exists');
+                  }
+                }
+              } catch (err) {
+                // ignore network errors and continue
+              }
+
+              // ingredient format validation
+              const lines = ingredientsInput.value.split('\n');
+              let ingValid = true;
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const parts = line.split('|');
+                if (parts.length !== 3) { ingValid = false; break; }
+                const name = parts[0].trim();
+                const qty = Number(parts[1].trim());
+                const unit = parts[2].trim();
+                if (!name || !Number.isFinite(qty) || qty <= 0 || !unit) { ingValid = false; break; }
+              }
+              if (!ingValid) {
+                ingredientsInput.setCustomValidity('Ingredients must be "name | quantity | unit" with positive quantity');
+              }
+
+              // if everything valid, submit; otherwise show messages
+              if (form.checkValidity()) {
+                form.submit();
+              } else {
+                form.reportValidity();
+              }
+            });
+          })();
+        </script>
+
       </div>
     </div>
   </body>
