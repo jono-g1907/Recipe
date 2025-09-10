@@ -7,27 +7,28 @@
   </head>
   <body>
     <div class="container py-4">
-      <div class="mb-3">
-        <a class="btn btn-outline-secondary" href="/">Home</a>
-        <a class="btn btn-primary" href="/recipes-list">View Recipes</a>
-        <a class="btn btn-success" href="/add-recipe">Add Recipe</a>
-      </div>
 
-      <h3>Delete a Recipe (by ID)</h3>
+      <h1 class="text-center text-danger mb-1">Delete Recipe</h1>
+      <p class="text-center text-muted mb-4">Remove a recipe from your collection</p>
 
       <% if (error) { %>
         <div class="alert alert-danger"><%= error %></div>
       <% } %>
 
-      <form action="/delete-recipe" method="POST" class="mt-3">
+      <form action="/delete-recipe" method="POST" class="mx-auto" style="max-width: 400px;">
         <div class="mb-3">
           <label class="form-label">Recipe ID</label>
           <input class="form-control" type="text" name="recipeId" required
                  placeholder="e.g. R-31477046-001" value="<%= lastId || '' %>">
           <div class="form-text">Enter the exact recipeId shown in the recipe list.</div>
         </div>
-
-        <button class="btn btn-danger" type="submit">Delete Recipe</button>
+        <div class="d-flex justify-content-between">
+          <a class="btn btn-secondary" href="/recipes-list">Back to Recipes</a>
+          <div>
+            <button class="btn btn-outline-secondary me-2" type="reset">Reset</button>
+            <button class="btn btn-danger" type="submit">Delete Recipe</button>
+          </div>
+        </div>
       </form>
     </div>
   </body>

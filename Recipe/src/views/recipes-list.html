@@ -14,15 +14,18 @@
   <body>
     <div class="container">
       <% if (typeof msg !== 'undefined' && msg) { %>
-        <div class="alert alert-success"><%= msg %></div>
+        <div class="alert alert-success mb-4"><%= msg %></div>
       <% } %>
+
+      <h1 class="text-center mb-1">All Recipes</h1>
+      <p class="text-center text-muted mb-4">Discover and manage your culinary collection</p>
+
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <a class="btn btn-outline-secondary" href="/">Home</a>
-          <a class="btn btn-primary" href="/add-recipe">Add Recipe</a>
+          <a class="btn btn-primary" href="/add-recipe">Add New Recipe</a>
           <a class="btn btn-danger" href="/delete-recipe">Delete Recipe</a>
         </div>
-        <small class="text-muted">Total: <%= recipes ? recipes.length : 0 %></small>
+        <span class="badge bg-secondary"><%= recipes ? recipes.length : 0 %> recipes</span>
       </div>
 
       <% if (!recipes || recipes.length === 0) { %>
@@ -47,9 +50,8 @@
               </tr>
             </thead>
             <tbody>
-            <% for (let i = 0; i < recipes.length; i++) { 
+            <% for (let i = 0; i < recipes.length; i++) {
                  const r = recipes[i];
-                 // make plain text for arrays
                  let ingLines = [];
                  if (Array.isArray(r.ingredients)) {
                    for (let j = 0; j < r.ingredients.length; j++) {
@@ -63,6 +65,10 @@
                      if (r.instructions[k]) stepLines.push((k+1) + '. ' + r.instructions[k]);
                    }
                  }
+                 let diffClass = 'bg-secondary';
+                 if (r.difficulty === 'Easy') { diffClass = 'bg-success'; }
+                 else if (r.difficulty === 'Medium') { diffClass = 'bg-warning text-dark'; }
+                 else if (r.difficulty === 'Hard') { diffClass = 'bg-danger'; }
             %>
               <tr>
                 <td class="mono"><%= r.recipeId %></td>
@@ -70,7 +76,7 @@
                 <td><%= r.mealType %></td>
                 <td><%= r.cuisineType %></td>
                 <td class="mono"><%= r.prepTime %></td>
-                <td><%= r.difficulty %></td>
+                <td><span class="badge <%= diffClass %>"><%= r.difficulty %></span></td>
                 <td class="mono"><%= r.servings %></td>
                 <td><%= r.chef %></td>
                 <td class="mono"><%= r.createdDate %></td>
