@@ -28,11 +28,36 @@ app.use(express.static(path.join(__dirname, 'images')));
 app.use(express.static(path.join(__dirname, 'css')));
 
 
-// runs before any static files
+// project dashboard
 app.get('/', function (req, res) {
+  const store = require('./store');
+  const totalRecipes = store.recipes.length;
+  const totalInventory = store.inventory.length;
+
+  const cuisines = [];
+  for (let i = 0; i < store.recipes.length; i++) {
+    const c = store.recipes[i].cuisineType;
+    if (c && cuisines.indexOf(c) === -1) {
+      cuisines.push(c);
+    }
+  }
+  const cuisineCount = cuisines.length;
+
+  let value = 0;
+  for (let j = 0; j < store.inventory.length; j++) {
+    const cost = Number(store.inventory[j].cost);
+    if (!isNaN(cost)) {
+      value = value + cost;
+    }
+  }
+
   res.render('index.html', {
     username: 'Jonathan Gan',
-    id: '31477046'
+    id: '31477046',
+    totalRecipes: totalRecipes,
+    totalInventory: totalInventory,
+    cuisineCount: cuisineCount,
+    inventoryValue: value
   });
 });
 
