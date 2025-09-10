@@ -181,10 +181,6 @@ Recipe.prototype._assignAndValidate = function (patch, isPatch) {
 
   if (errors.length) throw new ValidationError(errors);
 
-  if (!isPatch || next.chef !== undefined) {
-    if (!next.chef) errors.push('chef is required');
-  }
-
   for (const k in next) {
     this[k] = next[k];
   }
