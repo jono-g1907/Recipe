@@ -9,21 +9,24 @@ function toFiniteNumber(value) {
     return Number.isFinite(n) ? n : NaN;
 }
   
-  // copy of plain objects & arrays
+// copy of plain objects & arrays
 function clone(value) {
-    if (Array.isArray(value)) {
-        const out = [];
-        for (let i = 0; i < value.length; i++) out.push(clone(value[i]));
-        return out;
+  if (value instanceof Date) {
+    return new Date(value.getTime());
+  }
+  if (Array.isArray(value)) {
+    const out = [];
+    for (let i = 0; i < value.length; i++) out.push(clone(value[i]));
+    return out;
   }
   if (value && typeof value === 'object') {
-        const copy = {};
-        for (const k in value) {
-            if (Object.prototype.hasOwnProperty.call(value, k)) copy[k] = clone(value[k]);
-        }
-        return copy;
+    const copy = {};
+    for (const k in value) {
+      if (Object.prototype.hasOwnProperty.call(value, k)) copy[k] = clone(value[k]);
     }
-    return value;
+    return copy;
+  }
+  return value;
 }
   
 module.exports = { sanitiseString: sanitiseString, toFiniteNumber: toFiniteNumber, clone: clone };
