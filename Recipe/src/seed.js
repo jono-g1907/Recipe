@@ -48,7 +48,7 @@ const RECIPE_SEED = [
     ],
     instructions: [
       'Add oats and milk to a microwave-safe bowl.',
-      'Microwave 2–3 minutes, stirring halfway.',
+      'Microwave 2-3 minutes, stirring halfway.',
       'Stir in whey protein until smooth and serve.'
     ],
     mealType: MealType.BREAKFAST,

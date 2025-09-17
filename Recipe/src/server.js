@@ -28,7 +28,7 @@ app.use(express.static(path.join(__dirname, 'images')));
 app.use(express.static(path.join(__dirname, 'css')));
 
 
-// project dashboard
+// dashboard
 app.get('/', function (req, res) {
   const store = require('./store');
   const totalRecipes = store.recipes.length;
@@ -50,7 +50,7 @@ app.get('/', function (req, res) {
       value = value + cost;
     }
   }
-
+  
   res.render('index.html', {
     username: 'Jonathan Gan',
     id: '31477046',
@@ -62,17 +62,17 @@ app.get('/', function (req, res) {
 });
 
 // show add recipe form
-app.get('/add-recipe', function (req, res) {
-  res.render('add-recipe.html');
+app.get('/add-recipe-31477046', function (req, res) {
+  res.render('add-recipe-31477046.html');
 });
 
 // show add inventory form
-app.get('/add-inventory', function (req, res){
-  res.render('add-inventory.html');
+app.get('/add-inventory-31477046', function (req, res){
+  res.render('add-inventory-31477046.html');
 });
 
 // recipes table page
-app.get('/recipes-list', function (req, res) {
+app.get('/recipes-list-31477046', function (req, res) {
   const store = require('./store');
   const recipes = [];
   for (let i = 0; i < store.recipes.length; i++) {
@@ -80,30 +80,30 @@ app.get('/recipes-list', function (req, res) {
   }
   let msg = '';
   if (req.query.deleted) msg = 'Deleted recipe ' + req.query.deleted;
-  res.render('recipes-list.html', { recipes: recipes, msg: msg });
+  res.render('recipes-list-31477046.html', { recipes: recipes, msg: msg });
 });
 
 // show delete recipe form
-app.get('/delete-recipe', function (req, res) {
+app.get('/delete-recipe-31477046', function (req, res) {
   const error = req.query.error || '';
   const lastId = req.query.lastId || '';
-  res.render('delete-recipe.html', { error: error, lastId: lastId });
+  res.render('delete-recipe-31477046.html', { error: error, lastId: lastId });
 });
 
 // show delete inventory form
-app.get('/delete-inventory', function (req, res) {
+app.get('/delete-inventory-31477046', function (req, res) {
   const error = req.query.error || '';
   const lastId = req.query.lastId || '';
-  res.render('delete-inventory.html', { error: error, lastId: lastId });
+  res.render('delete-inventory-31477046.html', { error: error, lastId: lastId });
 });
 
 // handle delete inventory form POST
-app.post('/delete-inventory', function (req, res) {
+app.post('/delete-inventory-31477046', function (req, res) {
   const id = (req.body.inventoryId || '').trim();
 
   if (!id) {
     // stay on form and show message
-    return res.render('delete-inventory.html', { error: 'inventoryId is required', lastId: '' });
+    return res.render('delete-inventory-31477046.html', { error: 'inventoryId is required', lastId: '' });
   }
 
   const store = require('./store');
@@ -119,17 +119,17 @@ app.post('/delete-inventory', function (req, res) {
 
   if (foundIndex === -1) {
     // not found, keep what they typed so they can try again
-    return res.render('delete-inventory.html', { error: 'Inventory item not found', lastId: id });
+    return res.render('delete-inventory-31477046.html', { error: 'Inventory item not found', lastId: id });
   }
 
   // delete and redirect back to dashboard with a success message
   store.inventory.splice(foundIndex, 1);
-  return res.redirect(302, '/inventory-dashboard?deleted=' + encodeURIComponent(id));
+  return res.redirect(302, '/inventory-dashboard-31477046?deleted=' + encodeURIComponent(id));
 });
 
 
 // inventory dashboard
-app.get('/inventory-dashboard', function (req, res) {
+app.get('/inventory-dashboard-31477046', function (req, res) {
   var store = require('./store');
   var constants = require('./lib/constants');
   var APP_ID = constants.APP_ID;
@@ -193,22 +193,23 @@ app.get('/inventory-dashboard', function (req, res) {
   var msg = '';
   if (req.query.deleted) msg = 'Deleted inventory item ' + req.query.deleted;
 
-  res.render('inventory-dashboard.html', {
+  res.render('inventory-dashboard-31477046.html', {
     groupBy: groupBy,
     groups: groups,
     totalValue: totalValue,
     appId: APP_ID,
-    msg: msg
+    msg: msg,
+    itemCount: rows.length
   });
 });
 
 
 // handle delete recipe form POST
-app.post('/delete-recipe', function (req, res) {
+app.post('/delete-recipe-31477046', function (req, res) {
   const id = (req.body.recipeId || '').trim();
   if (!id) {
     // stay on form and show message
-    return res.render('delete-recipe.html', { error: 'recipeId is required', lastId: '' });
+    return res.render('delete-recipe-31477046.html', { error: 'recipeId is required', lastId: '' });
   }
 
   const store = require('./store');
@@ -222,17 +223,17 @@ app.post('/delete-recipe', function (req, res) {
 
   if (foundIndex === -1) {
     // if not found, stay on form with error + keep what they typed
-    return res.render('delete-recipe.html', { error: 'Recipe not found', lastId: id });
+    return res.render('delete-recipe-31477046.html', { error: 'Recipe not found', lastId: id });
   }
 
   // delete and redirect to list with a success message
   store.recipes.splice(foundIndex, 1);
-  return res.redirect(302, '/recipes-list?deleted=' + encodeURIComponent(id));
+  return res.redirect(302, '/recipes-list-31477046?deleted=' + encodeURIComponent(id));
 });
 
 
 // handle the add recipe form POST, do simple parsing then validate
-app.post('/add-recipe', function (req, res, next) {
+app.post('/add-recipe-31477046', function (req, res, next) {
   try {
     // pull simple fields
     const payload = {};
@@ -290,14 +291,14 @@ app.post('/add-recipe', function (req, res, next) {
     store.recipes.push(rec);
     
     // redirect to the recipe list
-    res.redirect(302, '/recipes-list');
+    res.redirect(302, '/recipes-list-31477046');
   } catch (err) {
     return next(err);
   }
 });
 
 // handle add inventory form POST
-app.post('/add-inventory', function (req, res, next) {
+app.post('/add-inventory-31477046', function (req, res, next) {
   try {
     const payload = {};
     payload.inventoryId = (req.body.inventoryId || '').trim();
@@ -329,7 +330,7 @@ app.post('/add-inventory', function (req, res, next) {
     store.inventory.push(item);
 
     // redirect to list inventory items
-    return res.redirect(302, '/inventory-dashboard');
+    return res.redirect(302, '/inventory-dashboard-31477046');
   } catch (err) {
     
     return next(err);

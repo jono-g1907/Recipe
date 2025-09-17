@@ -13,7 +13,7 @@
         Share your culinary creation with detailed instructions and ingredients
       </p>
 
-      <form action="/add-recipe" method="POST">
+      <form action="/add-recipe-31477046" method="POST">
 
         <div class="card mb-4">
           <div class="card-header">Basic Information</div>
@@ -29,12 +29,10 @@
             </div>
             <div class="mb-3">
               <label class="form-label">Chef</label>
-              <input class="form-control" type="text" name="chef" required placeholder="YourName-31477046" />
-              <div class="form-text">Format like: FirstLast-31477046</div>
+              <input class="form-control" type="text" name="chef" required placeholder="Your name" />
             </div>
           </div>
         </div>
-
         <div class="card mb-4">
           <div class="card-header">Recipe Details</div>
           <div class="card-body">
@@ -101,7 +99,7 @@ Whey Protein | 30 | g"></textarea>
         </div>
 
         <div class="d-flex justify-content-between">
-          <a class="btn btn-outline-secondary" href="/recipes-list">View Recipes</a>
+          <a class="btn btn-outline-secondary" href="/recipes-list-31477046">View Recipes</a>
           <button class="btn btn-primary" type="submit">Add Recipe</button>
         </div>
 
@@ -114,7 +112,6 @@ Whey Protein | 30 | g"></textarea>
           const form = document.querySelector('form');
           const recipeIdInput = form.querySelector('input[name="recipeId"]');
           const ingredientsInput = form.querySelector('textarea[name="ingredientsText"]');
-
           function toTrimmed(str) {
             if (typeof str !== 'string') return '';
             return str.trim();
@@ -141,10 +138,11 @@ Whey Protein | 30 | g"></textarea>
 
               if (!name || !Number.isFinite(qty) || qty <= 0 || !unit) { ok = false; break; }
             }
-
+        
             if (!ok) {
               ingredientsInput.setCustomValidity('Ingredients must be "name | quantity | unit" with a positive quantity.');
             }
+        
             return ok;
           }
 
@@ -170,7 +168,6 @@ Whey Protein | 30 | g"></textarea>
                     }
                   } catch (e) {}
                 }
-
                 if (isDup) {
                   recipeIdInput.setCustomValidity('Recipe ID already exists.');
                 } else {
@@ -203,6 +200,7 @@ Whey Protein | 30 | g"></textarea>
                 recipeIdInput.reportValidity();
               }
             });
+        
           });
 
           form.addEventListener('submit', function (e) {
@@ -221,13 +219,11 @@ Whey Protein | 30 | g"></textarea>
                   const firstInvalid = form.querySelector(':invalid');
                   if (firstInvalid) firstInvalid.focus();
                 }
-              }
-            });
+              }}
+            );
           });
         })();
       </script>
-
     </div>
   </body>
 </html>
-
