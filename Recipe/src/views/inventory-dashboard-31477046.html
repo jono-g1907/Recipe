@@ -46,14 +46,14 @@
 
       <% 
         // render one table per group
-        var groupKeys = Object.keys(groups);
+        let groupKeys = Object.keys(groups);
         if (groupKeys.length === 0) { %>
           <div class="alert alert-warning">No inventory items yet. Add some to see them here.</div>
       <% } %>
 
-      <% for (var gi = 0; gi < groupKeys.length; gi++) { 
-           var gkey = groupKeys[gi];
-           var bucket = groups[gkey] || { items: [], value: 0 };
+      <% for (let gi = 0; gi < groupKeys.length; gi++) { 
+           let gkey = groupKeys[gi];
+           let bucket = groups[gkey] || { items: [], value: 0 };
       %>
         <h4 class="mt-4">
           <%= (groupBy === 'location' ? 'Location: ' : 'Category: ') + gkey %>
@@ -83,9 +83,9 @@
               </tr>
             </thead>
             <tbody>
-            <% for (var i = 0; i < bucket.items.length; i++) {
-                 var r = bucket.items[i];
-                 var badgeClass = 'status-unknown', statusText = 'Unknown';
+            <% for (let i = 0; i < bucket.items.length; i++) {
+                 let r = bucket.items[i];
+                 let badgeClass = 'status-unknown', statusText = 'Unknown';
                  if (r.expiryStatus === 'expired') { badgeClass = 'status-expired'; statusText = 'Expired'; }
                  else if (r.expiryStatus === 'soon') { badgeClass = 'status-soon'; statusText = 'Soon'; }
                  else if (r.expiryStatus === 'ok') { badgeClass = 'status-ok'; statusText = 'OK'; }
