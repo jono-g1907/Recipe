@@ -109,8 +109,8 @@ app.post('/delete-inventory-31477046', function (req, res) {
   const store = require('./store');
 
   // find item index
-  let foundIndex = -1;
-  for (let i = 0; i < store.inventory.length; i++) {
+  var foundIndex = -1;
+  for (var i = 0; i < store.inventory.length; i++) {
     if (store.inventory[i].inventoryId === id) {
       foundIndex = i;
       break;
@@ -130,36 +130,36 @@ app.post('/delete-inventory-31477046', function (req, res) {
 
 // inventory dashboard
 app.get('/inventory-dashboard-31477046', function (req, res) {
-  const store = require('./store');
-  const constants = require('./lib/constants');
-  const APP_ID = constants.APP_ID;
+  var store = require('./store');
+  var constants = require('./lib/constants');
+  var APP_ID = constants.APP_ID;
 
   // copy items out
-  const rows = [];
-  for (let i = 0; i < store.inventory.length; i++) {
+  var rows = [];
+  for (var i = 0; i < store.inventory.length; i++) {
     rows.push(store.inventory[i].toJSON());
   }
 
   // date helpers
   function parseDate(s) {
     if (!s) return null;
-    const d = new Date(s);
+    var d = new Date(s);
     if (isNaN(d.getTime())) return null;
     return d;
   }
 
   function daysUntil(s) {
-    const d = parseDate(s);
+    var d = parseDate(s);
     if (!d) return null;
-    const now = new Date();
-    const ms = d.getTime() - now.getTime();
-    const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+    var now = new Date();
+    var ms = d.getTime() - now.getTime();
+    var days = Math.ceil(ms / (1000 * 60 * 60 * 24));
     return days;
   }
 
   // daysLeft + status
-  for (let j = 0; j < rows.length; j++) {
-    const dd = daysUntil(rows[j].expirationDate);
+  for (var j = 0; j < rows.length; j++) {
+    var dd = daysUntil(rows[j].expirationDate);
     rows[j].daysLeft = dd;
     if (dd === null) {
       rows[j].expiryStatus = 'unknown';
@@ -173,24 +173,24 @@ app.get('/inventory-dashboard-31477046', function (req, res) {
   }
 
   // total value (sum of cost)
-  let totalValue = 0;
-  for (let k = 0; k < rows.length; k++) {
-    const c = Number(rows[k].cost);
+  var totalValue = 0;
+  for (var k = 0; k < rows.length; k++) {
+    var c = Number(rows[k].cost);
     if (Number.isFinite(c)) totalValue += c;
   }
 
   // grouping: location (default) or category
-  const groupBy = req.query.group === 'category' ? 'category' : 'location';
-  const groups = {};
-  for (let m = 0; m < rows.length; m++) {
-    const key = rows[m][groupBy] || 'Unspecified';
+  var groupBy = req.query.group === 'category' ? 'category' : 'location';
+  var groups = {};
+  for (var m = 0; m < rows.length; m++) {
+    var key = rows[m][groupBy] || 'Unspecified';
     if (!groups[key]) groups[key] = { items: [], value: 0 };
     groups[key].items.push(rows[m]);
-    const cc = Number(rows[m].cost);
+    var cc = Number(rows[m].cost);
     if (Number.isFinite(cc)) groups[key].value += cc;
   }
 
-  let msg = '';
+  var msg = '';
   if (req.query.deleted) msg = 'Deleted inventory item ' + req.query.deleted;
 
   res.render('inventory-dashboard-31477046.html', {
@@ -214,7 +214,7 @@ app.post('/delete-recipe-31477046', function (req, res) {
 
   const store = require('./store');
   let foundIndex = -1;
-  for (let i = 0; i < store.recipes.length; i++) {
+  for (var i = 0; i < store.recipes.length; i++) {
     if (store.recipes[i].recipeId === id) {
       foundIndex = i;
       break;

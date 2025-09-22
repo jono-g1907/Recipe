@@ -94,6 +94,97 @@
           <button class="btn btn-primary" type="submit">Add Item</button>
         </div>
       </form>
+      <script>
+        (function () {
+          const APP_ID = '31477046';
+      
+          const form = document.querySelector('form');
+          if (!form) return;
+      
+          const idInput = form.querySelector('input[name="inventoryId"]');
+          const qtyInput = form.querySelector('input[name="quantity"]');
+          const costInput = form.querySelector('input[name="cost"]');
+          const purchaseDateInput = form.querySelector('input[name="purchaseDate"]');
+          const expirationDateInput = form.querySelector('input[name="expirationDate"]');
+          function checkDuplicate(cb) {
+            idInput.setCustomValidity('');
+            const want = (idInput.value || '').trim();
+            if (!want) { cb(false); return; }
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/inventory-' + APP_ID, true);
+            xhr.onreadystatechange = function () {
+              if (xhr.readyState === 4) {
+                const isDup = false;
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  try {
+                    const data = JSON.parse(xhr.responseText || '{}');
+                    const list = (data && data.items) ? data.items : [];
+                    for (let i = 0; i < list.length; i++) {
+                      const it = list[i];
+                      if (it && it.inventoryId === want) { isDup = true; break; }
+                    }
+                  } catch (e) {}
+                }
+                if (isDup) {
+                  idInput.setCustomValidity('Inventory ID already exists.');
+                }
+                cb(isDup);
+              }
+            };
+            try { xhr.send(); } catch (e) { cb(false); }
+          }
+
+          function validateNumbers() {
+            qtyInput.setCustomValidity('');
+            costInput.setCustomValidity('');
+            expirationDateInput.setCustomValidity('');
+            const q = Number(qtyInput.value);
+            if (!isFinite(q) || q <= 0) {
+              qtyInput.setCustomValidity('Quantity must be positive.');
+            }
+      
+            const c = Number(costInput.value);
+            if (!isFinite(c) || c < 0) {
+              costInput.setCustomValidity('Cost must be non-negative.');
+            }
+      
+            if (purchaseDateInput.value && expirationDateInput.value) {
+              const pd = new Date(purchaseDateInput.value);
+              const ed = new Date(expirationDateInput.value);
+              if (ed < pd) {
+                expirationDateInput.setCustomValidity('Expiration cannot be before purchase.');
+              }
+            }
+      
+          }
+
+          idInput.addEventListener('input', function () {
+            idInput.setCustomValidity('');
+          });
+          idInput.addEventListener('blur', function () {
+            checkDuplicate(function () {
+              if (idInput.reportValidity) idInput.reportValidity();
+            });
+          });
+          qtyInput.addEventListener('input', validateNumbers);
+          costInput.addEventListener('input', validateNumbers);
+          purchaseDateInput.addEventListener('change', validateNumbers);
+          expirationDateInput.addEventListener('change', validateNumbers);
+
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            validateNumbers();
+            checkDuplicate(function () {
+              if (form.checkValidity()) {
+                form.submit();
+              } else {
+                if (form.reportValidity) { form.reportValidity(); }
+              }
+            });
+          });
+        })();
+      </script>
+      
     </div>
   </body>
 </html>
