@@ -81,19 +81,7 @@ Notes: Use efficient Mongoose queries/aggregations to compute counts. The homepa
 
 ---
 
-## 5) Method Changes (No PUT/PATCH)
-
-The following prior endpoints **are replaced**:
-- `PUT /recipes/:recipeId-31477046` → **POST** `/recipes/:recipeId/update-31477046`
-- `PATCH /recipes/:recipeId-31477046` → **POST** `/recipes/:recipeId/update-31477046`
-- `PUT /inventory-dashboard/:inventoryId-31477046` → **POST** `/inventory-dashboard/:inventoryId/update-31477046`
-- `PATCH /inventory-dashboard/:inventoryId-31477046` → **POST** `/inventory-dashboard/:inventoryId/update-31477046`
-
-**Reason:** Assignment constraint forbidding PUT/PATCH; the POST update endpoints accept partial or full payloads and apply field-level updates server-side with Mongoose validation.
-
----
-
-## 6) Role Visibility (Routing-Level)
+## 5) Role Visibility (Routing-Level)
 
 - **Admin:** Inventory + Reports; no recipe pages.  
 - **Chef:** Recipes + Inventory; no reports.  
@@ -103,7 +91,7 @@ Implement this at the router/middleware level (page access/menus), not with DB-l
 
 ---
 
-## 7) Notes for Controllers / DB Integration
+## 6) Notes for Controllers / DB Integration
 
 - All create/update routes must validate against the Mongoose schemas, enforce uniqueness (e.g., user email, `recipeId`, `inventoryId`, `title` per user), and coerce/trim inputs server-side.  
 - `userId` must be attached to created recipes and inventory items (from session or request body).  
