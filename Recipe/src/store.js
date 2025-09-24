@@ -108,7 +108,14 @@ async function updateRecipe(recipeId, patch) {
 
 async function deleteRecipe(recipeId) {
   await ensureConnection();
-  return Recipe.deleteOne({ recipeId });
+
+  const normalisedId = recipeId ? String(recipeId).trim().toUpperCase() : '';
+  if (!normalisedId) {
+    return null;
+  }
+
+  const deletedRecipe = await Recipe.findOneAndDelete({ recipeId: normalisedId }).lean();
+  return deletedRecipe || null;
 }
 
 async function getAllInventory() {

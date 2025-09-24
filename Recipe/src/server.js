@@ -765,7 +765,14 @@ app.get('/recipes-list-' + APP_ID, async function (req, res, next) {
     const recipes = await store.getAllRecipes();
     const rows = recipes.map(mapRecipeForView);
     const deletedId = sanitiseString(req.query && req.query.deleted);
-    const msg = deletedId ? 'Deleted recipe ' + deletedId : '';
+    const deletedTitle = sanitiseString(req.query && req.query.deletedTitle);
+    let msg = '';
+    if (deletedId) {
+      msg = 'Deleted recipe ' + deletedId;
+      if (deletedTitle) {
+        msg += ' (' + deletedTitle + ')';
+      }
+    }
     res.render('recipes-list-31477046.html', {
       recipes: rows,
       msg: msg,
@@ -903,7 +910,8 @@ app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
 
 app.post('/delete-recipe-' + APP_ID, async function (req, res, next) {
   try {
-    const id = (req.body.recipeId || '').trim();
+    const rawId = sanitiseString(req.body && req.body.recipeId);
+    const id = rawId ? rawId.toUpperCase() : '';
     const bodyUserId = sanitiseString(req.body && req.body.userId);
     const userId = bodyUserId ? bodyUserId.toUpperCase() : '';
     if (!id) {
@@ -914,11 +922,11 @@ app.post('/delete-recipe-' + APP_ID, async function (req, res, next) {
         appId: APP_ID
       });
     }
-    const result = await store.deleteRecipe(id);
-    if (!result || result.deletedCount === 0) {
+    const deletedRecipe = await store.deleteRecipe(id);
+    if (!deletedRecipe) {
       return res.render('delete-recipe-31477046.html', {
         error: 'Recipe not found',
-        lastId: id,
+        lastId: rawId,
         userId: userId,
         appId: APP_ID
       });
@@ -927,7 +935,10 @@ app.post('/delete-recipe-' + APP_ID, async function (req, res, next) {
     if (userId) {
       params.push('userId=' + encodeURIComponent(userId));
     }
-    params.push('deleted=' + encodeURIComponent(id));
+    params.push('deleted=' + encodeURIComponent(deletedRecipe.recipeId));
+    if (deletedRecipe.title) {
+      params.push('deletedTitle=' + encodeURIComponent(deletedRecipe.title));
+    }
     const redirectTarget = '/recipes-list-' + APP_ID + '?' + params.join('&');
     return res.redirect(302, redirectTarget);
   } catch (err) {
