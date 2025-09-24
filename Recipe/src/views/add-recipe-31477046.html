@@ -16,6 +16,8 @@
         Share your culinary creation with detailed instructions and ingredients
       </p>
 
+      <div class="alert alert-danger" style="<%= error ? '' : 'display:none;' %>"><%= error %></div>
+
       <form action="/add-recipe-<%= appId %>" method="POST">
 
         <div class="card mb-4">
@@ -24,11 +26,11 @@
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label class="form-label">Recipe Title</label>
-                <input class="form-control" type="text" name="title" required />
+                <input class="form-control" type="text" name="title" required value="<%= values.title %>" />
               </div>
               <div class="col-md-3 mb-3">
                 <label class="form-label">Recipe ID</label>
-                <input class="form-control" type="text" name="recipeId" required placeholder="R-00005" />
+                <input class="form-control" type="text" name="recipeId" required placeholder="R-00005" value="<%= values.recipeId %>" />
                 <div class="form-text">Format: R-#####</div>
               </div>
               <div class="col-md-3 mb-3">
@@ -41,14 +43,14 @@
             <div class="row">
               <div class="col-md-4 mb-3">
                 <label class="form-label">Chef</label>
-                <input class="form-control" type="text" name="chef" required placeholder="Your name" />
+                <input class="form-control" type="text" name="chef" required placeholder="Your name" value="<%= values.chef %>" />
               </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">Meal Type</label>
                 <select class="form-select" name="mealType" required>
                   <option value="">-- choose --</option>
                   <% for (let i = 0; i < mealTypes.length; i++) { %>
-                    <option value="<%= mealTypes[i] %>"><%= mealTypes[i] %></option>
+                    <option value="<%= mealTypes[i] %>" <%= values.mealType === mealTypes[i] ? 'selected' : '' %>><%= mealTypes[i] %></option>
                   <% } %>
                 </select>
               </div>
@@ -57,7 +59,7 @@
                 <select class="form-select" name="cuisineType" required>
                   <option value="">-- choose --</option>
                   <% for (let i = 0; i < cuisineTypes.length; i++) { %>
-                    <option value="<%= cuisineTypes[i] %>"><%= cuisineTypes[i] %></option>
+                    <option value="<%= cuisineTypes[i] %>" <%= values.cuisineType === cuisineTypes[i] ? 'selected' : '' %>><%= cuisineTypes[i] %></option>
                   <% } %>
                 </select>
               </div>
@@ -68,22 +70,22 @@
                 <select class="form-select" name="difficulty" required>
                   <option value="">-- choose --</option>
                   <% for (let i = 0; i < difficulties.length; i++) { %>
-                    <option value="<%= difficulties[i] %>"><%= difficulties[i] %></option>
+                    <option value="<%= difficulties[i] %>" <%= values.difficulty === difficulties[i] ? 'selected' : '' %>><%= difficulties[i] %></option>
                   <% } %>
                 </select>
               </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">Prep Time (mins)</label>
-                <input class="form-control" type="number" name="prepTime" min="1" max="480" step="1" required />
+                <input class="form-control" type="number" name="prepTime" min="1" max="480" step="1" required value="<%= values.prepTime %>" />
               </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">Servings</label>
-                <input class="form-control" type="number" name="servings" min="1" max="20" step="1" required />
+                <input class="form-control" type="number" name="servings" min="1" max="20" step="1" required value="<%= values.servings %>" />
               </div>
             </div>
             <div class="mb-3">
               <label class="form-label">Created Date</label>
-              <input class="form-control" type="date" name="createdDate" />
+              <input class="form-control" type="date" name="createdDate" value="<%= values.createdDate %>" />
             </div>
           </div>
         </div>
@@ -95,7 +97,7 @@
               placeholder="One per line, like:
 Rolled Oats | 60 | g
 Milk | 250 | ml
-Whey Protein | 30 | g"></textarea>
+Whey Protein | 30 | g"><%= values.ingredientsText %></textarea>
             <div class="form-text">Each line: <code>name | quantity | unit</code>. Units: pieces, kg, g, liters, ml, cups, tbsp, tsp, dozen.</div>
           </div>
         </div>
@@ -103,8 +105,7 @@ Whey Protein | 30 | g"></textarea>
         <div class="card mb-4">
           <div class="card-header">Instructions</div>
           <div class="card-body">
-            <textarea class="form-control" name="instructionsText" rows="6" required
-              placeholder="One step per line"></textarea>
+            <textarea class="form-control" name="instructionsText" rows="6" required placeholder="One step per line"><%= values.instructionsText %></textarea>
           </div>
         </div>
 
