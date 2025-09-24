@@ -82,6 +82,7 @@
                 <td><pre><%= ingLines.join('\n') %></pre></td>
                 <td><pre><%= stepLines.join('\n') %></pre></td>
                 <td>
+                  <a class="btn btn-sm btn-secondary mb-1" href="/edit-recipe-<%= appId %>?userId=<%= userId %>&recipeId=<%= r.recipeId %>">Edit</a>
                   <form
                     method="post"
                     action="/delete-recipe-<%= appId %>"

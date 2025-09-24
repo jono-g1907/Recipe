@@ -34,6 +34,7 @@ const EMAIL_REGEX = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}:;"'<>?,.\/]).{8,}$/;
 const NAME_REGEX = /^[A-Za-z\s\-']{2,100}$/;
 const RECIPE_ID_REGEX = /^R-\d{5}$/;
+const INVENTORY_ID_REGEX = /^I-\d{5}$/;
 const USER_ID_REGEX = /^U-\d{5}$/;
 const RECIPE_TITLE_REGEX = /^[A-Za-z0-9\s'\-\(\)]{3,100}$/;
 const CHEF_REGEX = /^[A-Za-z\s'\-]{2,50}$/;
@@ -43,6 +44,8 @@ const MEAL_TYPE_OPTIONS = Object.values(enums.MealType);
 const CUISINE_TYPE_OPTIONS = Object.values(enums.CuisineType);
 const DIFFICULTY_OPTIONS = Object.values(enums.Difficulty);
 const UNIT_OPTIONS = Object.values(enums.Unit);
+const INVENTORY_CATEGORY_OPTIONS = Object.values(enums.InventoryCategory);
+const LOCATION_OPTIONS = Object.values(enums.Location);
 
 const EMPTY_RECIPE_FORM_VALUES = {
   recipeId: '',
@@ -60,6 +63,24 @@ const EMPTY_RECIPE_FORM_VALUES = {
 
 function getEmptyRecipeFormValues() {
   return Object.assign({}, EMPTY_RECIPE_FORM_VALUES);
+}
+
+const EMPTY_INVENTORY_FORM_VALUES = {
+  inventoryId: '',
+  userId: '',
+  ingredientName: '',
+  quantity: '',
+  unit: '',
+  category: '',
+  purchaseDate: '',
+  expirationDate: '',
+  location: '',
+  cost: '',
+  createdDate: ''
+};
+
+function getEmptyInventoryFormValues() {
+  return Object.assign({}, EMPTY_INVENTORY_FORM_VALUES);
 }
 
 function normaliseSelectValue(value, options) {
@@ -91,6 +112,53 @@ function buildRecipeFormValuesFromBody(body) {
   values.createdDate = sanitiseString(body.createdDate);
   values.ingredientsText = body.ingredientsText ? String(body.ingredientsText).replace(/\r\n/g, '\n') : '';
   values.instructionsText = body.instructionsText ? String(body.instructionsText).replace(/\r\n/g, '\n') : '';
+  return values;
+}
+
+function buildRecipeFormValuesFromRecipe(recipe) {
+  const values = getEmptyRecipeFormValues();
+  if (!recipe) {
+    return values;
+  }
+
+  values.recipeId = sanitiseString(recipe.recipeId).toUpperCase();
+  values.title = sanitiseString(recipe.title);
+  values.chef = sanitiseString(recipe.chef);
+  values.mealType = sanitiseString(recipe.mealType);
+  values.cuisineType = sanitiseString(recipe.cuisineType);
+  values.difficulty = sanitiseString(recipe.difficulty);
+
+  const prepTimeNumber = Number(recipe.prepTime);
+  values.prepTime = Number.isFinite(prepTimeNumber) ? prepTimeNumber : '';
+
+  const servingsNumber = Number(recipe.servings);
+  values.servings = Number.isFinite(servingsNumber) ? servingsNumber : '';
+
+  values.createdDate = toIsoDate(recipe.createdDate);
+
+  const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+  const ingredientLines = [];
+  for (let i = 0; i < ingredients.length; i++) {
+    const entry = ingredients[i] || {};
+    const name = sanitiseString(entry.ingredientName);
+    const quantity = entry.quantity !== undefined && entry.quantity !== null ? String(entry.quantity) : '';
+    const unit = sanitiseString(entry.unit);
+    if (name || quantity || unit) {
+      ingredientLines.push((name || '') + ' | ' + (quantity || '') + ' | ' + (unit || ''));
+    }
+  }
+  values.ingredientsText = ingredientLines.join('\n');
+
+  const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
+  const instructionLines = [];
+  for (let j = 0; j < instructions.length; j++) {
+    const step = sanitiseString(instructions[j]);
+    if (step) {
+      instructionLines.push(step);
+    }
+  }
+  values.instructionsText = instructionLines.join('\n');
+
   return values;
 }
 
@@ -229,6 +297,24 @@ function renderRecipeForm(res, user, values, errorMessage, status) {
   });
 }
 
+function renderRecipeEditForm(res, user, recipes, selectedId, values, errorMessage, successMessage, status) {
+  const safeValues = values || getEmptyRecipeFormValues();
+  const statusCode = status || 200;
+  return res.status(statusCode).render('edit-recipe-31477046.html', {
+    error: errorMessage || '',
+    success: successMessage || '',
+    values: safeValues,
+    recipes: Array.isArray(recipes) ? recipes : [],
+    selectedRecipeId: selectedId || '',
+    defaultUserId: user ? user.userId : '',
+    userId: user ? user.userId : '',
+    mealTypes: MEAL_TYPE_OPTIONS,
+    cuisineTypes: CUISINE_TYPE_OPTIONS,
+    difficulties: DIFFICULTY_OPTIONS,
+    appId: APP_ID
+  });
+}
+
 function normaliseError(err) {
   if (!err) return err;
 
@@ -334,6 +420,121 @@ function parseInventoryForm(body) {
   return item;
 }
 
+function collectInventoryErrors(item) {
+  const errors = [];
+  if (!item) {
+    errors.push('Inventory details are required.');
+    return errors;
+  }
+
+  const inventoryId = sanitiseString(item.inventoryId).toUpperCase();
+  if (!inventoryId) {
+    errors.push('Inventory ID is required.');
+  } else if (!INVENTORY_ID_REGEX.test(inventoryId)) {
+    errors.push('Inventory ID must follow the I-00000 format.');
+  }
+
+  const userId = sanitiseString(item.userId).toUpperCase();
+  if (!userId || !USER_ID_REGEX.test(userId)) {
+    errors.push('A valid user ID is required.');
+  }
+
+  const name = sanitiseString(item.ingredientName);
+  if (!name) {
+    errors.push('Ingredient name is required.');
+  } else if (!INGREDIENT_NAME_REGEX.test(name)) {
+    errors.push('Ingredient names must be 2-50 characters using letters, spaces, hyphens or apostrophes.');
+  }
+
+  const quantity = Number(item.quantity);
+  if (!Number.isFinite(quantity)) {
+    errors.push('Quantity must be a number.');
+  } else if (quantity <= 0 || quantity > 9999) {
+    errors.push('Quantity must be between 0.01 and 9999.');
+  }
+
+  const unit = sanitiseString(item.unit).toLowerCase();
+  if (!unit || UNIT_OPTIONS.indexOf(unit) === -1) {
+    errors.push('Select a valid unit.');
+  }
+
+  const category = sanitiseString(item.category);
+  if (!category || INVENTORY_CATEGORY_OPTIONS.indexOf(category) === -1) {
+    errors.push('Select a valid category.');
+  }
+
+  const location = sanitiseString(item.location);
+  if (!location || LOCATION_OPTIONS.indexOf(location) === -1) {
+    errors.push('Select a valid location.');
+  }
+
+  const cost = Number(item.cost);
+  if (!Number.isFinite(cost)) {
+    errors.push('Cost must be a number.');
+  } else if (cost < 0.01 || cost > 999.99) {
+    errors.push('Cost must be between 0.01 and 999.99.');
+  } else {
+    const cents = Math.round(cost * 100);
+    if (Math.abs(cost * 100 - cents) > 1e-6) {
+      errors.push('Cost must have no more than two decimal places.');
+    }
+  }
+
+  const purchaseDate = item.purchaseDate instanceof Date ? item.purchaseDate : new Date(item.purchaseDate);
+  if (!(purchaseDate instanceof Date) || isNaN(purchaseDate.getTime())) {
+    errors.push('Purchase date must be a valid date.');
+  } else if (purchaseDate.getTime() > Date.now()) {
+    errors.push('Purchase date cannot be in the future.');
+  }
+
+  const expirationDate = item.expirationDate instanceof Date ? item.expirationDate : new Date(item.expirationDate);
+  if (!(expirationDate instanceof Date) || isNaN(expirationDate.getTime())) {
+    errors.push('Expiration date must be a valid date.');
+  } else if (!isNaN(purchaseDate.getTime()) && expirationDate.getTime() <= purchaseDate.getTime()) {
+    errors.push('Expiration date must be after the purchase date.');
+  }
+
+  const createdDate = item.createdDate instanceof Date ? item.createdDate : new Date(item.createdDate);
+  if (!(createdDate instanceof Date) || isNaN(createdDate.getTime())) {
+    errors.push('Created date must be a valid date.');
+  } else if (createdDate.getTime() > Date.now()) {
+    errors.push('Created date cannot be in the future.');
+  }
+
+  return errors;
+}
+
+function buildInventoryFormValuesFromItem(item) {
+  const values = getEmptyInventoryFormValues();
+  if (!item) {
+    return values;
+  }
+
+  values.inventoryId = sanitiseString(item.inventoryId).toUpperCase();
+  values.userId = sanitiseString(item.userId).toUpperCase();
+  values.ingredientName = sanitiseString(item.ingredientName);
+
+  const quantityNumber = Number(item.quantity);
+  values.quantity = Number.isFinite(quantityNumber) ? quantityNumber : '';
+
+  values.unit = sanitiseString(item.unit).toLowerCase();
+  values.category = sanitiseString(item.category);
+  values.location = sanitiseString(item.location);
+
+  const costNumber = Number(item.cost);
+  if (Number.isFinite(costNumber)) {
+    values.cost = (Math.round(costNumber * 100) / 100).toFixed(2);
+  } else {
+    values.cost = '';
+  }
+
+  values.purchaseDate = toIsoDate(item.purchaseDate);
+  values.expirationDate = toIsoDate(item.expirationDate);
+  values.createdDate = toIsoDate(item.createdDate);
+
+  return values;
+}
+
 function toIsoDate(value) {
   if (!value) return '';
   const d = value instanceof Date ? value : new Date(value);
@@ -395,6 +596,24 @@ function mapInventoryForView(item) {
     daysLeft: daysLeft,
     expiryStatus: expiryStatus
   };
+}
+
+function renderInventoryEditForm(res, user, items, selectedId, values, errorMessage, successMessage, status) {
+  const safeValues = values || getEmptyInventoryFormValues();
+  const statusCode = status || 200;
+  return res.status(statusCode).render('edit-inventory-31477046.html', {
+    error: errorMessage || '',
+    success: successMessage || '',
+    values: safeValues,
+    items: Array.isArray(items) ? items : [],
+    selectedInventoryId: selectedId || '',
+    categories: INVENTORY_CATEGORY_OPTIONS,
+    locations: LOCATION_OPTIONS,
+    units: UNIT_OPTIONS,
+    userId: user ? user.userId : '',
+    defaultUserId: user ? user.userId : '',
+    appId: APP_ID
+  });
 }
 
 function parseRegistrationForm(body) {
@@ -732,6 +951,50 @@ app.get('/add-recipe-' + APP_ID, async function (req, res, next) {
   }
 });
 
+app.get('/edit-recipe-' + APP_ID, async function (req, res, next) {
+  try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    const user = result.user;
+    const allRecipes = await store.getAllRecipes();
+    const myRecipes = allRecipes.filter(function (recipe) {
+      return recipe && recipe.userId === user.userId;
+    });
+
+    const queryId = sanitiseString(req.query && req.query.recipeId);
+    const requestedId = queryId ? queryId.toUpperCase() : '';
+    let selectedRecipe = null;
+    for (let i = 0; i < myRecipes.length; i++) {
+      if (myRecipes[i] && myRecipes[i].recipeId === requestedId) {
+        selectedRecipe = myRecipes[i];
+        break;
+      }
+    }
+
+    let errorMessage = sanitiseString(req.query && req.query.error);
+    if (!myRecipes.length) {
+      errorMessage = (errorMessage ? errorMessage + ' ' : '') + 'You have no recipes to edit yet. Add a recipe first.';
+    } else if (requestedId && !selectedRecipe) {
+      errorMessage = (errorMessage ? errorMessage + ' ' : '') + 'Recipe ' + requestedId + ' was not found. Showing your first recipe.';
+    }
+
+    if (!selectedRecipe && myRecipes.length) {
+      selectedRecipe = myRecipes[0];
+    }
+
+    const values = selectedRecipe ? buildRecipeFormValuesFromRecipe(selectedRecipe) : getEmptyRecipeFormValues();
+    const successMessage = sanitiseString(req.query && req.query.success) || '';
+    const selectedId = selectedRecipe ? selectedRecipe.recipeId : '';
+
+    return renderRecipeEditForm(res, user, myRecipes, selectedId, values, errorMessage || '', successMessage, 200);
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get('/add-inventory-' + APP_ID, async function (req, res, next) {
   try {
     const result = await resolveActiveUser(req);
@@ -744,11 +1007,53 @@ app.get('/add-inventory-' + APP_ID, async function (req, res, next) {
     res.render('add-inventory-31477046.html', {
       defaultUserId: user.userId,
       userId: user.userId,
-      categories: Object.values(enums.InventoryCategory),
-      locations: Object.values(enums.Location),
-      units: Object.values(enums.Unit),
+      categories: INVENTORY_CATEGORY_OPTIONS,
+      locations: LOCATION_OPTIONS,
+      units: UNIT_OPTIONS,
       appId: APP_ID
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/edit-inventory-' + APP_ID, async function (req, res, next) {
+  try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    const user = result.user;
+    const listResult = await store.listInventory({ userId: user.userId, page: 1, limit: 500, sort: '-createdDate' });
+    const items = Array.isArray(listResult.items) ? listResult.items : [];
+
+    const queryId = sanitiseString(req.query && req.query.inventoryId);
+    const requestedId = queryId ? queryId.toUpperCase() : '';
+    let selectedItem = null;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i] && items[i].inventoryId === requestedId) {
+        selectedItem = items[i];
+        break;
+      }
+    }
+
+    let errorMessage = sanitiseString(req.query && req.query.error);
+    if (!items.length) {
+      errorMessage = (errorMessage ? errorMessage + ' ' : '') + 'You have no inventory items to edit yet. Add an item first.';
+    } else if (requestedId && !selectedItem) {
+      errorMessage = (errorMessage ? errorMessage + ' ' : '') + 'Inventory item ' + requestedId + ' was not found. Showing your first item.';
+    }
+
+    if (!selectedItem && items.length) {
+      selectedItem = items[0];
+    }
+
+    const values = selectedItem ? buildInventoryFormValuesFromItem(selectedItem) : getEmptyInventoryFormValues();
+    const successMessage = sanitiseString(req.query && req.query.success) || '';
+    const selectedId = selectedItem ? selectedItem.inventoryId : '';
+
+    return renderInventoryEditForm(res, user, items, selectedId, values, errorMessage || '', successMessage, 200);
   } catch (err) {
     next(err);
   }
@@ -766,13 +1071,24 @@ app.get('/recipes-list-' + APP_ID, async function (req, res, next) {
     const rows = recipes.map(mapRecipeForView);
     const deletedId = sanitiseString(req.query && req.query.deleted);
     const deletedTitle = sanitiseString(req.query && req.query.deletedTitle);
-    let msg = '';
-    if (deletedId) {
-      msg = 'Deleted recipe ' + deletedId;
-      if (deletedTitle) {
-        msg += ' (' + deletedTitle + ')';
+    const updatedId = sanitiseString(req.query && req.query.updated);
+    const updatedTitle = sanitiseString(req.query && req.query.updatedTitle);
+    const notices = [];
+    if (updatedId) {
+      let text = 'Updated recipe ' + updatedId;
+      if (updatedTitle) {
+        text += ' (' + updatedTitle + ')';
       }
+      notices.push(text);
     }
+    if (deletedId) {
+      let text = 'Deleted recipe ' + deletedId;
+      if (deletedTitle) {
+        text += ' (' + deletedTitle + ')';
+      }
+      notices.push(text);
+    }
+    const msg = notices.join(' ');
     res.render('recipes-list-31477046.html', {
       recipes: rows,
       msg: msg,
@@ -892,7 +1208,20 @@ app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
     }
 
     const deletedId = sanitiseString(req.query && req.query.deleted);
-    const msg = deletedId ? 'Deleted inventory item ' + deletedId : '';
+    const updatedId = sanitiseString(req.query && req.query.updated);
+    const updatedName = sanitiseString(req.query && req.query.updatedName);
+    const notices = [];
+    if (updatedId) {
+      let text = 'Updated inventory item ' + updatedId;
+      if (updatedName) {
+        text += ' (' + updatedName + ')';
+      }
+      notices.push(text);
+    }
+    if (deletedId) {
+      notices.push('Deleted inventory item ' + deletedId);
+    }
+    const msg = notices.join(' ');
 
     res.render('inventory-dashboard-31477046.html', {
       groupBy: groupBy,
@@ -943,6 +1272,92 @@ app.post('/delete-recipe-' + APP_ID, async function (req, res, next) {
     return res.redirect(302, redirectTarget);
   } catch (err) {
     next(err);
+  }
+});
+
+app.post('/edit-recipe-' + APP_ID, async function (req, res, next) {
+  let activeUser = null;
+  let recipeOptions = [];
+  let formValues = null;
+  try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    activeUser = result.user;
+    const allRecipes = await store.getAllRecipes();
+    recipeOptions = allRecipes.filter(function (recipe) {
+      return recipe && recipe.userId === activeUser.userId;
+    });
+
+    formValues = buildRecipeFormValuesFromBody(req.body || {});
+    const payload = parseRecipeForm(req.body || {});
+    payload.userId = activeUser.userId;
+    payload.recipeId = payload.recipeId ? payload.recipeId.toUpperCase() : '';
+
+    if (!payload.recipeId) {
+      return renderRecipeEditForm(res, activeUser, recipeOptions, '', formValues, 'Select a recipe to update.', '', 400);
+    }
+
+    const existingRecipe = await store.getRecipeByRecipeId(payload.recipeId);
+    if (!existingRecipe || existingRecipe.userId !== activeUser.userId) {
+      return renderRecipeEditForm(res, activeUser, recipeOptions, payload.recipeId, formValues, 'Recipe ' + payload.recipeId + ' was not found for your account.', '', 404);
+    }
+
+    const validationErrors = collectRecipeErrors(payload);
+
+    if (payload.title && RECIPE_TITLE_REGEX.test(payload.title)) {
+      const duplicateTitle = await store.getRecipeByTitleForUser(payload.userId, payload.title);
+      if (duplicateTitle && duplicateTitle.recipeId !== existingRecipe.recipeId) {
+        validationErrors.push('You already have a recipe with this title.');
+      }
+    }
+
+    if (validationErrors.length) {
+      return renderRecipeEditForm(res, activeUser, recipeOptions, existingRecipe.recipeId, formValues, validationErrors.join(' '), '', 400);
+    }
+
+    const patch = {
+      title: payload.title,
+      chef: payload.chef,
+      mealType: payload.mealType,
+      cuisineType: payload.cuisineType,
+      prepTime: payload.prepTime,
+      difficulty: payload.difficulty,
+      servings: payload.servings,
+      createdDate: payload.createdDate,
+      ingredients: payload.ingredients,
+      instructions: payload.instructions,
+      userId: existingRecipe.userId
+    };
+
+    const updatedRecipe = await store.updateRecipe(existingRecipe.recipeId, patch);
+    if (!updatedRecipe) {
+      return renderRecipeEditForm(res, activeUser, recipeOptions, existingRecipe.recipeId, formValues, 'Recipe could not be updated. Try again.', '', 500);
+    }
+
+    const params = [];
+    params.push('userId=' + encodeURIComponent(activeUser.userId));
+    params.push('recipeId=' + encodeURIComponent(updatedRecipe.recipeId));
+    let successMessage = 'Updated recipe ' + updatedRecipe.recipeId + '.';
+    if (updatedRecipe.title) {
+      successMessage = 'Updated recipe ' + updatedRecipe.recipeId + ' (' + updatedRecipe.title + ').';
+    }
+    params.push('success=' + encodeURIComponent(successMessage));
+
+    return res.redirect(302, '/edit-recipe-' + APP_ID + '?' + params.join('&'));
+  } catch (err) {
+    const normalised = normaliseError(err);
+    if (normalised instanceof ValidationError) {
+      if (!formValues) {
+        formValues = buildRecipeFormValuesFromBody(req.body || {});
+      }
+      const message = normalised.errors && normalised.errors.length ? normalised.errors.join(' ') : 'Unable to update recipe.';
+      const selectedId = formValues && formValues.recipeId ? formValues.recipeId : '';
+      return renderRecipeEditForm(res, activeUser, recipeOptions, selectedId, formValues, message, '', 400);
+    }
+    next(normalised);
   }
 });
 
@@ -1024,6 +1439,86 @@ app.post('/add-inventory-' + APP_ID, async function (req, res, next) {
     return res.redirect(302, redirectTarget);
   } catch (err) {
     next(normaliseError(err));
+  }
+});
+
+app.post('/edit-inventory-' + APP_ID, async function (req, res, next) {
+  let activeUser = null;
+  let inventoryOptions = [];
+  let formValues = null;
+  try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    activeUser = result.user;
+    const listResult = await store.listInventory({ userId: activeUser.userId, page: 1, limit: 500, sort: '-createdDate' });
+    inventoryOptions = Array.isArray(listResult.items) ? listResult.items : [];
+
+    const payload = parseInventoryForm(req.body || {});
+    payload.userId = activeUser.userId;
+    payload.inventoryId = payload.inventoryId ? payload.inventoryId.toUpperCase() : '';
+    formValues = buildInventoryFormValuesFromItem(payload);
+
+    if (!payload.inventoryId) {
+      return renderInventoryEditForm(res, activeUser, inventoryOptions, '', formValues, 'Select an inventory item to update.', '', 400);
+    }
+
+    const existingItem = await store.getInventoryItemById(payload.inventoryId);
+    if (!existingItem || existingItem.userId !== activeUser.userId) {
+      return renderInventoryEditForm(res, activeUser, inventoryOptions, payload.inventoryId, formValues, 'Inventory item ' + payload.inventoryId + ' was not found for your account.', '', 404);
+    }
+
+    const validationErrors = collectInventoryErrors(payload);
+    if (validationErrors.length) {
+      return renderInventoryEditForm(res, activeUser, inventoryOptions, existingItem.inventoryId, formValues, validationErrors.join(' '), '', 400);
+    }
+
+    const patch = {
+      ingredientName: payload.ingredientName,
+      quantity: payload.quantity,
+      unit: payload.unit,
+      category: payload.category,
+      purchaseDate: payload.purchaseDate,
+      expirationDate: payload.expirationDate,
+      location: payload.location,
+      cost: payload.cost,
+      createdDate: payload.createdDate,
+      userId: existingItem.userId
+    };
+
+    const updatedItem = await store.updateInventoryItem(existingItem.inventoryId, patch);
+    if (!updatedItem) {
+      return renderInventoryEditForm(res, activeUser, inventoryOptions, existingItem.inventoryId, formValues, 'Inventory item could not be updated. Try again.', '', 500);
+    }
+
+    const params = [];
+    params.push('userId=' + encodeURIComponent(activeUser.userId));
+    params.push('inventoryId=' + encodeURIComponent(updatedItem.inventoryId));
+    let successMessage = 'Updated inventory item ' + updatedItem.inventoryId + '.';
+    if (updatedItem.ingredientName) {
+      successMessage = 'Updated inventory item ' + updatedItem.inventoryId + ' (' + updatedItem.ingredientName + ').';
+    }
+    params.push('success=' + encodeURIComponent(successMessage));
+
+    return res.redirect(302, '/edit-inventory-' + APP_ID + '?' + params.join('&'));
+  } catch (err) {
+    const normalised = normaliseError(err);
+    if (normalised instanceof ValidationError) {
+      if (!formValues) {
+        const fallback = parseInventoryForm(req.body || {});
+        if (activeUser) {
+          fallback.userId = activeUser.userId;
+        }
+        fallback.inventoryId = fallback.inventoryId ? fallback.inventoryId.toUpperCase() : '';
+        formValues = buildInventoryFormValuesFromItem(fallback);
+      }
+      const message = normalised.errors && normalised.errors.length ? normalised.errors.join(' ') : 'Unable to update inventory item.';
+      const selectedId = formValues && formValues.inventoryId ? formValues.inventoryId : '';
+      return renderInventoryEditForm(res, activeUser, inventoryOptions, selectedId, formValues, message, '', 400);
+    }
+    next(normalised);
   }
 });
 

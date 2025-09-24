@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <title>Edit Inventory Item</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
+  </head>
+  <body>
+    <div class="container py-4">
+      <div class="mb-3">
+        <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
+      </div>
+
+      <h1 class="text-center mb-1">Edit Inventory Item</h1>
+      <p class="text-center text-muted mb-4">Adjust stock levels, dates and storage details</p>
+
+      <% if (success) { %>
+        <div class="alert alert-success"><%= success %></div>
+      <% } %>
+
+      <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <% if (!items || !items.length) { %>
+        <div class="alert alert-info">
+          You have no inventory items to edit.
+          <a class="alert-link" href="/add-inventory-<%= appId %>?userId=<%= userId %>">Add an inventory item</a> to get started.
+        </div>
+      <% } else { %>
+        <div class="card mb-4">
+          <div class="card-header">Choose Inventory Item</div>
+          <div class="card-body">
+            <label class="form-label" for="inventorySelection">Select an item to edit</label>
+            <select class="form-select" id="inventorySelection">
+              <% for (let i = 0; i < items.length; i++) { const item = items[i] || {}; %>
+                <option value="<%= item.inventoryId %>" <%= selectedInventoryId === item.inventoryId ? 'selected' : '' %>>
+                  <%= item.inventoryId %>
+                  <% if (item.ingredientName) { %>
+                    - <%= item.ingredientName %>
+                  <% } %>
+                </option>
+              <% } %>
+            </select>
+          </div>
+        </div>
+
+        <form action="/edit-inventory-<%= appId %>" method="POST">
+          <input type="hidden" name="userId" value="<%= defaultUserId %>" />
+
+          <div class="card mb-4">
+            <div class="card-header">Basic Information</div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Inventory ID</label>
+                  <input class="form-control" type="text" name="inventoryId" readonly value="<%= values.inventoryId %>" />
+                  <div class="form-text">Format: I-#####</div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">User ID</label>
+                  <div class="form-control-plaintext fw-semibold"><%= defaultUserId %></div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Ingredient Name</label>
+                  <input class="form-control" type="text" name="ingredientName" required value="<%= values.ingredientName %>" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-header">Item Details</div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Quantity</label>
+                  <input class="form-control" type="number" name="quantity" step="0.01" min="0.01" required value="<%= values.quantity %>" />
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Unit</label>
+                  <select class="form-select" name="unit" required>
+                    <option value="">-- choose --</option>
+                    <% for (let i = 0; i < units.length; i++) { %>
+                      <option value="<%= units[i] %>" <%= values.unit === units[i] ? 'selected' : '' %>><%= units[i] %></option>
+                    <% } %>
+                  </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Category</label>
+                  <select class="form-select" name="category" required>
+                    <option value="">-- choose --</option>
+                    <% for (let i = 0; i < categories.length; i++) { %>
+                      <option value="<%= categories[i] %>" <%= values.category === categories[i] ? 'selected' : '' %>><%= categories[i] %></option>
+                    <% } %>
+                  </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Cost</label>
+                  <input class="form-control" type="number" name="cost" step="0.01" min="0.01" required value="<%= values.cost %>" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-header">Dates</div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Purchase Date</label>
+                  <input class="form-control" type="date" name="purchaseDate" required value="<%= values.purchaseDate %>" />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Expiration Date</label>
+                  <input class="form-control" type="date" name="expirationDate" required value="<%= values.expirationDate %>" />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Created Date</label>
+                  <input class="form-control" type="date" name="createdDate" value="<%= values.createdDate %>" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-header">Location</div>
+            <div class="card-body">
+              <select class="form-select" name="location" required>
+                <option value="">-- choose --</option>
+                <% for (let i = 0; i < locations.length; i++) { %>
+                  <option value="<%= locations[i] %>" <%= values.location === locations[i] ? 'selected' : '' %>><%= locations[i] %></option>
+                <% } %>
+              </select>
+              <div class="form-text">Select one of the approved storage locations.</div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a class="btn btn-outline-secondary" href="/inventory-dashboard-<%= appId %>?userId=<%= userId %>">View Inventory</a>
+            <button class="btn btn-primary" type="submit">Update Item</button>
+          </div>
+        </form>
+      <% } %>
+    </div>
+
+    <script>
+      (function () {
+        const APP_ID = '<%= appId %>';
+        const USER_ID = '<%= userId %>';
+        const select = document.getElementById('inventorySelection');
+        if (select) {
+          select.addEventListener('change', function () {
+            if (!USER_ID) return;
+            let target = '/edit-inventory-' + APP_ID + '?userId=' + encodeURIComponent(USER_ID);
+            if (this.value) {
+              target += '&inventoryId=' + encodeURIComponent(this.value);
+            }
+            window.location.href = target;
+          });
+        }
+
+        const form = document.querySelector('form');
+        if (!form) return;
+        const qtyInput = form.querySelector('input[name="quantity"]');
+        const costInput = form.querySelector('input[name="cost"]');
+        const purchaseDateInput = form.querySelector('input[name="purchaseDate"]');
+        const expirationDateInput = form.querySelector('input[name="expirationDate"]');
+
+        function validateNumbers() {
+          if (qtyInput) qtyInput.setCustomValidity('');
+          if (costInput) costInput.setCustomValidity('');
+          if (expirationDateInput) expirationDateInput.setCustomValidity('');
+
+          if (qtyInput) {
+            const q = Number(qtyInput.value);
+            if (!Number.isFinite(q) || q <= 0) {
+              qtyInput.setCustomValidity('Quantity must be more than zero.');
+            }
+          }
+
+          if (costInput) {
+            const c = Number(costInput.value);
+            if (!Number.isFinite(c) || c <= 0) {
+              costInput.setCustomValidity('Cost must be greater than zero.');
+            }
+          }
+
+          if (purchaseDateInput && expirationDateInput && purchaseDateInput.value && expirationDateInput.value) {
+            const pd = new Date(purchaseDateInput.value);
+            const ed = new Date(expirationDateInput.value);
+            if (!(pd instanceof Date) || isNaN(pd.getTime()) || !(ed instanceof Date) || isNaN(ed.getTime())) {
+              expirationDateInput.setCustomValidity('Dates must be valid.');
+            } else if (ed <= pd) {
+              expirationDateInput.setCustomValidity('Expiration must be after purchase date.');
+            }
+          }
+        }
+
+        if (qtyInput) {
+          qtyInput.addEventListener('input', validateNumbers);
+        }
+        if (costInput) {
+          costInput.addEventListener('input', validateNumbers);
+        }
+        if (purchaseDateInput) {
+          purchaseDateInput.addEventListener('change', validateNumbers);
+        }
+        if (expirationDateInput) {
+          expirationDateInput.addEventListener('change', validateNumbers);
+        }
+
+        form.addEventListener('submit', function (e) {
+          validateNumbers();
+          if (!form.checkValidity()) {
+            e.preventDefault();
+            if (form.reportValidity) {
+              form.reportValidity();
+            }
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <title>Edit Recipe</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
+  </head>
+  <body>
+    <div class="container py-4">
+      <div class="mb-3">
+        <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
+      </div>
+
+      <h1 class="text-center mb-1">Edit Recipe</h1>
+      <p class="text-center text-muted mb-4">Update recipe information, ingredients and instructions</p>
+
+      <% if (success) { %>
+        <div class="alert alert-success"><%= success %></div>
+      <% } %>
+
+      <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <% if (!recipes || !recipes.length) { %>
+        <div class="alert alert-info">
+          You have no recipes to edit yet.
+          <a class="alert-link" href="/add-recipe-<%= appId %>?userId=<%= userId %>">Add a new recipe</a> to get started.
+        </div>
+      <% } else { %>
+        <div class="card mb-4">
+          <div class="card-header">Choose Recipe</div>
+          <div class="card-body">
+            <label class="form-label" for="recipeSelection">Select a recipe to edit</label>
+            <select class="form-select" id="recipeSelection">
+              <% for (let i = 0; i < recipes.length; i++) { const recipe = recipes[i] || {}; %>
+                <option value="<%= recipe.recipeId %>" <%= selectedRecipeId === recipe.recipeId ? 'selected' : '' %>>
+                  <%= recipe.recipeId %>
+                  <% if (recipe.title) { %>
+                    - <%= recipe.title %>
+                  <% } %>
+                </option>
+              <% } %>
+            </select>
+          </div>
+        </div>
+
+        <form action="/edit-recipe-<%= appId %>" method="POST">
+          <input type="hidden" name="userId" value="<%= defaultUserId %>" />
+
+          <div class="card mb-4">
+            <div class="card-header">Basic Information</div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Recipe Title</label>
+                  <input class="form-control" type="text" name="title" required value="<%= values.title %>" />
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Recipe ID</label>
+                  <input class="form-control" type="text" name="recipeId" readonly value="<%= values.recipeId %>" />
+                  <div class="form-text">Format: R-#####</div>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">User ID</label>
+                  <div class="form-control-plaintext fw-semibold"><%= defaultUserId %></div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Chef</label>
+                  <input class="form-control" type="text" name="chef" required value="<%= values.chef %>" />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Meal Type</label>
+                  <select class="form-select" name="mealType" required>
+                    <option value="">-- choose --</option>
+                    <% for (let i = 0; i < mealTypes.length; i++) { %>
+                      <option value="<%= mealTypes[i] %>" <%= values.mealType === mealTypes[i] ? 'selected' : '' %>><%= mealTypes[i] %></option>
+                    <% } %>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Cuisine Type</label>
+                  <select class="form-select" name="cuisineType" required>
+                    <option value="">-- choose --</option>
+                    <% for (let i = 0; i < cuisineTypes.length; i++) { %>
+                      <option value="<%= cuisineTypes[i] %>" <%= values.cuisineType === cuisineTypes[i] ? 'selected' : '' %>><%= cuisineTypes[i] %></option>
+                    <% } %>
+                  </select>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Difficulty</label>
+                  <select class="form-select" name="difficulty" required>
+                    <option value="">-- choose --</option>
+                    <% for (let i = 0; i < difficulties.length; i++) { %>
+                      <option value="<%= difficulties[i] %>" <%= values.difficulty === difficulties[i] ? 'selected' : '' %>><%= difficulties[i] %></option>
+                    <% } %>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Prep Time (mins)</label>
+                  <input class="form-control" type="number" name="prepTime" min="1" max="480" step="1" required value="<%= values.prepTime %>" />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Servings</label>
+                  <input class="form-control" type="number" name="servings" min="1" max="20" step="1" required value="<%= values.servings %>" />
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Created Date</label>
+                <input class="form-control" type="date" name="createdDate" value="<%= values.createdDate %>" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-header">Ingredients</div>
+            <div class="card-body">
+              <textarea class="form-control" name="ingredientsText" rows="6" required
+                placeholder="One per line, like:
+Rolled Oats | 60 | g
+Milk | 250 | ml
+Whey Protein | 30 | g"><%= values.ingredientsText %></textarea>
+              <div class="form-text">Each line: <code>name | quantity | unit</code>. Units: pieces, kg, g, liters, ml, cups, tbsp, tsp, dozen.</div>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-header">Instructions</div>
+            <div class="card-body">
+              <textarea class="form-control" name="instructionsText" rows="6" required placeholder="One step per line"><%= values.instructionsText %></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a class="btn btn-outline-secondary" href="/recipes-list-<%= appId %>?userId=<%= userId %>">View Recipes</a>
+            <button class="btn btn-primary" type="submit">Update Recipe</button>
+          </div>
+        </form>
+      <% } %>
+    </div>
+
+    <script>
+      (function () {
+        const APP_ID = '<%= appId %>';
+        const USER_ID = '<%= userId %>';
+        const select = document.getElementById('recipeSelection');
+        if (select) {
+          select.addEventListener('change', function () {
+            if (!USER_ID) return;
+            let target = '/edit-recipe-' + APP_ID + '?userId=' + encodeURIComponent(USER_ID);
+            if (this.value) {
+              target += '&recipeId=' + encodeURIComponent(this.value);
+            }
+            window.location.href = target;
+          });
+        }
+
+        const form = document.querySelector('form');
+        if (!form) return;
+        const ingredientsInput = form.querySelector('textarea[name="ingredientsText"]');
+
+        function toTrimmed(str) {
+          return typeof str === 'string' ? str.trim() : '';
+        }
+
+        function validateIngredients() {
+          if (!ingredientsInput) return true;
+          ingredientsInput.setCustomValidity('');
+          const text = ingredientsInput.value || '';
+          const lines = text.split(/\r?\n/);
+          let ok = true;
+          let hasContent = false;
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = toTrimmed(lines[i]);
+            if (!line) continue;
+            hasContent = true;
+            const parts = line.split('|');
+            if (parts.length !== 3) { ok = false; break; }
+            const name = toTrimmed(parts[0]);
+            const qtyStr = toTrimmed(parts[1]);
+            const unit = toTrimmed(parts[2]).toLowerCase();
+            const qty = Number(qtyStr);
+            if (!name || !Number.isFinite(qty) || qty <= 0 || !unit) { ok = false; break; }
+          }
+
+          if (!hasContent) {
+            ok = false;
+          }
+
+          if (!ok) {
+            ingredientsInput.setCustomValidity('Ingredients must follow the "name | quantity | unit" format.');
+          }
+
+          return ok;
+        }
+
+        if (ingredientsInput) {
+          ingredientsInput.addEventListener('input', function () {
+            validateIngredients();
+            if (ingredientsInput.reportValidity) {
+              ingredientsInput.reportValidity();
+            }
+          });
+        }
+
+        form.addEventListener('submit', function (e) {
+          if (!validateIngredients()) {
+            e.preventDefault();
+            if (ingredientsInput && ingredientsInput.reportValidity) {
+              ingredientsInput.reportValidity();
+            }
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
