@@ -103,7 +103,20 @@ async function createRecipe(data) {
 
 async function updateRecipe(recipeId, patch) {
   await ensureConnection();
-  return Recipe.findOneAndUpdate({ recipeId }, patch, { new: true, runValidators: true }).lean();
+
+  const normalisedId = recipeId ? String(recipeId).trim().toUpperCase() : '';
+  if (!normalisedId) {
+    return null;
+  }
+
+  const update = Object.assign({}, patch || {});
+  delete update.recipeId;
+  if (update.userId) {
+    update.userId = String(update.userId).trim().toUpperCase();
+  }
+  update.updatedAt = new Date();
+
+  return Recipe.findOneAndUpdate({ recipeId: normalisedId }, update, { new: true, runValidators: true }).lean();
 }
 
 async function deleteRecipe(recipeId) {
@@ -246,7 +259,20 @@ async function createInventoryItem(data) {
 
 async function updateInventoryItem(inventoryId, patch) {
   await ensureConnection();
-  return InventoryItem.findOneAndUpdate({ inventoryId }, patch, { new: true, runValidators: true }).lean();
+
+  const normalisedId = inventoryId ? String(inventoryId).trim().toUpperCase() : '';
+  if (!normalisedId) {
+    return null;
+  }
+
+  const update = Object.assign({}, patch || {});
+  delete update.inventoryId;
+  if (update.userId) {
+    update.userId = String(update.userId).trim().toUpperCase();
+  }
+  update.updatedAt = new Date();
+
+  return InventoryItem.findOneAndUpdate({ inventoryId: normalisedId }, update, { new: true, runValidators: true }).lean();
 }
 
 async function deleteInventoryItem(inventoryId) {

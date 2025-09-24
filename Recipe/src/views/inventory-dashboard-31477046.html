@@ -109,6 +109,7 @@
                 <td class="mono"><%= (Number.isFinite(Number(r.cost)) ? Number(r.cost).toFixed(2) : '') %></td>
                 <td class="mono"><%= r.createdDate || '' %></td>
                 <td>
+                  <a class="btn btn-sm btn-secondary mb-1" href="/edit-inventory-<%= appId %>?userId=<%= userId %>&inventoryId=<%= r.inventoryId %>">Edit</a>
                   <button class="btn btn-sm btn-danger" onclick="deleteInventory('<%= r.inventoryId %>')">Delete</button>
                 </td>
               </tr>
