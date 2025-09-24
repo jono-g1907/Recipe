@@ -14,7 +14,7 @@
   <body>
     <div class="container">
       <div class="mb-3">
-        <a class="btn btn-outline-primary" href="/home-31477046">Return to Home</a>
+        <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
 
       <% if (typeof msg !== 'undefined' && msg) { %>
@@ -24,8 +24,8 @@
       <p class="text-center text-muted mb-4">Discover and manage your culinary collection</p>
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <a class="btn btn-primary" href="/add-recipe-31477046">Add New Recipe</a>
-          <a class="btn btn-danger" href="/delete-recipe-31477046">Delete Recipe</a>
+          <a class="btn btn-primary" href="/add-recipe-<%= appId %>?userId=<%= userId %>">Add New Recipe</a>
+          <a class="btn btn-danger" href="/delete-recipe-<%= appId %>?userId=<%= userId %>">Delete Recipe</a>
         </div>
         <span class="badge bg-secondary"><%= recipes ? recipes.length : 0 %> recipes</span>
       </div>

@@ -8,7 +8,7 @@
   <body>
     <div class="container py-4">
       <div class="mb-3">
-        <a class="btn btn-outline-primary" href="/home-31477046">Return to Home</a>
+        <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
 
       <h1 class="text-center mb-1">+ Add Recipe</h1>
@@ -16,7 +16,7 @@
         Share your culinary creation with detailed instructions and ingredients
       </p>
 
-      <form action="/add-recipe-31477046" method="POST">
+      <form action="/add-recipe-<%= appId %>" method="POST">
 
         <div class="card mb-4">
           <div class="card-header">Basic Information</div>
@@ -108,7 +108,7 @@ Whey Protein | 30 | g"></textarea>
         </div>
 
         <div class="d-flex justify-content-between">
-          <a class="btn btn-outline-secondary" href="/recipes-list-31477046">View Recipes</a>
+          <a class="btn btn-outline-secondary" href="/recipes-list-<%= appId %>?userId=<%= userId %>">View Recipes</a>
           <button class="btn btn-primary" type="submit">Add Recipe</button>
         </div>
 

@@ -9,7 +9,7 @@
     <div class="album py-5">
       <div class="container py-4">
       <div class="mb-3">
-        <a class="btn btn-outline-primary" href="/home-31477046">Return to Home</a>
+        <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
 
 
@@ -20,7 +20,8 @@
         <div class="alert alert-danger"><%= error %></div>
       <% } %>
 
-      <form action="/delete-inventory-31477046" method="POST" class="mx-auto" style="max-width: 400px;">
+      <form action="/delete-inventory-<%= appId %>" method="POST" class="mx-auto" style="max-width: 400px;">
+        <input type="hidden" name="userId" value="<%= userId %>">
         <div class="mb-3">
           <label class="form-label">Inventory ID</label>
           <input class="form-control" type="text" name="inventoryId" required
@@ -28,7 +29,7 @@
           <div class="form-text">Enter the exact inventoryId shown in the inventory list.</div>
         </div>
         <div class="d-flex justify-content-between">
-          <a class="btn btn-secondary" href="/inventory-dashboard-31477046">Back to Inventory</a>
+          <a class="btn btn-secondary" href="/inventory-dashboard-<%= appId %>?userId=<%= userId %>">Back to Inventory</a>
           <div>
             <button class="btn btn-outline-secondary me-2" type="reset">Reset</button>
             <button class="btn btn-danger" type="submit">Delete Item</button>

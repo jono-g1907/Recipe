@@ -319,27 +319,43 @@ function collectLoginErrors(form) {
   return errors;
 }
 
+function buildLoginRedirectUrl(message) {
+  const text = message || 'Log in to access the dashboard.';
+  return '/login-' + APP_ID + '?error=' + encodeURIComponent(text);
+}
+
+async function resolveActiveUser(req) {
+  const queryUserId = sanitiseString(req.query && req.query.userId);
+  if (!queryUserId) {
+    return { error: 'Log in to access the dashboard.' };
+  }
+
+  const userId = queryUserId.toUpperCase();
+  const user = await store.getUserByUserId(userId);
+
+  if (!user) {
+    return { error: 'Account not found. Please log in again.' };
+  }
+
+  if (!user.isLoggedIn) {
+    return { error: 'Your session has ended. Please log in again.' };
+  }
+
+  return { user: user };
+}
+
 app.get('/', function (req, res) {
   res.redirect(302, '/login-' + APP_ID);
 });
 
 app.get('/home-' + APP_ID, async function (req, res, next) {
   try {
-    const queryUserId = sanitiseString(req.query && req.query.userId);
-    if (!queryUserId) {
-      return res.redirect(302, '/login-' + APP_ID + '?error=' + encodeURIComponent('Log in to access the dashboard.'));
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
     }
 
-    const userId = queryUserId.toUpperCase();
-    const user = await store.getUserByUserId(userId);
-
-    if (!user) {
-      return res.redirect(302, '/login-' + APP_ID + '?error=' + encodeURIComponent('Account not found. Please log in again.'));
-    }
-
-    if (!user.isLoggedIn) {
-      return res.redirect(302, '/login-' + APP_ID + '?error=' + encodeURIComponent('Your session has ended. Please log in again.'));
-    }
+    const user = result.user;
 
     const stats = await store.getDashboardStats();
     const successMessage = req.query && req.query.success === '1' ? 'Login successful. Use your User ID when submitting forms.' : sanitiseString(req.query && req.query.successMessage);
@@ -497,60 +513,144 @@ app.post('/logout-' + APP_ID, async function (req, res, next) {
   }
 });
 
-app.get('/add-recipe-' + APP_ID, function (req, res) {
-  res.render('add-recipe-31477046.html', {
-    defaultUserId: DEFAULT_USER_ID,
-    mealTypes: Object.values(enums.MealType),
-    cuisineTypes: Object.values(enums.CuisineType),
-    difficulties: Object.values(enums.Difficulty),
-    appId: APP_ID
-  });
-});
-
-app.get('/add-inventory-' + APP_ID, function (req, res) {
-  res.render('add-inventory-31477046.html', {
-    defaultUserId: DEFAULT_USER_ID,
-    categories: Object.values(enums.InventoryCategory),
-    locations: Object.values(enums.Location),
-    units: Object.values(enums.Unit),
-    appId: APP_ID
-  });
-});
-
-app.get('/recipes-list-' + APP_ID, async function (req, res, next) {
+app.get('/add-recipe-' + APP_ID, async function (req, res, next) {
   try {
-    const recipes = await store.getAllRecipes();
-    const rows = recipes.map(mapRecipeForView);
-    const msg = req.query.deleted ? 'Deleted recipe ' + req.query.deleted : '';
-    res.render('recipes-list-31477046.html', { recipes: rows, msg: msg });
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    const user = result.user;
+
+    res.render('add-recipe-31477046.html', {
+      defaultUserId: user.userId,
+      userId: user.userId,
+      mealTypes: Object.values(enums.MealType),
+      cuisineTypes: Object.values(enums.CuisineType),
+      difficulties: Object.values(enums.Difficulty),
+      appId: APP_ID
+    });
   } catch (err) {
     next(err);
   }
 });
 
-app.get('/delete-recipe-' + APP_ID, function (req, res) {
-  const error = req.query.error || '';
-  const lastId = req.query.lastId || '';
-  res.render('delete-recipe-31477046.html', { error: error, lastId: lastId });
+app.get('/add-inventory-' + APP_ID, async function (req, res, next) {
+  try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    const user = result.user;
+
+    res.render('add-inventory-31477046.html', {
+      defaultUserId: user.userId,
+      userId: user.userId,
+      categories: Object.values(enums.InventoryCategory),
+      locations: Object.values(enums.Location),
+      units: Object.values(enums.Unit),
+      appId: APP_ID
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
-app.get('/delete-inventory-' + APP_ID, function (req, res) {
-  const error = req.query.error || '';
-  const lastId = req.query.lastId || '';
-  res.render('delete-inventory-31477046.html', { error: error, lastId: lastId });
+app.get('/recipes-list-' + APP_ID, async function (req, res, next) {
+  try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    const user = result.user;
+    const recipes = await store.getAllRecipes();
+    const rows = recipes.map(mapRecipeForView);
+    const deletedId = sanitiseString(req.query && req.query.deleted);
+    const msg = deletedId ? 'Deleted recipe ' + deletedId : '';
+    res.render('recipes-list-31477046.html', {
+      recipes: rows,
+      msg: msg,
+      userId: user.userId,
+      appId: APP_ID
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/delete-recipe-' + APP_ID, async function (req, res, next) {
+  try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    const user = result.user;
+    const error = sanitiseString(req.query && req.query.error);
+    const lastId = sanitiseString(req.query && req.query.lastId);
+    res.render('delete-recipe-31477046.html', {
+      error: error || '',
+      lastId: lastId || '',
+      userId: user.userId,
+      appId: APP_ID
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/delete-inventory-' + APP_ID, async function (req, res, next) {
+  try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    const user = result.user;
+    const error = sanitiseString(req.query && req.query.error);
+    const lastId = sanitiseString(req.query && req.query.lastId);
+    res.render('delete-inventory-31477046.html', {
+      error: error || '',
+      lastId: lastId || '',
+      userId: user.userId,
+      appId: APP_ID
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.post('/delete-inventory-' + APP_ID, async function (req, res, next) {
   try {
     const id = (req.body.inventoryId || '').trim();
+    const bodyUserId = sanitiseString(req.body && req.body.userId);
+    const userId = bodyUserId ? bodyUserId.toUpperCase() : '';
     if (!id) {
-      return res.render('delete-inventory-31477046.html', { error: 'inventoryId is required', lastId: '' });
+      return res.render('delete-inventory-31477046.html', {
+        error: 'inventoryId is required',
+        lastId: '',
+        userId: userId,
+        appId: APP_ID
+      });
     }
     const result = await store.deleteInventoryItem(id);
     if (!result || result.deletedCount === 0) {
-      return res.render('delete-inventory-31477046.html', { error: 'Inventory item not found', lastId: id });
+      return res.render('delete-inventory-31477046.html', {
+        error: 'Inventory item not found',
+        lastId: id,
+        userId: userId,
+        appId: APP_ID
+      });
     }
-    return res.redirect(302, '/inventory-dashboard-' + APP_ID + '?deleted=' + encodeURIComponent(id));
+    const params = [];
+    if (userId) {
+      params.push('userId=' + encodeURIComponent(userId));
+    }
+    params.push('deleted=' + encodeURIComponent(id));
+    const redirectTarget = '/inventory-dashboard-' + APP_ID + '?' + params.join('&');
+    return res.redirect(302, redirectTarget);
   } catch (err) {
     next(err);
   }
@@ -558,6 +658,12 @@ app.post('/delete-inventory-' + APP_ID, async function (req, res, next) {
 
 app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
   try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
+    const user = result.user;
     const items = await store.getAllInventory();
     const rows = items.map(mapInventoryForView);
 
@@ -581,7 +687,8 @@ app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
       }
     }
 
-    const msg = req.query.deleted ? 'Deleted inventory item ' + req.query.deleted : '';
+    const deletedId = sanitiseString(req.query && req.query.deleted);
+    const msg = deletedId ? 'Deleted inventory item ' + deletedId : '';
 
     res.render('inventory-dashboard-31477046.html', {
       groupBy: groupBy,
@@ -589,7 +696,8 @@ app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
       totalValue: totalValue,
       appId: APP_ID,
       msg: msg,
-      itemCount: rows.length
+      itemCount: rows.length,
+      userId: user.userId
     });
   } catch (err) {
     next(err);
@@ -599,14 +707,32 @@ app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
 app.post('/delete-recipe-' + APP_ID, async function (req, res, next) {
   try {
     const id = (req.body.recipeId || '').trim();
+    const bodyUserId = sanitiseString(req.body && req.body.userId);
+    const userId = bodyUserId ? bodyUserId.toUpperCase() : '';
     if (!id) {
-      return res.render('delete-recipe-31477046.html', { error: 'recipeId is required', lastId: '' });
+      return res.render('delete-recipe-31477046.html', {
+        error: 'recipeId is required',
+        lastId: '',
+        userId: userId,
+        appId: APP_ID
+      });
     }
     const result = await store.deleteRecipe(id);
     if (!result || result.deletedCount === 0) {
-      return res.render('delete-recipe-31477046.html', { error: 'Recipe not found', lastId: id });
+      return res.render('delete-recipe-31477046.html', {
+        error: 'Recipe not found',
+        lastId: id,
+        userId: userId,
+        appId: APP_ID
+      });
     }
-    return res.redirect(302, '/recipes-list-' + APP_ID + '?deleted=' + encodeURIComponent(id));
+    const params = [];
+    if (userId) {
+      params.push('userId=' + encodeURIComponent(userId));
+    }
+    params.push('deleted=' + encodeURIComponent(id));
+    const redirectTarget = '/recipes-list-' + APP_ID + '?' + params.join('&');
+    return res.redirect(302, redirectTarget);
   } catch (err) {
     next(err);
   }
@@ -616,10 +742,16 @@ app.post('/add-recipe-' + APP_ID, async function (req, res, next) {
   try {
     const payload = parseRecipeForm(req.body || {});
     const recipe = await store.createRecipe(payload);
-    if (recipe && recipe.recipeId) {
-      return res.redirect(302, '/recipes-list-' + APP_ID);
+    const redirectUserId = sanitiseString(payload.userId).toUpperCase();
+    const params = [];
+    if (redirectUserId) {
+      params.push('userId=' + encodeURIComponent(redirectUserId));
     }
-    return res.redirect(302, '/recipes-list-' + APP_ID);
+    const redirectTarget = '/recipes-list-' + APP_ID + (params.length ? '?' + params.join('&') : '');
+    if (recipe && recipe.recipeId) {
+      return res.redirect(302, redirectTarget);
+    }
+    return res.redirect(302, redirectTarget);
   } catch (err) {
     next(normaliseError(err));
   }
@@ -629,10 +761,16 @@ app.post('/add-inventory-' + APP_ID, async function (req, res, next) {
   try {
     const payload = parseInventoryForm(req.body || {});
     const item = await store.createInventoryItem(payload);
-    if (item && item.inventoryId) {
-      return res.redirect(302, '/inventory-dashboard-' + APP_ID);
+    const redirectUserId = sanitiseString(payload.userId).toUpperCase();
+    const params = [];
+    if (redirectUserId) {
+      params.push('userId=' + encodeURIComponent(redirectUserId));
     }
-    return res.redirect(302, '/inventory-dashboard-' + APP_ID);
+    const redirectTarget = '/inventory-dashboard-' + APP_ID + (params.length ? '?' + params.join('&') : '');
+    if (item && item.inventoryId) {
+      return res.redirect(302, redirectTarget);
+    }
+    return res.redirect(302, redirectTarget);
   } catch (err) {
     next(normaliseError(err));
   }
