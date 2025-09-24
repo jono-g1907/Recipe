@@ -10,6 +10,14 @@
   </head>
   <body>
     <h1>404 Page not found</h1>
-    <p><a href="/home-31477046">Return to Home</a></p>
+    <% if (requestedPath) { %>
+      <p>The page <code><%= requestedPath %></code> could not be found.</p>
+    <% } else { %>
+      <p>The page you requested could not be found.</p>
+    <% } %>
+    <p><a href="<%= returnHref %>"><%= returnText %></a></p>
+    <% if (!userId) { %>
+      <p>You may need to log in again to access your dashboard.</p>
+    <% } %>
   </body>
 </html>

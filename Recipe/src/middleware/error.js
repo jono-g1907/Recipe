@@ -1,5 +1,5 @@
-const path = require('path');
 const ValidationError = require('../errors/ValidationError');
+const navigation = require('../lib/navigation');
 
 function clientWantsHtml(req) {
   const a = req.headers && (req.headers['accept'] || '');
@@ -30,7 +30,16 @@ function errorHandler(err, req, res, next) {
   if (err instanceof ValidationError) {
     const status = pickValidationStatus(err);
     if (clientWantsHtml(req)) {
-      return res.redirect(302, '/invalid.html');
+      const link = navigation.buildReturnLink(req);
+      const message = err.errors && err.errors.length
+        ? err.errors.join(' ')
+        : 'Validation failed. Please check the information and try again.';
+      return res.status(status).render('invalid.html', {
+        message: message,
+        returnHref: link.href,
+        returnText: link.text,
+        userId: link.userId,
+      });
     }
     return res.status(status).json({ error: 'Validation failed', details: err.errors });
   }
@@ -40,7 +49,13 @@ function errorHandler(err, req, res, next) {
   if (req.path && req.path.indexOf('/api') === 0) {
     return res.status(500).json({ error: 'Server error' });
   }
-  return res.status(500).sendFile(path.join(__dirname, '..', 'views', 'invalid.html'));
+  const link = navigation.buildReturnLink(req);
+  return res.status(500).render('invalid.html', {
+    message: 'An unexpected error occurred. Please try again later.',
+    returnHref: link.href,
+    returnText: link.text,
+    userId: link.userId,
+  });
 }
 
 module.exports = errorHandler;

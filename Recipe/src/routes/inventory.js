@@ -4,6 +4,7 @@ const constants = require('../lib/constants');
 const APP_ID = constants.APP_ID;
 const store = require('../store');
 const ValidationError = require('../errors/ValidationError');
+const navigation = require('../lib/navigation');
 
 const CREATE_PATH = '/add-inventory-' + APP_ID;
 const LIST_PATH = '/inventory-dashboard-' + APP_ID;
@@ -409,7 +410,16 @@ router.post(UPDATE_PATH, async function (req, res, next) {
   } catch (err) {
     const mapped = normaliseError(err);
     if (mapped instanceof ValidationError && clientWantsHtml(req)) {
-      return res.redirect(302, '/invalid.html');
+      const link = navigation.buildReturnLink(req);
+      const message = mapped.errors && mapped.errors.length
+        ? mapped.errors.join(' ')
+        : 'There was a problem with the submitted data.';
+      return res.status(400).render('invalid.html', {
+        message: message,
+        returnHref: link.href,
+        returnText: link.text,
+        userId: link.userId,
+      });
     }
     return next(mapped);
   }
