@@ -33,8 +33,9 @@
               </div>
               <div class="col-md-3 mb-3">
                 <label class="form-label">User ID</label>
-                <input class="form-control" type="text" name="userId" required value="<%= defaultUserId %>" />
-                <div class="form-text">Format: U-#####</div>
+                <div class="form-control-plaintext fw-semibold"><%= defaultUserId %></div>
+                <input type="hidden" name="userId" value="<%= defaultUserId %>" />
+                <div class="form-text">Automatically linked to your account.</div>
               </div>
             </div>
             <div class="row">
@@ -234,8 +235,3 @@ Whey Protein | 30 | g"></textarea>
     </div>
   </body>
 </html>
-
-
-
-
-

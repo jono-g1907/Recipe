@@ -29,7 +29,8 @@
               </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">User ID</label>
-                <input class="form-control" type="text" name="userId" required value="<%= defaultUserId %>" />
+                <div class="form-control-plaintext fw-semibold"><%= defaultUserId %></div>
+                <input type="hidden" name="userId" value="<%= defaultUserId %>" />
               </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">Ingredient Name</label>
@@ -206,8 +207,3 @@
     </div>
   </body>
 </html>
-
-
-
-
-

@@ -154,20 +154,22 @@ async function setInventoryQuantity(inventoryId, amount) {
 
 async function getDashboardStats() {
   await ensureConnection();
-  const [recipeCount, inventoryCount, cuisineInfo, inventoryValue] = await Promise.all([
+  const [recipeCount, inventoryCount, userCount, cuisineInfo, inventoryTotals] = await Promise.all([
     Recipe.countDocuments({}),
     InventoryItem.countDocuments({}),
+    User.countDocuments({}),
     Recipe.distinct('cuisineType'),
     InventoryItem.aggregate([
       { $group: { _id: null, total: { $sum: '$cost' } } }
     ])
   ]);
 
-  const totalValue = inventoryValue.length ? inventoryValue[0].total : 0;
+  const totalValue = inventoryTotals.length && inventoryTotals[0].total ? Number(inventoryTotals[0].total) : 0;
 
   return {
     recipeCount,
     inventoryCount,
+    userCount,
     cuisineCount: cuisineInfo.length,
     inventoryValue: totalValue
   };

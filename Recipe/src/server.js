@@ -6,7 +6,6 @@ const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/error');
 const apiRouter = require('./routes');
 const store = require('./store');
-const seed = require('./seed');
 const ValidationError = require('./errors/ValidationError');
 const { sanitiseString } = require('./lib/utils');
 
@@ -27,7 +26,6 @@ app.set('view engine', 'html');
 app.use(express.static(path.join(__dirname, 'images')));
 app.use(express.static(path.join(__dirname, 'css')));
 
-const DEFAULT_USER_ID = seed.DEFAULT_USER_ID;
 const APP_ID = constants.APP_ID;
 const AUTHOR_NAME = constants.AUTHOR_NAME;
 
@@ -78,7 +76,8 @@ function normaliseError(err) {
 function parseRecipeForm(body) {
   const recipe = {};
   recipe.recipeId = (body.recipeId || '').trim();
-  recipe.userId = (body.userId || DEFAULT_USER_ID).trim();
+  const userIdInput = sanitiseString(body && body.userId);
+  recipe.userId = userIdInput ? userIdInput.toUpperCase() : '';
   recipe.title = (body.title || '').trim();
   recipe.mealType = (body.mealType || '').trim();
   recipe.cuisineType = (body.cuisineType || '').trim();
@@ -121,7 +120,8 @@ function parseRecipeForm(body) {
 function parseInventoryForm(body) {
   const item = {};
   item.inventoryId = (body.inventoryId || '').trim();
-  item.userId = (body.userId || DEFAULT_USER_ID).trim();
+  const userIdInput = sanitiseString(body && body.userId);
+  item.userId = userIdInput ? userIdInput.toUpperCase() : '';
   item.ingredientName = (body.ingredientName || '').trim();
   item.quantity = Number(body.quantity);
   item.unit = (body.unit || '').trim().toLowerCase();
@@ -326,11 +326,14 @@ function buildLoginRedirectUrl(message) {
 
 async function resolveActiveUser(req) {
   const queryUserId = sanitiseString(req.query && req.query.userId);
-  if (!queryUserId) {
+  const bodyUserId = sanitiseString(req.body && req.body.userId);
+  const sourceId = queryUserId || bodyUserId;
+
+  if (!sourceId) {
     return { error: 'Log in to access the dashboard.' };
   }
 
-  const userId = queryUserId.toUpperCase();
+  const userId = sourceId.toUpperCase();
   const user = await store.getUserByUserId(userId);
 
   if (!user) {
@@ -358,14 +361,16 @@ app.get('/home-' + APP_ID, async function (req, res, next) {
     const user = result.user;
 
     const stats = await store.getDashboardStats();
-    const successMessage = req.query && req.query.success === '1' ? 'Login successful. Use your User ID when submitting forms.' : sanitiseString(req.query && req.query.successMessage);
+    const successMessage = req.query && req.query.success === '1' ? 'Login successful. Your account details are now loaded for new submissions.' : sanitiseString(req.query && req.query.successMessage);
     const errorMessage = sanitiseString(req.query && req.query.errorMessage);
 
     res.render('index.html', {
       username: user.fullname,
+      email: sanitiseString(user.email),
       id: user.userId,
       totalRecipes: stats.recipeCount,
       totalInventory: stats.inventoryCount,
+      userCount: stats.userCount,
       cuisineCount: stats.cuisineCount,
       inventoryValue: Number(stats.inventoryValue || 0),
       successMessage: successMessage || '',
@@ -740,17 +745,21 @@ app.post('/delete-recipe-' + APP_ID, async function (req, res, next) {
 
 app.post('/add-recipe-' + APP_ID, async function (req, res, next) {
   try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
     const payload = parseRecipeForm(req.body || {});
-    const recipe = await store.createRecipe(payload);
-    const redirectUserId = sanitiseString(payload.userId).toUpperCase();
+    payload.userId = result.user.userId;
+
+    await store.createRecipe(payload);
+    const redirectUserId = result.user.userId;
     const params = [];
     if (redirectUserId) {
       params.push('userId=' + encodeURIComponent(redirectUserId));
     }
     const redirectTarget = '/recipes-list-' + APP_ID + (params.length ? '?' + params.join('&') : '');
-    if (recipe && recipe.recipeId) {
-      return res.redirect(302, redirectTarget);
-    }
     return res.redirect(302, redirectTarget);
   } catch (err) {
     next(normaliseError(err));
@@ -759,17 +768,21 @@ app.post('/add-recipe-' + APP_ID, async function (req, res, next) {
 
 app.post('/add-inventory-' + APP_ID, async function (req, res, next) {
   try {
+    const result = await resolveActiveUser(req);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(result.error));
+    }
+
     const payload = parseInventoryForm(req.body || {});
-    const item = await store.createInventoryItem(payload);
-    const redirectUserId = sanitiseString(payload.userId).toUpperCase();
+    payload.userId = result.user.userId;
+
+    await store.createInventoryItem(payload);
+    const redirectUserId = result.user.userId;
     const params = [];
     if (redirectUserId) {
       params.push('userId=' + encodeURIComponent(redirectUserId));
     }
     const redirectTarget = '/inventory-dashboard-' + APP_ID + (params.length ? '?' + params.join('&') : '');
-    if (item && item.inventoryId) {
-      return res.redirect(302, redirectTarget);
-    }
     return res.redirect(302, redirectTarget);
   } catch (err) {
     next(normaliseError(err));
