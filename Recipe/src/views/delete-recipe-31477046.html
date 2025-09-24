@@ -36,6 +36,26 @@
         </div>
       </form>
     </div>
+    <script>
+      (function () {
+        var form = document.querySelector('form');
+        if (!form) {
+          return;
+        }
+        form.addEventListener('submit', function (event) {
+          var input = form.querySelector('input[name="recipeId"]');
+          var idValue = input && input.value ? input.value.trim() : '';
+          var question = 'Are you sure you want to delete this recipe?';
+          if (idValue) {
+            question = 'Are you sure you want to delete recipe ' + idValue + '?';
+          }
+          var confirmed = window.confirm(question);
+          if (!confirmed) {
+            event.preventDefault();
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
 

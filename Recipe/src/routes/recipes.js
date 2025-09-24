@@ -162,8 +162,8 @@ router.post(UPDATE_PATH, async function (req, res, next) {
 // Delete recipe
 router.delete(DELETE_PATH, async function (req, res, next) {
   try {
-    const result = await store.deleteRecipe(req.params.recipeId);
-    if (!result || result.deletedCount === 0) {
+    const deleted = await store.deleteRecipe(req.params.recipeId);
+    if (!deleted) {
       return res.status(404).json({ error: 'Recipe not found' });
     }
     return res.status(204).send();
