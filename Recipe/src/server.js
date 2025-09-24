@@ -294,20 +294,67 @@ function buildRegistrationValues(form) {
   };
 }
 
+function parseLoginForm(body) {
+  const form = {};
+  const emailInput = sanitiseString(body && body.email);
+  form.email = emailInput ? emailInput.toLowerCase() : '';
+  if (body && typeof body.password === 'string') {
+    form.password = body.password;
+  } else {
+    form.password = '';
+  }
+  return form;
+}
+
+function collectLoginErrors(form) {
+  const errors = [];
+  if (!form.email) {
+    errors.push('Email is required');
+  } else if (!EMAIL_REGEX.test(form.email)) {
+    errors.push('Enter a valid email address');
+  }
+  if (!form.password) {
+    errors.push('Password is required');
+  }
+  return errors;
+}
+
 app.get('/', function (req, res) {
   res.redirect(302, '/login-' + APP_ID);
 });
 
 app.get('/home-' + APP_ID, async function (req, res, next) {
   try {
+    const queryUserId = sanitiseString(req.query && req.query.userId);
+    if (!queryUserId) {
+      return res.redirect(302, '/login-' + APP_ID + '?error=' + encodeURIComponent('Log in to access the dashboard.'));
+    }
+
+    const userId = queryUserId.toUpperCase();
+    const user = await store.getUserByUserId(userId);
+
+    if (!user) {
+      return res.redirect(302, '/login-' + APP_ID + '?error=' + encodeURIComponent('Account not found. Please log in again.'));
+    }
+
+    if (!user.isLoggedIn) {
+      return res.redirect(302, '/login-' + APP_ID + '?error=' + encodeURIComponent('Your session has ended. Please log in again.'));
+    }
+
     const stats = await store.getDashboardStats();
+    const successMessage = req.query && req.query.success === '1' ? 'Login successful. Use your User ID when submitting forms.' : sanitiseString(req.query && req.query.successMessage);
+    const errorMessage = sanitiseString(req.query && req.query.errorMessage);
+
     res.render('index.html', {
-      username: AUTHOR_NAME,
-      id: APP_ID,
+      username: user.fullname,
+      id: user.userId,
       totalRecipes: stats.recipeCount,
       totalInventory: stats.inventoryCount,
       cuisineCount: stats.cuisineCount,
-      inventoryValue: Number(stats.inventoryValue || 0)
+      inventoryValue: Number(stats.inventoryValue || 0),
+      successMessage: successMessage || '',
+      errorMessage: errorMessage || '',
+      appId: APP_ID
     });
   } catch (err) {
     next(err);
@@ -371,11 +418,83 @@ app.post('/register-' + APP_ID, async function (req, res, next) {
 
 app.get('/login-' + APP_ID, function (req, res) {
   const registered = sanitiseString(req.query && req.query.registered);
-  const message = registered ? 'Registration successful. You can now log in with ' + registered : '';
+  const infoMessage = registered ? 'Registration successful. You can now log in with ' + registered : sanitiseString(req.query && req.query.message);
+  const successMessage = registered ? '' : sanitiseString(req.query && req.query.success);
+  const errorMessage = sanitiseString(req.query && req.query.error);
+  const emailValue = registered || sanitiseString(req.query && req.query.email) || '';
+
   res.render('login-31477046.html', {
-    message: message,
-    email: registered
+    message: infoMessage || '',
+    error: errorMessage || '',
+    success: successMessage || '',
+    email: emailValue
   });
+});
+
+app.post('/login-' + APP_ID, async function (req, res, next) {
+  try {
+    const form = parseLoginForm(req.body || {});
+    const errors = collectLoginErrors(form);
+
+    if (errors.length) {
+      return res.status(400).render('login-31477046.html', {
+        message: '',
+        error: errors.join(' '),
+        success: '',
+        email: form.email
+      });
+    }
+
+    const user = await store.getUserByEmail(form.email);
+
+    if (!user) {
+      return res.status(404).render('login-31477046.html', {
+        message: '',
+        error: 'Account not found. Please check your email or register.',
+        success: '',
+        email: form.email
+      });
+    }
+
+    if (user.password !== form.password) {
+      return res.status(401).render('login-31477046.html', {
+        message: '',
+        error: 'Invalid credentials. Please try again.',
+        success: '',
+        email: form.email
+      });
+    }
+
+    const updated = await store.setUserLoginState(user.userId, true);
+    const activeUser = updated || user;
+
+    return res.redirect(302, '/home-' + APP_ID + '?userId=' + encodeURIComponent(activeUser.userId) + '&success=1');
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/logout-' + APP_ID, async function (req, res, next) {
+  try {
+    const idInput = sanitiseString(req.body && req.body.userId);
+    const userId = idInput ? idInput.toUpperCase() : '';
+
+    if (!userId) {
+      return res.redirect(302, '/login-' + APP_ID + '?error=' + encodeURIComponent('User identifier is required to log out.'));
+    }
+
+    const user = await store.getUserByUserId(userId);
+
+    if (!user) {
+      return res.redirect(302, '/login-' + APP_ID + '?error=' + encodeURIComponent('Account not found for the supplied ID.'));
+    }
+
+    await store.setUserLoginState(userId, false);
+
+    return res.redirect(302, '/login-' + APP_ID + '?success=' + encodeURIComponent('You have been logged out.') + '&email=' + encodeURIComponent(user.email));
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.get('/add-recipe-' + APP_ID, function (req, res) {

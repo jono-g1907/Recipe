@@ -45,6 +45,16 @@ async function getUserByEmail(email) {
   return User.findOne({ email: normalised }).lean();
 }
 
+async function getUserByUserId(userId) {
+  await ensureConnection();
+  return User.findOne({ userId }).lean();
+}
+
+async function setUserLoginState(userId, state) {
+  await ensureConnection();
+  return User.findOneAndUpdate({ userId }, { isLoggedIn: state }, { new: true }).lean();
+}
+
 async function createUser(data) {
   await ensureConnection();
   const payload = Object.assign({}, data);
@@ -167,6 +177,8 @@ module.exports = {
   seedDatabase,
   getNextUserId,
   getUserByEmail,
+  getUserByUserId,
+  setUserLoginState,
   createUser,
   getAllRecipes,
   getRecipeByRecipeId,
@@ -182,5 +194,3 @@ module.exports = {
   setInventoryQuantity,
   getDashboardStats
 };
-
-

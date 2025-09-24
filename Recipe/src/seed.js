@@ -14,6 +14,7 @@ const USERS = [
     fullname: AUTHOR_NAME,
     role: 'chef',
     phone: '+61-400-314-770',
+    isLoggedIn: false,
     createdAt: '2024-05-10'
   },
   {
@@ -23,6 +24,7 @@ const USERS = [
     fullname: 'Mario Rossi',
     role: 'chef',
     phone: '+39-347-555-0111',
+    isLoggedIn: false,
     createdAt: '2024-05-12'
   }
 ];

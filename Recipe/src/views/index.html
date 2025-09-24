@@ -8,20 +8,33 @@
   <body style="margin:0;">
     <nav class="navbar navbar-expand bg-primary navbar-dark">
       <div class="container-fluid">
-        <a class="navbar-brand" href="/home-31477046">Recipe Hub</a>
+        <a class="navbar-brand" href="/home-<%= appId %>?userId=<%= id %>">Recipe Hub</a>
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link active" href="/home-31477046">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="/inventory-dashboard-31477046">Inventory</a></li>
+          <li class="nav-item"><a class="nav-link active" href="/home-<%= appId %>?userId=<%= id %>">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">Inventory</a></li>
         </ul>
-        <span class="navbar-text">Welcome, <%= username %> (ID: <%= id %>)</span>
+        <div class="d-flex align-items-center text-white">
+          <span class="me-3">Welcome, <%= username %> (ID: <%= id %>)</span>
+          <form class="d-flex" method="post" action="/logout-<%= appId %>">
+            <input type="hidden" name="userId" value="<%= id %>" />
+            <button class="btn btn-outline-light btn-sm" type="submit">Logout</button>
+          </form>
+        </div>
       </div>
     </nav>
 
     <div class="container py-4">
+      <% if (successMessage) { %>
+        <div class="alert alert-success text-center"><%= successMessage %></div>
+      <% } %>
+      <% if (errorMessage) { %>
+        <div class="alert alert-danger text-center"><%= errorMessage %></div>
+      <% } %>
+
       <div class="text-center mb-4">
         <h1>Recipe Hub</h1>
         <p>Your Personal Meal Planning Assistant</p>
-        <p>Welcome back, <%= username %> (Student ID: <%= id %>)</p>
+        <p>Welcome back, <%= username %> (User ID: <%= id %>)</p>
       </div>
 
       <h2 class="text-center mb-3">Your Recipe Hub at a Glance</h2>
@@ -59,9 +72,9 @@
             <div class="card-body">
               <h3 class="card-title">Recipe Actions</h3>
               <ul class="list-unstyled mb-0">
-                <li><a href="/recipes-list-31477046">All Recipes</a></li>
-                <li><a href="/add-recipe-31477046">Add New Recipe</a></li>
-                <li><a href="/delete-recipe-31477046">Delete Recipe</a></li>
+                <li><a href="/recipes-list-<%= appId %>?userId=<%= id %>">All Recipes</a></li>
+                <li><a href="/add-recipe-<%= appId %>?userId=<%= id %>">Add New Recipe</a></li>
+                <li><a href="/delete-recipe-<%= appId %>?userId=<%= id %>">Delete Recipe</a></li>
               </ul>
             </div>
           </div>
@@ -71,9 +84,9 @@
             <div class="card-body">
               <h3 class="card-title">Inventory Actions</h3>
               <ul class="list-unstyled mb-0">
-                <li><a href="/add-inventory-31477046">Add Inventory Item</a></li>
-                <li><a href="/inventory-dashboard-31477046">Inventory List</a></li>
-                <li><a href="/delete-inventory-31477046">Delete Inventory</a></li>
+                <li><a href="/add-inventory-<%= appId %>?userId=<%= id %>">Add Inventory Item</a></li>
+                <li><a href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">Inventory List</a></li>
+                <li><a href="/delete-inventory-<%= appId %>?userId=<%= id %>">Delete Inventory</a></li>
               </ul>
             </div>
           </div>
@@ -81,9 +94,8 @@
       </div>
       <footer class="text-center mt-4">
         <p>Recipe Hub - FTT2095 Assignment 1</p>
-        <p>Built by <%= username %> (Student ID: <%= id %>)</p>
+        <p>Built by <%= username %> (Student ID: <%= appId %>)</p>
       </footer>
     </div>
   </body>
 </html>
-

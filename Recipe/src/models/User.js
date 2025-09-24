@@ -57,6 +57,10 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: PHONE_REGEX
   },
+  isLoggedIn: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: defaultToNow

@@ -11,10 +11,18 @@
       <p class="text-center">Enter your credentials to access Recipe Hub.</p>
 
       <% if (message) { %>
-        <div class="alert alert-success"><%= message %></div>
+        <div class="alert alert-info"><%= message %></div>
       <% } %>
 
-      <form class="card p-4 shadow-sm" method="post" action="#" novalidate>
+      <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <% if (success) { %>
+        <div class="alert alert-success"><%= success %></div>
+      <% } %>
+
+      <form class="card p-4 shadow-sm" method="post" action="/login-31477046" novalidate>
         <div class="mb-3">
           <label class="form-label" for="loginEmail">Email address</label>
           <input class="form-control" type="email" id="loginEmail" name="email" value="<%= email %>" required />
@@ -25,6 +33,7 @@
         </div>
         <button class="btn btn-secondary w-100" type="submit">Login</button>
       </form>
+
 
       <p class="mt-4 text-center">Don't have an account? <a href="/register-31477046">Sign up here</a>.</p>
     </div>
