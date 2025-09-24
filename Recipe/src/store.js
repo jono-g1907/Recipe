@@ -79,6 +79,16 @@ async function getRecipeByRecipeId(recipeId) {
   return Recipe.findOne({ recipeId }).lean();
 }
 
+async function getRecipeByTitleForUser(userId, title) {
+  await ensureConnection();
+  const normalisedUserId = (userId || '').trim().toUpperCase();
+  const normalisedTitle = (title || '').trim();
+  if (!normalisedUserId || !normalisedTitle) {
+    return null;
+  }
+  return Recipe.findOne({ userId: normalisedUserId, title: normalisedTitle }).lean();
+}
+
 async function createRecipe(data) {
   await ensureConnection();
   const recipe = new Recipe(data);
@@ -184,6 +194,7 @@ module.exports = {
   createUser,
   getAllRecipes,
   getRecipeByRecipeId,
+  getRecipeByTitleForUser,
   createRecipe,
   updateRecipe,
   deleteRecipe,
