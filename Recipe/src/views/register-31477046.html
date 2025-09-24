@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Register - Recipe Hub</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
+  </head>
+  <body class="bg-light">
+    <div class="container py-5" style="max-width: 640px;">
+      <h1 class="mb-3 text-center">Create Your Account</h1>
+      <p class="text-center mb-4">Fill in the details below to access Recipe Hub.</p>
+
+      <div id="errorBox" class="alert alert-danger" style="<%= error ? '' : 'display:none;' %>"><%= error %></div>
+
+      <form id="registrationForm" method="post" action="/register-31477046" novalidate>
+        <div class="mb-3">
+          <label class="form-label" for="email">Email address</label>
+          <input class="form-control" type="email" id="email" name="email" value="<%= values.email %>" required />
+          <div class="form-text">Use a valid email (e.g. name@example.com).</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password" minlength="8" required />
+          <div class="form-text">Must include uppercase, lowercase, number, and special character.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="confirmPassword">Confirm password</label>
+          <input class="form-control" type="password" id="confirmPassword" name="confirmPassword" minlength="8" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="fullname">Full name</label>
+          <input class="form-control" type="text" id="fullname" name="fullname" value="<%= values.fullname %>" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="role">Role</label>
+          <select class="form-select" id="role" name="role" required>
+            <option value="">Select a role</option>
+            <% if (roles && roles.length) { for (var i = 0; i < roles.length; i++) { var role = roles[i]; var isSelected = values.role === role; %>
+              <option value="<%= role %>" <%= isSelected ? 'selected' : '' %>><%= role.charAt(0).toUpperCase() + role.slice(1) %></option>
+            <% } } %>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="phone">Phone number</label>
+          <input class="form-control" type="text" id="phone" name="phone" value="<%= values.phone %>" placeholder="e.g. +61 412 345 678" required />
+          <div class="form-text">Australian numbers only. You can use spaces or dashes.</div>
+        </div>
+
+        <button class="btn btn-primary w-100" type="submit">Create Account</button>
+      </form>
+
+      <p class="mt-4 text-center">Already registered? <a href="/login-31477046">Go to login</a>.</p>
+    </div>
+
+    <script>
+      (function () {
+        var form = document.getElementById('registrationForm');
+        if (!form) {
+          return;
+        }
+
+        var errorBox = document.getElementById('errorBox');
+        var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        var passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}:;"'<>?,.\/]).{8,}$/;
+        var namePattern = /^[A-Za-z\s\-']{2,100}$/;
+
+        function cleanPhone(value) {
+          return value.replace(/[\s()-]/g, '');
+        }
+
+        function isAustralianPhone(value) {
+          var cleaned = cleanPhone(value || '');
+          if (!cleaned) {
+            return false;
+          }
+          if (cleaned.indexOf('+') === 0) {
+            if (cleaned.indexOf('+61') !== 0) {
+              return false;
+            }
+            var rest = cleaned.slice(3);
+            return rest.length === 9 && /^[2-478]\d{8}$/.test(rest);
+          }
+          if (cleaned.indexOf('0') === 0) {
+            return cleaned.length === 10 && /^[2-478]\d{9}$/.test(cleaned);
+          }
+          return false;
+        }
+
+        form.addEventListener('submit', function (event) {
+          var messages = [];
+          var email = (form.email.value || '').trim().toLowerCase();
+          var password = form.password.value || '';
+          var confirmPassword = form.confirmPassword.value || '';
+          var fullname = (form.fullname.value || '').trim();
+          var role = form.role.value || '';
+          var phone = (form.phone.value || '').trim();
+
+          if (!email) {
+            messages.push('Email is required');
+          } else if (!emailPattern.test(email)) {
+            messages.push('Enter a valid email address');
+          }
+
+          if (!password) {
+            messages.push('Password is required');
+          } else if (!passwordPattern.test(password)) {
+            messages.push('Password must be at least 8 characters with upper, lower, number and special character');
+          }
+
+          if (!confirmPassword) {
+            messages.push('Confirm your password');
+          } else if (password !== confirmPassword) {
+            messages.push('Passwords do not match');
+          }
+
+          if (!fullname) {
+            messages.push('Full name is required');
+          } else if (!namePattern.test(fullname)) {
+            messages.push('Full name can only include letters, spaces, hyphens and apostrophes');
+          }
+
+          if (!role) {
+            messages.push('Select a role');
+          }
+
+          if (!phone) {
+            messages.push('Phone number is required');
+          } else if (!isAustralianPhone(phone)) {
+            messages.push('Enter a valid Australian phone number');
+          }
+
+          if (messages.length) {
+            event.preventDefault();
+            if (errorBox) {
+              errorBox.textContent = messages.join(' ');
+              errorBox.style.display = 'block';
+            }
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
+
+
+
+
+

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Login - Recipe Hub</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
+  </head>
+  <body class="bg-light">
+    <div class="container py-5" style="max-width: 480px;">
+      <h1 class="mb-3 text-center">Login</h1>
+      <p class="text-center">Enter your credentials to access Recipe Hub.</p>
+
+      <% if (message) { %>
+        <div class="alert alert-success"><%= message %></div>
+      <% } %>
+
+      <form class="card p-4 shadow-sm" method="post" action="#" novalidate>
+        <div class="mb-3">
+          <label class="form-label" for="loginEmail">Email address</label>
+          <input class="form-control" type="email" id="loginEmail" name="email" value="<%= email %>" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input class="form-control" type="password" id="loginPassword" name="password" required />
+        </div>
+        <button class="btn btn-secondary w-100" type="submit" disabled>Login (Coming Soon)</button>
+      </form>
+
+      <p class="mt-4 text-center">Need an account? <a href="/register-31477046">Create one here</a>.</p>
+    </div>
+  </body>
+</html>
+
+
+
+
+

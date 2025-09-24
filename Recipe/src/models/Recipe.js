@@ -3,7 +3,7 @@ const User = require('./User');
 
 const RECIPE_ID_REGEX = /^R-\d{5}$/;
 const USER_ID_REGEX = /^U-\d{5}$/;
-const TITLE_REGEX = /^[A-Za-z0-9\s'\-]{3,100}$/;
+const TITLE_REGEX = /^[A-Za-z0-9\s'\-\(\)]{3,100}$/;
 const CHEF_REGEX = /^[A-Za-z\s'\-]{2,50}$/;
 const INGREDIENT_NAME_REGEX = /^[A-Za-z\s'\-]{2,50}$/;
 const CUISINE_OPTIONS = ['Italian', 'Asian', 'Mexican', 'American', 'French', 'Indian', 'Mediterranean', 'Other'];
