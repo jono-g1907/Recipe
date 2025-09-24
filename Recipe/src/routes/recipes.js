@@ -64,8 +64,8 @@ function normaliseOption(value, options) {
 
 function coerceRecipePayload(body) {
   const out = Object.assign({}, body);
-  if (out.recipeId !== undefined) out.recipeId = String(out.recipeId).trim();
-  if (out.userId !== undefined) out.userId = String(out.userId).trim();
+  if (out.recipeId !== undefined) out.recipeId = String(out.recipeId).trim().toUpperCase();
+  if (out.userId !== undefined) out.userId = String(out.userId).trim().toUpperCase();
   if (out.title !== undefined) out.title = String(out.title).trim();
   if (out.chef !== undefined) out.chef = String(out.chef).trim();
   if (out.mealType !== undefined) out.mealType = normaliseOption(out.mealType, MEAL_TYPES);
@@ -108,6 +108,12 @@ router.post(CREATE_PATH, async function (req, res, next) {
     const payload = coerceRecipePayload(req.body || {});
     if (!payload.createdDate) {
       payload.createdDate = new Date();
+    }
+    if (payload.userId && payload.title) {
+      const existingTitle = await store.getRecipeByTitleForUser(payload.userId, payload.title);
+      if (existingTitle) {
+        throw new ValidationError(['You already have a recipe with this title.']);
+      }
     }
     const recipe = await store.createRecipe(payload);
     return res.status(201).json({ recipe });
