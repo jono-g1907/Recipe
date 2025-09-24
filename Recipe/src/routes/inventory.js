@@ -10,6 +10,9 @@ const LIST_PATH = '/inventory-dashboard-' + APP_ID;
 const GET_ONE_PATH = '/inventory-dashboard/:inventoryId-' + APP_ID;
 const UPDATE_PATH = '/inventory-dashboard/:inventoryId/update-' + APP_ID;
 const DELETE_PATH = '/inventory-dashboard/:inventoryId-' + APP_ID;
+const EXPIRING_PATH = '/inventory/expiring-' + APP_ID;
+const LOW_STOCK_PATH = '/inventory/low-stock-' + APP_ID;
+const VALUE_PATH = '/inventory/value-' + APP_ID;
 
 const CATEGORY_OPTIONS = ['Vegetables', 'Fruits', 'Meat', 'Dairy', 'Grains', 'Spices', 'Beverages', 'Frozen', 'Canned', 'Other'];
 const LOCATION_OPTIONS = ['Fridge', 'Freezer', 'Pantry', 'Counter', 'Cupboard'];
@@ -84,6 +87,161 @@ function coerceInventoryPayload(body) {
   return out;
 }
 
+function parseNumber(value) {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  return parsed;
+}
+
+function parseDate(value) {
+  if (!value) {
+    return null;
+  }
+  const d = new Date(value);
+  if (isNaN(d.getTime())) {
+    return null;
+  }
+  return d;
+}
+
+function parseListQuery(query) {
+  const q = query || {};
+  const filters = { page: 1, limit: 10 };
+
+  const page = parseInt(q.page, 10);
+  if (Number.isFinite(page) && page > 0) {
+    filters.page = page;
+  }
+
+  const limit = parseInt(q.limit, 10);
+  if (Number.isFinite(limit) && limit > 0) {
+    filters.limit = Math.min(limit, 50);
+  }
+
+  const search = typeof q.q === 'string' ? q.q.trim() : '';
+  if (search) {
+    filters.q = search;
+  }
+
+  const category = normaliseOption(q.category, CATEGORY_OPTIONS, false);
+  if (category && CATEGORY_OPTIONS.indexOf(category) !== -1) {
+    filters.category = category;
+  }
+
+  const location = normaliseOption(q.location, LOCATION_OPTIONS, false);
+  if (location && LOCATION_OPTIONS.indexOf(location) !== -1) {
+    filters.location = location;
+  }
+
+  const unit = normaliseOption(q.unit, UNIT_OPTIONS, true);
+  if (unit && UNIT_OPTIONS.indexOf(unit) !== -1) {
+    filters.unit = unit;
+  }
+
+  const userId = typeof q.userId === 'string' ? q.userId.trim().toUpperCase() : '';
+  if (userId) {
+    filters.userId = userId;
+  }
+
+  const expiring = parseDate(q.expiringBy);
+  if (expiring) {
+    filters.expiringBy = expiring;
+  }
+
+  const lowStock = parseNumber(q.lowStockBelow);
+  if (lowStock !== null) {
+    filters.lowStockBelow = lowStock;
+  }
+
+  const sort = typeof q.sort === 'string' ? q.sort.trim() : '';
+  if (sort) {
+    filters.sort = sort;
+  }
+
+  return filters;
+}
+
+function toIsoString(value) {
+  if (!value) {
+    return null;
+  }
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) {
+    return null;
+  }
+  return d.toISOString();
+}
+
+function getDaysUntilExpiration(value) {
+  if (!value) {
+    return null;
+  }
+  const expiration = value instanceof Date ? value : new Date(value);
+  if (isNaN(expiration.getTime())) {
+    return null;
+  }
+  const now = new Date();
+  const diff = expiration.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function getExpiryStatus(daysLeft) {
+  if (daysLeft === null) {
+    return 'unknown';
+  }
+  if (daysLeft < 0) {
+    return 'expired';
+  }
+  if (daysLeft <= 3) {
+    return 'soon';
+  }
+  return 'ok';
+}
+
+function roundCurrency(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.round(value * 100) / 100;
+}
+
+function formatInventoryForResponse(item) {
+  if (!item) {
+    return item;
+  }
+
+  const quantity = Number(item.quantity);
+  const cost = Number(item.cost);
+  const daysLeft = getDaysUntilExpiration(item.expirationDate);
+  const value = Number.isFinite(quantity) && Number.isFinite(cost)
+    ? roundCurrency(quantity * cost)
+    : null;
+
+  return {
+    inventoryId: item.inventoryId,
+    userId: item.userId,
+    ingredientName: item.ingredientName,
+    quantity: Number.isFinite(quantity) ? quantity : null,
+    unit: item.unit,
+    category: item.category,
+    purchaseDate: toIsoString(item.purchaseDate),
+    expirationDate: toIsoString(item.expirationDate),
+    location: item.location,
+    cost: Number.isFinite(cost) ? roundCurrency(cost) : null,
+    createdDate: toIsoString(item.createdDate),
+    updatedAt: toIsoString(item.updatedAt),
+    daysUntilExpiration: daysLeft,
+    expirationStatus: getExpiryStatus(daysLeft),
+    inventoryValue: value
+  };
+}
+
+
 router.post(CREATE_PATH, async function (req, res, next) {
   try {
     const payload = coerceInventoryPayload(req.body || {});
@@ -91,7 +249,7 @@ router.post(CREATE_PATH, async function (req, res, next) {
       payload.createdDate = new Date();
     }
     const item = await store.createInventoryItem(payload);
-    return res.status(201).json({ item });
+    return res.status(201).json({ item: formatInventoryForResponse(item) });
   } catch (err) {
     return next(normaliseError(err));
   }
@@ -99,10 +257,12 @@ router.post(CREATE_PATH, async function (req, res, next) {
 
 router.get(LIST_PATH, async function (req, res, next) {
   try {
-    const items = await store.getAllInventory();
-    return res.json({ items, page: 1, total: items.length });
+    const filters = parseListQuery(req.query);
+    const result = await store.listInventory(filters);
+    const items = result.items.map(formatInventoryForResponse);
+    return res.json({ items, page: result.page, total: result.total, limit: result.limit });
   } catch (err) {
-    return next(err);
+    return next(normaliseError(err));
   }
 });
 
@@ -112,9 +272,104 @@ router.get(GET_ONE_PATH, async function (req, res, next) {
     if (!item) {
       return res.status(404).json({ error: 'Inventory item not found' });
     }
-    return res.json({ item });
+    return res.json({ item: formatInventoryForResponse(item) });
   } catch (err) {
     return next(err);
+  }
+});
+
+router.get(EXPIRING_PATH, async function (req, res, next) {
+  try {
+    const byDate = parseDate(req.query && req.query.by);
+    if (!byDate) {
+      throw new ValidationError(['Query parameter "by" must be a valid ISO date (YYYY-MM-DD).']);
+    }
+
+    const filters = parseListQuery(req.query);
+    const result = await store.findExpiringInventory({
+      by: byDate,
+      page: filters.page,
+      limit: filters.limit,
+      category: filters.category,
+      location: filters.location,
+      unit: filters.unit,
+      userId: filters.userId
+    });
+
+    return res.json({
+      by: byDate.toISOString(),
+      items: result.items.map(formatInventoryForResponse),
+      page: result.page,
+      total: result.total,
+      limit: result.limit
+    });
+  } catch (err) {
+    return next(normaliseError(err));
+  }
+});
+
+router.get(LOW_STOCK_PATH, async function (req, res, next) {
+  try {
+    const threshold = parseNumber(req.query && req.query.threshold);
+    if (threshold === null) {
+      throw new ValidationError(['Query parameter "threshold" must be a number.']);
+    }
+    if (threshold < 0) {
+      throw new ValidationError(['Threshold must be zero or greater.']);
+    }
+
+    const filters = parseListQuery(req.query);
+    const items = await store.findLowStockInventory({
+      threshold: threshold,
+      category: filters.category,
+      location: filters.location,
+      unit: filters.unit,
+      userId: filters.userId
+    });
+
+    return res.json({
+      threshold: threshold,
+      items: items.map(formatInventoryForResponse)
+    });
+  } catch (err) {
+    return next(normaliseError(err));
+  }
+});
+
+router.get(VALUE_PATH, async function (req, res, next) {
+  try {
+    const query = req.query || {};
+    const rawGroup = typeof query.groupBy === 'string'
+      ? query.groupBy.trim().toLowerCase()
+      : '';
+    let groupBy = null;
+    if (rawGroup === 'category' || rawGroup === 'location') {
+      groupBy = rawGroup;
+    }
+
+    const result = await store.calculateInventoryValue(groupBy);
+    const totalValue = result && Number.isFinite(result.totalValue)
+      ? result.totalValue
+      : 0;
+    const response = {
+      totalValue: roundCurrency(totalValue)
+    };
+
+    if (groupBy && Array.isArray(result.breakdown)) {
+      response.groupBy = groupBy;
+      response.breakdown = result.breakdown.map(function (entry) {
+        const entryValue = entry && Number.isFinite(entry.totalValue) ? entry.totalValue : 0;
+        return {
+          group: entry.group,
+          totalValue: roundCurrency(entryValue),
+          itemCount: entry.itemCount
+        };
+      });
+    }
+
+    return res.json(response);
+  } catch (err) {
+    return next(normaliseError(err));
   }
 });
 
@@ -142,7 +397,7 @@ router.post(UPDATE_PATH, async function (req, res, next) {
       if (!updated) {
         return res.status(404).json({ error: 'Inventory item not found' });
       }
-      return res.json({ item: updated });
+      return res.json({ item: formatInventoryForResponse(updated) });
     }
 
     const patch = coerceInventoryPayload(body);
@@ -150,7 +405,7 @@ router.post(UPDATE_PATH, async function (req, res, next) {
     if (!updated) {
       return res.status(404).json({ error: 'Inventory item not found' });
     }
-    return res.json({ item: updated });
+    return res.json({ item: formatInventoryForResponse(updated) });
   } catch (err) {
     const mapped = normaliseError(err);
     if (mapped instanceof ValidationError && clientWantsHtml(req)) {
