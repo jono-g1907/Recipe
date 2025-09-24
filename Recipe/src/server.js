@@ -1,12 +1,46 @@
 const path = require('path');
 const express = require('express');
 const constants = require('./lib/constants');
-const enums = require('./enums');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/error');
 const apiRouter = require('./routes');
 const store = require('./store');
 const ValidationError = require('./errors/ValidationError');
+const normaliseError = require('./lib/normaliseError');
+const { buildLoginRedirectUrl, resolveActiveUser } = require('./lib/auth');
+const {
+  getEmptyRecipeFormValues,
+  buildRecipeFormValuesFromBody,
+  buildRecipeFormValuesFromRecipe,
+  collectRecipeErrors,
+  parseRecipeForm,
+  mapRecipeForView
+} = require('./forms/recipeForm');
+const {
+  getEmptyInventoryFormValues,
+  parseInventoryForm,
+  collectInventoryErrors,
+  buildInventoryFormValuesFromItem,
+  mapInventoryForView
+} = require('./forms/inventoryForm');
+const {
+  parseRegistrationForm,
+  collectRegistrationErrors,
+  buildRegistrationValues,
+  parseLoginForm,
+  collectLoginErrors
+} = require('./forms/userForm');
+const {
+  ROLE_OPTIONS,
+  MEAL_TYPE_OPTIONS,
+  CUISINE_TYPE_OPTIONS,
+  DIFFICULTY_OPTIONS,
+  UNIT_OPTIONS,
+  INVENTORY_CATEGORY_OPTIONS,
+  LOCATION_OPTIONS,
+  RECIPE_ID_REGEX,
+  RECIPE_TITLE_REGEX
+} = require('./lib/validationConstants');
 const { sanitiseString } = require('./lib/utils');
 
 const app = express();
@@ -27,260 +61,6 @@ app.use(express.static(path.join(__dirname, 'images')));
 app.use(express.static(path.join(__dirname, 'css')));
 
 const APP_ID = constants.APP_ID;
-const AUTHOR_NAME = constants.AUTHOR_NAME;
-
-const ROLE_OPTIONS = ['admin', 'chef', 'manager'];
-const EMAIL_REGEX = /[^\s@]+@[^\s@]+\.[^\s@]+/;
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}:;"'<>?,.\/]).{8,}$/;
-const NAME_REGEX = /^[A-Za-z\s\-']{2,100}$/;
-const RECIPE_ID_REGEX = /^R-\d{5}$/;
-const INVENTORY_ID_REGEX = /^I-\d{5}$/;
-const USER_ID_REGEX = /^U-\d{5}$/;
-const RECIPE_TITLE_REGEX = /^[A-Za-z0-9\s'\-\(\)]{3,100}$/;
-const CHEF_REGEX = /^[A-Za-z\s'\-]{2,50}$/;
-const INGREDIENT_NAME_REGEX = /^[A-Za-z\s'\-]{2,50}$/;
-
-const MEAL_TYPE_OPTIONS = Object.values(enums.MealType);
-const CUISINE_TYPE_OPTIONS = Object.values(enums.CuisineType);
-const DIFFICULTY_OPTIONS = Object.values(enums.Difficulty);
-const UNIT_OPTIONS = Object.values(enums.Unit);
-const INVENTORY_CATEGORY_OPTIONS = Object.values(enums.InventoryCategory);
-const LOCATION_OPTIONS = Object.values(enums.Location);
-
-const EMPTY_RECIPE_FORM_VALUES = {
-  recipeId: '',
-  title: '',
-  chef: '',
-  mealType: '',
-  cuisineType: '',
-  difficulty: '',
-  prepTime: '',
-  servings: '',
-  createdDate: '',
-  ingredientsText: '',
-  instructionsText: ''
-};
-
-function getEmptyRecipeFormValues() {
-  return Object.assign({}, EMPTY_RECIPE_FORM_VALUES);
-}
-
-const EMPTY_INVENTORY_FORM_VALUES = {
-  inventoryId: '',
-  userId: '',
-  ingredientName: '',
-  quantity: '',
-  unit: '',
-  category: '',
-  purchaseDate: '',
-  expirationDate: '',
-  location: '',
-  cost: '',
-  createdDate: ''
-};
-
-function getEmptyInventoryFormValues() {
-  return Object.assign({}, EMPTY_INVENTORY_FORM_VALUES);
-}
-
-function normaliseSelectValue(value, options) {
-  const trimmed = sanitiseString(value);
-  if (!trimmed) {
-    return '';
-  }
-  for (let i = 0; i < options.length; i++) {
-    if (options[i].toLowerCase() === trimmed.toLowerCase()) {
-      return options[i];
-    }
-  }
-  return trimmed;
-}
-
-function buildRecipeFormValuesFromBody(body) {
-  const values = getEmptyRecipeFormValues();
-  if (!body) {
-    return values;
-  }
-  values.recipeId = sanitiseString(body.recipeId).toUpperCase();
-  values.title = sanitiseString(body.title);
-  values.chef = sanitiseString(body.chef);
-  values.mealType = normaliseSelectValue(body.mealType, MEAL_TYPE_OPTIONS);
-  values.cuisineType = normaliseSelectValue(body.cuisineType, CUISINE_TYPE_OPTIONS);
-  values.difficulty = normaliseSelectValue(body.difficulty, DIFFICULTY_OPTIONS);
-  values.prepTime = sanitiseString(body.prepTime);
-  values.servings = sanitiseString(body.servings);
-  values.createdDate = sanitiseString(body.createdDate);
-  values.ingredientsText = body.ingredientsText ? String(body.ingredientsText).replace(/\r\n/g, '\n') : '';
-  values.instructionsText = body.instructionsText ? String(body.instructionsText).replace(/\r\n/g, '\n') : '';
-  return values;
-}
-
-function buildRecipeFormValuesFromRecipe(recipe) {
-  const values = getEmptyRecipeFormValues();
-  if (!recipe) {
-    return values;
-  }
-
-  values.recipeId = sanitiseString(recipe.recipeId).toUpperCase();
-  values.title = sanitiseString(recipe.title);
-  values.chef = sanitiseString(recipe.chef);
-  values.mealType = sanitiseString(recipe.mealType);
-  values.cuisineType = sanitiseString(recipe.cuisineType);
-  values.difficulty = sanitiseString(recipe.difficulty);
-
-  const prepTimeNumber = Number(recipe.prepTime);
-  values.prepTime = Number.isFinite(prepTimeNumber) ? prepTimeNumber : '';
-
-  const servingsNumber = Number(recipe.servings);
-  values.servings = Number.isFinite(servingsNumber) ? servingsNumber : '';
-
-  values.createdDate = toIsoDate(recipe.createdDate);
-
-  const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-  const ingredientLines = [];
-  for (let i = 0; i < ingredients.length; i++) {
-    const entry = ingredients[i] || {};
-    const name = sanitiseString(entry.ingredientName);
-    const quantity = entry.quantity !== undefined && entry.quantity !== null ? String(entry.quantity) : '';
-    const unit = sanitiseString(entry.unit);
-    if (name || quantity || unit) {
-      ingredientLines.push((name || '') + ' | ' + (quantity || '') + ' | ' + (unit || ''));
-    }
-  }
-  values.ingredientsText = ingredientLines.join('\n');
-
-  const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
-  const instructionLines = [];
-  for (let j = 0; j < instructions.length; j++) {
-    const step = sanitiseString(instructions[j]);
-    if (step) {
-      instructionLines.push(step);
-    }
-  }
-  values.instructionsText = instructionLines.join('\n');
-
-  return values;
-}
-
-function collectRecipeErrors(recipe) {
-  const errors = [];
-
-  if (!recipe.recipeId) {
-    errors.push('Recipe ID is required.');
-  } else if (!RECIPE_ID_REGEX.test(recipe.recipeId)) {
-    errors.push('Recipe ID must follow the R-00000 format.');
-  }
-
-  if (!recipe.userId || !USER_ID_REGEX.test(recipe.userId)) {
-    errors.push('A valid user ID is required.');
-  }
-
-  if (!recipe.title) {
-    errors.push('Recipe title is required.');
-  } else if (!RECIPE_TITLE_REGEX.test(recipe.title)) {
-    errors.push('Recipe title must be 3-100 characters and can include letters, numbers, spaces, hyphens, apostrophes and parentheses.');
-  }
-
-  if (!recipe.chef) {
-    errors.push('Chef name is required.');
-  } else if (!CHEF_REGEX.test(recipe.chef)) {
-    errors.push('Chef name must be 2-50 letters and can include spaces, hyphens and apostrophes.');
-  }
-
-  if (!recipe.mealType) {
-    errors.push('Meal type is required.');
-  } else if (MEAL_TYPE_OPTIONS.indexOf(recipe.mealType) === -1) {
-    errors.push('Select a valid meal type.');
-  }
-
-  if (!recipe.cuisineType) {
-    errors.push('Cuisine type is required.');
-  } else if (CUISINE_TYPE_OPTIONS.indexOf(recipe.cuisineType) === -1) {
-    errors.push('Select a valid cuisine type.');
-  }
-
-  if (!recipe.difficulty) {
-    errors.push('Difficulty is required.');
-  } else if (DIFFICULTY_OPTIONS.indexOf(recipe.difficulty) === -1) {
-    errors.push('Select a valid difficulty option.');
-  }
-
-  if (!Number.isFinite(recipe.prepTime)) {
-    errors.push('Preparation time must be a number.');
-  } else if (!Number.isInteger(recipe.prepTime)) {
-    errors.push('Preparation time must be a whole number of minutes.');
-  } else if (recipe.prepTime < 1 || recipe.prepTime > 480) {
-    errors.push('Preparation time must be between 1 and 480 minutes.');
-  }
-
-  if (!Number.isFinite(recipe.servings)) {
-    errors.push('Servings must be a number.');
-  } else if (!Number.isInteger(recipe.servings)) {
-    errors.push('Servings must be a whole number.');
-  } else if (recipe.servings < 1 || recipe.servings > 20) {
-    errors.push('Servings must be between 1 and 20.');
-  }
-
-  if (!(recipe.createdDate instanceof Date) || isNaN(recipe.createdDate.getTime())) {
-    errors.push('Created date must be a valid date.');
-  } else {
-    const now = new Date();
-    if (recipe.createdDate.getTime() > now.getTime()) {
-      errors.push('Created date cannot be in the future.');
-    }
-  }
-
-  const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-  if (!ingredients.length) {
-    errors.push('Add at least one ingredient.');
-  } else if (ingredients.length > 20) {
-    errors.push('You can list up to 20 ingredients.');
-  } else {
-    for (let i = 0; i < ingredients.length; i++) {
-      const item = ingredients[i] || {};
-      const name = sanitiseString(item.ingredientName);
-      if (!name) {
-        errors.push('Each ingredient needs a name.');
-        break;
-      }
-      if (!INGREDIENT_NAME_REGEX.test(name)) {
-        errors.push('Ingredient names can only use letters, spaces, hyphens and apostrophes (2-50 characters).');
-        break;
-      }
-      const quantity = Number(item.quantity);
-      if (!Number.isFinite(quantity)) {
-        errors.push('Ingredient quantities must be numbers.');
-        break;
-      }
-      if (quantity <= 0 || quantity > 9999) {
-        errors.push('Ingredient quantities must be between 0.01 and 9999.');
-        break;
-      }
-      const unit = sanitiseString(item.unit).toLowerCase();
-      if (UNIT_OPTIONS.indexOf(unit) === -1) {
-        errors.push('Each ingredient must use one of the allowed units.');
-        break;
-      }
-    }
-  }
-
-  const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
-  if (!instructions.length) {
-    errors.push('Provide at least one instruction step.');
-  } else if (instructions.length > 15) {
-    errors.push('Instructions can include up to 15 steps.');
-  } else {
-    for (let j = 0; j < instructions.length; j++) {
-      const step = sanitiseString(instructions[j]);
-      if (step.length < 10 || step.length > 500) {
-        errors.push('Each instruction step must be between 10 and 500 characters.');
-        break;
-      }
-    }
-  }
-
-  return errors;
-}
 
 function renderRecipeForm(res, user, values, errorMessage, status) {
   const safeValues = values || getEmptyRecipeFormValues();
@@ -315,289 +95,6 @@ function renderRecipeEditForm(res, user, recipes, selectedId, values, errorMessa
   });
 }
 
-function normaliseError(err) {
-  if (!err) return err;
-
-  if (err instanceof ValidationError) {
-    return err;
-  }
-
-  if (err.name === 'ValidationError' && err.errors) {
-    const messages = [];
-    for (const key in err.errors) {
-      if (Object.prototype.hasOwnProperty.call(err.errors, key)) {
-        messages.push(err.errors[key].message);
-      }
-    }
-    return new ValidationError(messages);
-  }
-
-  if (err.code === 11000) {
-    const details = [];
-    if (err.keyValue) {
-      for (const key in err.keyValue) {
-        if (Object.prototype.hasOwnProperty.call(err.keyValue, key)) {
-          details.push(key + ' already exists');
-        }
-      }
-    }
-    if (!details.length) {
-      details.push('Duplicate value is not allowed');
-    }
-    return new ValidationError(details);
-  }
-
-  if (err.message && err.message.indexOf('Quantity cannot be negative') !== -1) {
-    return new ValidationError([err.message]);
-  }
-
-  return err;
-}
-
-function parseRecipeForm(body) {
-  const recipe = {};
-  const recipeIdInput = sanitiseString(body && body.recipeId);
-  recipe.recipeId = recipeIdInput ? recipeIdInput.toUpperCase() : '';
-  const userIdInput = sanitiseString(body && body.userId);
-  recipe.userId = userIdInput ? userIdInput.toUpperCase() : '';
-  recipe.title = sanitiseString(body && body.title);
-  recipe.mealType = normaliseSelectValue(body && body.mealType, MEAL_TYPE_OPTIONS);
-  recipe.cuisineType = normaliseSelectValue(body && body.cuisineType, CUISINE_TYPE_OPTIONS);
-  const prepInput = sanitiseString(body && body.prepTime);
-  recipe.prepTime = prepInput ? Number(prepInput) : NaN;
-  recipe.difficulty = normaliseSelectValue(body && body.difficulty, DIFFICULTY_OPTIONS);
-  const servingsInput = sanitiseString(body && body.servings);
-  recipe.servings = servingsInput ? Number(servingsInput) : NaN;
-  recipe.chef = sanitiseString(body && body.chef);
-  const createdInput = sanitiseString(body && body.createdDate);
-  recipe.createdDate = createdInput ? new Date(createdInput) : new Date();
-
-  const ingText = body.ingredientsText || '';
-  const ingLines = ingText.split('\n');
-  const ingredients = [];
-  for (let i = 0; i < ingLines.length; i++) {
-    const line = sanitiseString(ingLines[i]);
-    if (!line) continue;
-    const parts = line.split('|');
-    const name = sanitiseString(parts[0]);
-    const quantityInput = sanitiseString(parts[1]);
-    const quantity = quantityInput ? Number(quantityInput) : NaN;
-    const unit = sanitiseString(parts[2]).toLowerCase();
-    ingredients.push({
-      ingredientName: name,
-      quantity: quantity,
-      unit: unit
-    });
-  }
-  recipe.ingredients = ingredients;
-
-  const insText = body.instructionsText || '';
-  const insLines = insText.split('\n');
-  const instructions = [];
-  for (let j = 0; j < insLines.length; j++) {
-    const line = sanitiseString(insLines[j]);
-    if (line) instructions.push(line);
-  }
-  recipe.instructions = instructions;
-
-  return recipe;
-}
-
-function parseInventoryForm(body) {
-  const item = {};
-  item.inventoryId = (body.inventoryId || '').trim();
-  const userIdInput = sanitiseString(body && body.userId);
-  item.userId = userIdInput ? userIdInput.toUpperCase() : '';
-  item.ingredientName = (body.ingredientName || '').trim();
-  item.quantity = Number(body.quantity);
-  item.unit = (body.unit || '').trim().toLowerCase();
-  item.category = (body.category || '').trim();
-  item.purchaseDate = body.purchaseDate ? new Date(body.purchaseDate) : new Date();
-  item.expirationDate = body.expirationDate ? new Date(body.expirationDate) : new Date();
-  item.location = (body.location || '').trim();
-  item.cost = Number(body.cost);
-  item.createdDate = body.createdDate ? new Date(body.createdDate) : new Date();
-  return item;
-}
-
-function collectInventoryErrors(item) {
-  const errors = [];
-  if (!item) {
-    errors.push('Inventory details are required.');
-    return errors;
-  }
-
-  const inventoryId = sanitiseString(item.inventoryId).toUpperCase();
-  if (!inventoryId) {
-    errors.push('Inventory ID is required.');
-  } else if (!INVENTORY_ID_REGEX.test(inventoryId)) {
-    errors.push('Inventory ID must follow the I-00000 format.');
-  }
-
-  const userId = sanitiseString(item.userId).toUpperCase();
-  if (!userId || !USER_ID_REGEX.test(userId)) {
-    errors.push('A valid user ID is required.');
-  }
-
-  const name = sanitiseString(item.ingredientName);
-  if (!name) {
-    errors.push('Ingredient name is required.');
-  } else if (!INGREDIENT_NAME_REGEX.test(name)) {
-    errors.push('Ingredient names must be 2-50 characters using letters, spaces, hyphens or apostrophes.');
-  }
-
-  const quantity = Number(item.quantity);
-  if (!Number.isFinite(quantity)) {
-    errors.push('Quantity must be a number.');
-  } else if (quantity <= 0 || quantity > 9999) {
-    errors.push('Quantity must be between 0.01 and 9999.');
-  }
-
-  const unit = sanitiseString(item.unit).toLowerCase();
-  if (!unit || UNIT_OPTIONS.indexOf(unit) === -1) {
-    errors.push('Select a valid unit.');
-  }
-
-  const category = sanitiseString(item.category);
-  if (!category || INVENTORY_CATEGORY_OPTIONS.indexOf(category) === -1) {
-    errors.push('Select a valid category.');
-  }
-
-  const location = sanitiseString(item.location);
-  if (!location || LOCATION_OPTIONS.indexOf(location) === -1) {
-    errors.push('Select a valid location.');
-  }
-
-  const cost = Number(item.cost);
-  if (!Number.isFinite(cost)) {
-    errors.push('Cost must be a number.');
-  } else if (cost < 0.01 || cost > 999.99) {
-    errors.push('Cost must be between 0.01 and 999.99.');
-  } else {
-    const cents = Math.round(cost * 100);
-    if (Math.abs(cost * 100 - cents) > 1e-6) {
-      errors.push('Cost must have no more than two decimal places.');
-    }
-  }
-
-  const purchaseDate = item.purchaseDate instanceof Date ? item.purchaseDate : new Date(item.purchaseDate);
-  if (!(purchaseDate instanceof Date) || isNaN(purchaseDate.getTime())) {
-    errors.push('Purchase date must be a valid date.');
-  } else if (purchaseDate.getTime() > Date.now()) {
-    errors.push('Purchase date cannot be in the future.');
-  }
-
-  const expirationDate = item.expirationDate instanceof Date ? item.expirationDate : new Date(item.expirationDate);
-  if (!(expirationDate instanceof Date) || isNaN(expirationDate.getTime())) {
-    errors.push('Expiration date must be a valid date.');
-  } else if (!isNaN(purchaseDate.getTime()) && expirationDate.getTime() <= purchaseDate.getTime()) {
-    errors.push('Expiration date must be after the purchase date.');
-  }
-
-  const createdDate = item.createdDate instanceof Date ? item.createdDate : new Date(item.createdDate);
-  if (!(createdDate instanceof Date) || isNaN(createdDate.getTime())) {
-    errors.push('Created date must be a valid date.');
-  } else if (createdDate.getTime() > Date.now()) {
-    errors.push('Created date cannot be in the future.');
-  }
-
-  return errors;
-}
-
-function buildInventoryFormValuesFromItem(item) {
-  const values = getEmptyInventoryFormValues();
-  if (!item) {
-    return values;
-  }
-
-  values.inventoryId = sanitiseString(item.inventoryId).toUpperCase();
-  values.userId = sanitiseString(item.userId).toUpperCase();
-  values.ingredientName = sanitiseString(item.ingredientName);
-
-  const quantityNumber = Number(item.quantity);
-  values.quantity = Number.isFinite(quantityNumber) ? quantityNumber : '';
-
-  values.unit = sanitiseString(item.unit).toLowerCase();
-  values.category = sanitiseString(item.category);
-  values.location = sanitiseString(item.location);
-
-  const costNumber = Number(item.cost);
-  if (Number.isFinite(costNumber)) {
-    values.cost = (Math.round(costNumber * 100) / 100).toFixed(2);
-  } else {
-    values.cost = '';
-  }
-
-  values.purchaseDate = toIsoDate(item.purchaseDate);
-  values.expirationDate = toIsoDate(item.expirationDate);
-  values.createdDate = toIsoDate(item.createdDate);
-
-  return values;
-}
-
-function toIsoDate(value) {
-  if (!value) return '';
-  const d = value instanceof Date ? value : new Date(value);
-  if (isNaN(d.getTime())) return '';
-  return d.toISOString().split('T')[0];
-}
-
-function mapRecipeForView(recipe) {
-  return {
-    recipeId: recipe.recipeId,
-    userId: recipe.userId,
-    title: recipe.title,
-    mealType: recipe.mealType,
-    cuisineType: recipe.cuisineType,
-    prepTime: recipe.prepTime,
-    difficulty: recipe.difficulty,
-    servings: recipe.servings,
-    chef: recipe.chef,
-    createdDate: toIsoDate(recipe.createdDate),
-    ingredients: recipe.ingredients || [],
-    instructions: recipe.instructions || []
-  };
-}
-
-function mapInventoryForView(item) {
-  const now = new Date();
-  const expiration = item.expirationDate instanceof Date ? item.expirationDate : new Date(item.expirationDate);
-  let daysLeft = null;
-  if (expiration && !isNaN(expiration.getTime())) {
-    const diff = expiration.getTime() - now.getTime();
-    daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  }
-
-  let expiryStatus = 'unknown';
-  if (daysLeft !== null) {
-    if (daysLeft < 0) {
-      expiryStatus = 'expired';
-    } else if (daysLeft <= 3) {
-      expiryStatus = 'soon';
-    } else {
-      expiryStatus = 'ok';
-    }
-  }
-
-  const costNumber = Number(item.cost);
-
-  return {
-    inventoryId: item.inventoryId,
-    userId: item.userId,
-    ingredientName: item.ingredientName,
-    quantity: item.quantity,
-    unit: item.unit,
-    category: item.category,
-    purchaseDate: toIsoDate(item.purchaseDate),
-    expirationDate: toIsoDate(item.expirationDate),
-    location: item.location,
-    cost: Number.isFinite(costNumber) ? costNumber : 0,
-    createdDate: toIsoDate(item.createdDate),
-    daysLeft: daysLeft,
-    expiryStatus: expiryStatus
-  };
-}
-
 function renderInventoryEditForm(res, user, items, selectedId, values, errorMessage, successMessage, status) {
   const safeValues = values || getEmptyInventoryFormValues();
   const statusCode = status || 200;
@@ -616,165 +113,15 @@ function renderInventoryEditForm(res, user, items, selectedId, values, errorMess
   });
 }
 
-function parseRegistrationForm(body) {
-  const form = {};
-  const emailInput = sanitiseString(body && body.email);
-  form.email = emailInput ? emailInput.toLowerCase() : '';
-
-  if (body && typeof body.password === 'string') {
-    form.password = body.password;
-  } else {
-    form.password = '';
-  }
-
-  if (body && typeof body.confirmPassword === 'string') {
-    form.confirmPassword = body.confirmPassword;
-  } else {
-    form.confirmPassword = '';
-  }
-
-  form.fullname = sanitiseString(body && body.fullname);
-  const roleInput = sanitiseString(body && body.role);
-  form.role = roleInput ? roleInput.toLowerCase() : '';
-  form.phone = sanitiseString(body && body.phone);
-  return form;
-}
-
-function stripPhoneFormatting(value) {
-  return (value || '').replace(/[\s()-]/g, '');
-}
-
-function isAustralianPhoneNumber(value) {
-  const cleaned = stripPhoneFormatting(value);
-  if (!cleaned) {
-    return false;
-  }
-  if (cleaned.indexOf('+') === 0) {
-    if (cleaned.indexOf('+61') !== 0) {
-      return false;
-    }
-    const rest = cleaned.slice(3);
-    return rest.length === 9 && /^[2-478]\d{8}$/.test(rest);
-  }
-  if (cleaned.indexOf('0') === 0) {
-    return cleaned.length === 10 && /^[2-478]\d{9}$/.test(cleaned);
-  }
-  return false;
-}
-
-function collectRegistrationErrors(form) {
-  const errors = [];
-
-  if (!form.email) {
-    errors.push('Email is required');
-  } else if (!EMAIL_REGEX.test(form.email)) {
-    errors.push('Enter a valid email address');
-  }
-
-  if (!form.password) {
-    errors.push('Password is required');
-  } else if (!PASSWORD_REGEX.test(form.password)) {
-    errors.push('Password must be at least 8 characters with upper, lower, number and special character');
-  }
-
-  if (!form.confirmPassword) {
-    errors.push('Confirm your password');
-  } else if (form.password !== form.confirmPassword) {
-    errors.push('Passwords do not match');
-  }
-
-  if (!form.fullname) {
-    errors.push('Full name is required');
-  } else if (!NAME_REGEX.test(form.fullname)) {
-    errors.push('Full name can only include letters, spaces, hyphens and apostrophes');
-  }
-
-  if (!form.role) {
-    errors.push('Role is required');
-  } else if (ROLE_OPTIONS.indexOf(form.role) === -1) {
-    errors.push('Select a valid role');
-  }
-
-  if (!form.phone) {
-    errors.push('Phone number is required');
-  } else if (!isAustralianPhoneNumber(form.phone)) {
-    errors.push('Enter a valid Australian phone number');
-  }
-
-  return errors;
-}
-
-function buildRegistrationValues(form) {
-  return {
-    email: form.email || '',
-    fullname: form.fullname || '',
-    role: form.role || '',
-    phone: form.phone || ''
-  };
-}
-
-function parseLoginForm(body) {
-  const form = {};
-  const emailInput = sanitiseString(body && body.email);
-  form.email = emailInput ? emailInput.toLowerCase() : '';
-  if (body && typeof body.password === 'string') {
-    form.password = body.password;
-  } else {
-    form.password = '';
-  }
-  return form;
-}
-
-function collectLoginErrors(form) {
-  const errors = [];
-  if (!form.email) {
-    errors.push('Email is required');
-  } else if (!EMAIL_REGEX.test(form.email)) {
-    errors.push('Enter a valid email address');
-  }
-  if (!form.password) {
-    errors.push('Password is required');
-  }
-  return errors;
-}
-
-function buildLoginRedirectUrl(message) {
-  const text = message || 'Log in to access the dashboard.';
-  return '/login-' + APP_ID + '?error=' + encodeURIComponent(text);
-}
-
-async function resolveActiveUser(req) {
-  const queryUserId = sanitiseString(req.query && req.query.userId);
-  const bodyUserId = sanitiseString(req.body && req.body.userId);
-  const sourceId = queryUserId || bodyUserId;
-
-  if (!sourceId) {
-    return { error: 'Log in to access the dashboard.' };
-  }
-
-  const userId = sourceId.toUpperCase();
-  const user = await store.getUserByUserId(userId);
-
-  if (!user) {
-    return { error: 'Account not found. Please log in again.' };
-  }
-
-  if (!user.isLoggedIn) {
-    return { error: 'Your session has ended. Please log in again.' };
-  }
-
-  return { user: user };
-}
-
 app.get('/', function (req, res) {
   res.redirect(302, '/login-' + APP_ID);
 });
 
 app.get('/home-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -939,9 +286,9 @@ app.post('/logout-' + APP_ID, async function (req, res, next) {
 
 app.get('/add-recipe-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -953,9 +300,9 @@ app.get('/add-recipe-' + APP_ID, async function (req, res, next) {
 
 app.get('/edit-recipe-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -997,9 +344,9 @@ app.get('/edit-recipe-' + APP_ID, async function (req, res, next) {
 
 app.get('/add-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -1019,9 +366,9 @@ app.get('/add-inventory-' + APP_ID, async function (req, res, next) {
 
 app.get('/edit-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -1061,9 +408,9 @@ app.get('/edit-inventory-' + APP_ID, async function (req, res, next) {
 
 app.get('/recipes-list-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -1102,9 +449,9 @@ app.get('/recipes-list-' + APP_ID, async function (req, res, next) {
 
 app.get('/delete-recipe-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -1123,9 +470,9 @@ app.get('/delete-recipe-' + APP_ID, async function (req, res, next) {
 
 app.get('/delete-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -1178,9 +525,9 @@ app.post('/delete-inventory-' + APP_ID, async function (req, res, next) {
 
 app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
@@ -1280,9 +627,9 @@ app.post('/edit-recipe-' + APP_ID, async function (req, res, next) {
   let recipeOptions = [];
   let formValues = null;
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     activeUser = result.user;
@@ -1365,9 +712,9 @@ app.post('/add-recipe-' + APP_ID, async function (req, res, next) {
   let activeUser = null;
   let formValues = null;
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     activeUser = result.user;
@@ -1421,9 +768,9 @@ app.post('/add-recipe-' + APP_ID, async function (req, res, next) {
 
 app.post('/add-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const payload = parseInventoryForm(req.body || {});
@@ -1447,9 +794,9 @@ app.post('/edit-inventory-' + APP_ID, async function (req, res, next) {
   let inventoryOptions = [];
   let formValues = null;
   try {
-    const result = await resolveActiveUser(req);
+    const result = await resolveActiveUser(req, store);
     if (!result.user) {
-      return res.redirect(302, buildLoginRedirectUrl(result.error));
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     activeUser = result.user;
