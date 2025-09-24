@@ -120,7 +120,7 @@
         if (!id) return;
         if (!confirm('Delete inventory item ' + id + '?')) return;
 
-        fetch('/api/inventory/' + encodeURIComponent(id) + '-<%= appId %>', {
+        fetch('/api/inventory-dashboard/' + encodeURIComponent(id) + '-<%= appId %>', {
           method: 'DELETE'
         }).then(function (res) {
           if (res.status === 204) {
@@ -136,3 +136,4 @@
     </script>
   </body>
 </html>
+

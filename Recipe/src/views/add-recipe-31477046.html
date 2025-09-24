@@ -18,62 +18,68 @@
         <div class="card mb-4">
           <div class="card-header">Basic Information</div>
           <div class="card-body">
-            <div class="mb-3">
-              <label class="form-label">Recipe Title</label>
-              <input class="form-control" type="text" name="title" required />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Recipe ID</label>
-              <input class="form-control" type="text" name="recipeId" required placeholder="R-31477046-004" />
-              <div class="form-text">Must be unique (example: R-31477046-004)</div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Chef</label>
-              <input class="form-control" type="text" name="chef" required placeholder="Your name" />
-            </div>
-          </div>
-        </div>
-        <div class="card mb-4">
-          <div class="card-header">Recipe Details</div>
-          <div class="card-body">
             <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Recipe Title</label>
+                <input class="form-control" type="text" name="title" required />
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label">Recipe ID</label>
+                <input class="form-control" type="text" name="recipeId" required placeholder="R-00005" />
+                <div class="form-text">Format: R-#####</div>
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label">User ID</label>
+                <input class="form-control" type="text" name="userId" required value="<%= defaultUserId %>" />
+                <div class="form-text">Format: U-#####</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Chef</label>
+                <input class="form-control" type="text" name="chef" required placeholder="Your name" />
+              </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">Meal Type</label>
                 <select class="form-select" name="mealType" required>
                   <option value="">-- choose --</option>
-                  <option>Breakfast</option>
-                  <option>Lunch</option>
-                  <option>Dinner</option>
-                  <option>Snack</option>
+                  <% for (let i = 0; i < mealTypes.length; i++) { %>
+                    <option value="<%= mealTypes[i] %>"><%= mealTypes[i] %></option>
+                  <% } %>
                 </select>
               </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">Cuisine Type</label>
-                <input class="form-control" type="text" name="cuisineType" />
-              </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Difficulty</label>
-                <select class="form-select" name="difficulty" required>
+                <select class="form-select" name="cuisineType" required>
                   <option value="">-- choose --</option>
-                  <option>Easy</option>
-                  <option>Medium</option>
-                  <option>Hard</option>
+                  <% for (let i = 0; i < cuisineTypes.length; i++) { %>
+                    <option value="<%= cuisineTypes[i] %>"><%= cuisineTypes[i] %></option>
+                  <% } %>
                 </select>
               </div>
             </div>
             <div class="row">
               <div class="col-md-4 mb-3">
+                <label class="form-label">Difficulty</label>
+                <select class="form-select" name="difficulty" required>
+                  <option value="">-- choose --</option>
+                  <% for (let i = 0; i < difficulties.length; i++) { %>
+                    <option value="<%= difficulties[i] %>"><%= difficulties[i] %></option>
+                  <% } %>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Prep Time (mins)</label>
-                <input class="form-control" type="number" name="prepTime" min="1" step="1" required />
+                <input class="form-control" type="number" name="prepTime" min="1" max="480" step="1" required />
               </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">Servings</label>
-                <input class="form-control" type="number" name="servings" min="1" step="1" required />
+                <input class="form-control" type="number" name="servings" min="1" max="20" step="1" required />
               </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Created Date</label>
-                <input class="form-control" type="date" name="createdDate" />
-              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Created Date</label>
+              <input class="form-control" type="date" name="createdDate" />
             </div>
           </div>
         </div>
@@ -86,7 +92,7 @@
 Rolled Oats | 60 | g
 Milk | 250 | ml
 Whey Protein | 30 | g"></textarea>
-            <div class="form-text">Each line: <code>name | quantity | unit</code></div>
+            <div class="form-text">Each line: <code>name | quantity | unit</code>. Units: pieces, kg, g, liters, ml, cups, tbsp, tsp, dozen.</div>
           </div>
         </div>
 
@@ -107,11 +113,12 @@ Whey Protein | 30 | g"></textarea>
 
       <script>
         (function () {
-          const APP_ID = '31477046';
+          const APP_ID = '<%= appId %>';
 
           const form = document.querySelector('form');
           const recipeIdInput = form.querySelector('input[name="recipeId"]');
           const ingredientsInput = form.querySelector('textarea[name="ingredientsText"]');
+
           function toTrimmed(str) {
             if (typeof str !== 'string') return '';
             return str.trim();
@@ -119,7 +126,6 @@ Whey Protein | 30 | g"></textarea>
 
           function validateIngredients() {
             ingredientsInput.setCustomValidity('');
-
             const text = ingredientsInput.value || '';
             const lines = text.split(/\r?\n/);
             let ok = true;
@@ -127,22 +133,21 @@ Whey Protein | 30 | g"></textarea>
             for (let i = 0; i < lines.length; i++) {
               const line = toTrimmed(lines[i]);
               if (!line) continue;
-
               const parts = line.split('|');
               if (parts.length !== 3) { ok = false; break; }
 
               const name = toTrimmed(parts[0]);
               const qtyStr = toTrimmed(parts[1]);
-              const unit = toTrimmed(parts[2]);
+              const unit = toTrimmed(parts[2]).toLowerCase();
               const qty = Number(qtyStr);
 
               if (!name || !Number.isFinite(qty) || qty <= 0 || !unit) { ok = false; break; }
             }
-        
+
             if (!ok) {
-              ingredientsInput.setCustomValidity('Ingredients must be "name | quantity | unit" with a positive quantity.');
+              ingredientsInput.setCustomValidity('Ingredients must follow the "name | quantity | unit" format.');
             }
-        
+
             return ok;
           }
 
@@ -153,7 +158,7 @@ Whey Protein | 30 | g"></textarea>
             if (!wantId) { cb(false); return; }
 
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/recipes-' + APP_ID, true);
+            xhr.open('GET', '/api/recipes-list-' + APP_ID, true);
             xhr.onreadystatechange = function () {
               if (xhr.readyState === 4) {
                 let isDup = false;
@@ -200,7 +205,6 @@ Whey Protein | 30 | g"></textarea>
                 recipeIdInput.reportValidity();
               }
             });
-        
           });
 
           form.addEventListener('submit', function (e) {
@@ -219,8 +223,8 @@ Whey Protein | 30 | g"></textarea>
                   const firstInvalid = form.querySelector(':invalid');
                   if (firstInvalid) firstInvalid.focus();
                 }
-              }}
-            );
+              }
+            });
           });
         })();
       </script>
