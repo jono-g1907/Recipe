@@ -10,7 +10,10 @@
   </head>
   <body>
     <h1>Invalid data</h1>
-    <p>Something about the request wasn’t valid. Please go back and check the input.</p>
-    <p><a href="/home-31477046">Return to Home</a></p>
+    <p><%= message || 'Something about the request wasn’t valid. Please go back and check the input.' %></p>
+    <p><a href="<%= returnHref %>"><%= returnText %></a></p>
+    <% if (!userId) { %>
+      <p>You may need to log in again to continue.</p>
+    <% } %>
   </body>
 </html>
