@@ -23,10 +23,7 @@
       <h1 class="text-center mb-1">All Recipes</h1>
       <p class="text-center text-muted mb-4">Discover and manage your culinary collection</p>
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <a class="btn btn-primary" href="/add-recipe-<%= appId %>?userId=<%= userId %>">Add New Recipe</a>
-          <a class="btn btn-danger" href="/delete-recipe-<%= appId %>?userId=<%= userId %>">Delete Recipe</a>
-        </div>
+        <a class="btn btn-primary" href="/add-recipe-<%= appId %>?userId=<%= userId %>">Add New Recipe</a>
         <span class="badge bg-secondary"><%= recipes ? recipes.length : 0 %> recipes</span>
       </div>
 
@@ -85,7 +82,16 @@
                 <td><pre><%= ingLines.join('\n') %></pre></td>
                 <td><pre><%= stepLines.join('\n') %></pre></td>
                 <td>
-                  <button class="btn btn-sm btn-danger" onclick="deleteRecipe('<%= r.recipeId %>')">Delete</button>
+                  <form
+                    method="post"
+                    action="/delete-recipe-<%= appId %>"
+                    class="d-inline"
+                    onsubmit="return confirm('Delete recipe <%= r.recipeId %>?');"
+                  >
+                    <input type="hidden" name="recipeId" value="<%= r.recipeId %>" />
+                    <input type="hidden" name="userId" value="<%= userId %>" />
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                  </form>
                 </td>
               </tr>
             <% } %>
@@ -95,24 +101,6 @@
       <% } %>
     </div>
 
-    <script>
-      function deleteRecipe(id) {
-        if (!id) return;
-        if (!confirm('Delete recipe ' + id + '?')) return;
-
-        fetch('/api/recipes/' + encodeURIComponent(id) + '-31477046', {
-          method: 'DELETE'
-        }).then(function (res) {
-          if (res.status === 204) {
-            location.reload();
-          } else {
-            alert('Could not delete (status ' + res.status + ')');
-          }
-        }).catch(function () {
-          alert('Network error while deleting');
-        });
-      }
-    </script>
   </body>
 </html>
 

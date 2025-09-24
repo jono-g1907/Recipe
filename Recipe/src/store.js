@@ -71,7 +71,12 @@ async function createUser(data) {
 
 async function getAllRecipes() {
   await ensureConnection();
-  return Recipe.find().sort({ createdDate: -1 }).lean();
+  return Recipe.find(
+    {},
+    'recipeId userId title mealType cuisineType prepTime difficulty servings chef createdDate ingredients instructions'
+  )
+    .sort({ createdDate: -1, recipeId: 1 })
+    .lean();
 }
 
 async function getRecipeByRecipeId(recipeId) {
