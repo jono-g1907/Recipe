@@ -1,15 +1,21 @@
-// trim a string, return '' for non-strings
+// A grab bag of tiny utilities that reduce repetition elsewhere in the codebase.
+
+// Trim a value if it's a string; otherwise return an empty string. This keeps
+// downstream code from having to check for null or unexpected types.
 function sanitiseString(value) {
-    return typeof value === 'string' ? value.trim() : '';
+  return typeof value === 'string' ? value.trim() : '';
 }
-  
-  // coerce to finite number or NaN
+
+// Convert anything to a number, but only return it if it's finite. Beginners
+// often forget that Number(undefined) is NaN, so this helper keeps that logic
+// in one place.
 function toFiniteNumber(value) {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : NaN;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : NaN;
 }
-  
-// copy of plain objects & arrays
+
+// Create a deep copy of plain objects, arrays, or Date instances so we can make
+// safe modifications without mutating the original input.
 function clone(value) {
   if (value instanceof Date) {
     return new Date(value.getTime());
@@ -28,5 +34,5 @@ function clone(value) {
   }
   return value;
 }
-  
+
 module.exports = { sanitiseString: sanitiseString, toFiniteNumber: toFiniteNumber, clone: clone };

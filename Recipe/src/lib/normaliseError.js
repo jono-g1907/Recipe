@@ -1,6 +1,10 @@
+// Convert various error shapes (from Mongoose and custom logic) into a single
+// ValidationError instance so the rest of the app can display consistent
+// feedback messages.
 const ValidationError = require('../errors/ValidationError');
 
 function normaliseError(err) {
+  // Leave null/undefined alone so callers can handle missing errors gracefully.
   if (!err) return err;
 
   if (err instanceof ValidationError) {
@@ -8,6 +12,8 @@ function normaliseError(err) {
   }
 
   if (err.name === 'ValidationError' && err.errors) {
+    // Mongoose stores individual field errors in an object. Convert them into
+    // a simple array of messages that our views can render easily.
     const messages = [];
     for (const key in err.errors) {
       if (Object.prototype.hasOwnProperty.call(err.errors, key)) {
@@ -18,6 +24,8 @@ function normaliseError(err) {
   }
 
   if (err.code === 11000) {
+    // Error code 11000 indicates a duplicate key violation in MongoDB. Provide
+    // human-friendly messages that tell the user what went wrong.
     const details = [];
     if (err.keyValue) {
       for (const key in err.keyValue) {
@@ -36,6 +44,8 @@ function normaliseError(err) {
     return new ValidationError([err.message]);
   }
 
+  // For anything else, pass the original error through so it can be logged or
+  // handled upstream.
   return err;
 }
 
