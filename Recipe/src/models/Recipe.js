@@ -61,6 +61,12 @@ const recipeSchema = new mongoose.Schema({
       message: 'User Id must exist before creating a recipe.'
     }
   },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
   title: {
     type: String,
     required: true,
@@ -147,6 +153,8 @@ const recipeSchema = new mongoose.Schema({
 });
 
 recipeSchema.index({ userId: 1, title: 1 }, { unique: true });
+recipeSchema.index({ recipeId: 1 });
+recipeSchema.index({ userId: 1 });
 
 recipeSchema.pre('save', function (next) {
   this.updatedAt = new Date();

@@ -4,6 +4,7 @@ const constants = require('../lib/constants');
 const APP_ID = constants.APP_ID;
 const store = require('../store');
 const ValidationError = require('../errors/ValidationError');
+const { userCanAccessRecipes, userCanModifyRecipe, userCanViewRecipe } = require('../lib/permissions');
 
 const CREATE_PATH = '/add-recipe-' + APP_ID;
 const LIST_PATH = '/recipes-list-' + APP_ID;
@@ -15,6 +16,28 @@ const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 const CUISINE_TYPES = ['Italian', 'Asian', 'Mexican', 'American', 'French', 'Indian', 'Mediterranean', 'Other'];
 const DIFFICULTY_OPTIONS = ['Easy', 'Medium', 'Hard'];
 const UNIT_OPTIONS = ['pieces', 'kg', 'g', 'liters', 'ml', 'cups', 'tbsp', 'tsp', 'dozen'];
+
+function getUserIdFromRequest(req) {
+  const queryId = req && req.query && req.query.userId;
+  const bodyId = req && req.body && req.body.userId;
+  const headerId = req && req.headers && req.headers['x-user-id'];
+  const candidate = headerId || queryId || bodyId || '';
+  return candidate ? String(candidate).trim().toUpperCase() : '';
+}
+
+async function resolveApiUser(req) {
+  const userId = getUserIdFromRequest(req);
+  if (!userId) {
+    return { status: 401, message: 'User authentication is required.' };
+  }
+
+  const user = await store.getUserByUserId(userId);
+  if (!user || !user.isLoggedIn) {
+    return { status: 401, message: 'Invalid or expired session. Please log in again.' };
+  }
+
+  return { user: user };
+}
 
 function normaliseError(err) {
   if (!err) return err;
@@ -105,12 +128,23 @@ function coerceRecipePayload(body) {
 // Create a recipe
 router.post(CREATE_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveApiUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
+
+    const activeUser = resolution.user;
+    if (!userCanAccessRecipes(activeUser)) {
+      return res.status(403).json({ error: 'Recipes are restricted to chef accounts.' });
+    }
+
     const payload = coerceRecipePayload(req.body || {});
     if (!payload.createdDate) {
       payload.createdDate = new Date();
     }
-    if (payload.userId && payload.title) {
-      const existingTitle = await store.getRecipeByTitleForUser(payload.userId, payload.title);
+    payload.userId = activeUser.userId;
+    if (payload.title) {
+      const existingTitle = await store.getRecipeByTitleForUser(activeUser.userId, payload.title);
       if (existingTitle) {
         throw new ValidationError(['You already have a recipe with this title.']);
       }
@@ -125,7 +159,24 @@ router.post(CREATE_PATH, async function (req, res, next) {
 // List recipes
 router.get(LIST_PATH, async function (req, res, next) {
   try {
-    const recipes = await store.getAllRecipes();
+    const resolution = await resolveApiUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
+
+    const activeUser = resolution.user;
+    if (!userCanAccessRecipes(activeUser)) {
+      return res.status(403).json({ error: 'Recipes are available to chefs only.' });
+    }
+
+    const scope = typeof req.query.scope === 'string' ? req.query.scope.trim().toLowerCase() : '';
+    let recipes = [];
+    if (scope === 'mine') {
+      recipes = await store.getRecipesByOwner(activeUser.userId, { includeChefInfo: true });
+    } else {
+      recipes = await store.getAllRecipes({ includeChefInfo: true });
+    }
+
     return res.json({ recipes, page: 1, total: recipes.length });
   } catch (err) {
     return next(err);
@@ -135,9 +186,22 @@ router.get(LIST_PATH, async function (req, res, next) {
 // Get single recipe
 router.get(GET_ONE_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveApiUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
+
+    const activeUser = resolution.user;
+    if (!userCanAccessRecipes(activeUser)) {
+      return res.status(403).json({ error: 'Recipes are available to chefs only.' });
+    }
+
     const recipe = await store.getRecipeByRecipeId(req.params.recipeId);
     if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found' });
+    }
+    if (!userCanViewRecipe(activeUser, recipe)) {
+      return res.status(403).json({ error: 'You do not have permission to view this recipe.' });
     }
     return res.json({ recipe });
   } catch (err) {
@@ -148,8 +212,28 @@ router.get(GET_ONE_PATH, async function (req, res, next) {
 // Update recipe (partial)
 router.post(UPDATE_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveApiUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
+
+    const activeUser = resolution.user;
+    if (!userCanAccessRecipes(activeUser)) {
+      return res.status(403).json({ error: 'Recipes are restricted to chef accounts.' });
+    }
+
+    const existing = await store.getRecipeByRecipeId(req.params.recipeId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+
+    if (!userCanModifyRecipe(activeUser, existing)) {
+      return res.status(403).json({ error: 'You can only update recipes that you created.' });
+    }
+
     const patch = coerceRecipePayload(req.body || {});
-    const updated = await store.updateRecipe(req.params.recipeId, patch);
+    patch.userId = activeUser.userId;
+    const updated = await store.updateRecipe(req.params.recipeId, patch, { userId: activeUser.userId });
     if (!updated) {
       return res.status(404).json({ error: 'Recipe not found' });
     }
@@ -162,7 +246,26 @@ router.post(UPDATE_PATH, async function (req, res, next) {
 // Delete recipe
 router.delete(DELETE_PATH, async function (req, res, next) {
   try {
-    const deleted = await store.deleteRecipe(req.params.recipeId);
+    const resolution = await resolveApiUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
+
+    const activeUser = resolution.user;
+    if (!userCanAccessRecipes(activeUser)) {
+      return res.status(403).json({ error: 'Recipes are restricted to chef accounts.' });
+    }
+
+    const existing = await store.getRecipeByRecipeId(req.params.recipeId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+
+    if (!userCanModifyRecipe(activeUser, existing)) {
+      return res.status(403).json({ error: 'You can only delete recipes that you created.' });
+    }
+
+    const deleted = await store.deleteRecipe(req.params.recipeId, { userId: activeUser.userId });
     if (!deleted) {
       return res.status(404).json({ error: 'Recipe not found' });
     }

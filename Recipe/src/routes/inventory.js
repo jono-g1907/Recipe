@@ -5,6 +5,7 @@ const APP_ID = constants.APP_ID;
 const store = require('../store');
 const ValidationError = require('../errors/ValidationError');
 const navigation = require('../lib/navigation');
+const { userCanAccessInventory } = require('../lib/permissions');
 
 const CREATE_PATH = '/add-inventory-' + APP_ID;
 const LIST_PATH = '/inventory-dashboard-' + APP_ID;
@@ -18,6 +19,32 @@ const VALUE_PATH = '/inventory/value-' + APP_ID;
 const CATEGORY_OPTIONS = ['Vegetables', 'Fruits', 'Meat', 'Dairy', 'Grains', 'Spices', 'Beverages', 'Frozen', 'Canned', 'Other'];
 const LOCATION_OPTIONS = ['Fridge', 'Freezer', 'Pantry', 'Counter', 'Cupboard'];
 const UNIT_OPTIONS = ['pieces', 'kg', 'g', 'liters', 'ml', 'cups', 'tbsp', 'tsp', 'dozen'];
+
+function getUserIdFromRequest(req) {
+  const queryId = req && req.query && req.query.userId;
+  const bodyId = req && req.body && req.body.userId;
+  const headerId = req && req.headers && req.headers['x-user-id'];
+  const candidate = headerId || queryId || bodyId || '';
+  return candidate ? String(candidate).trim().toUpperCase() : '';
+}
+
+async function resolveInventoryUser(req) {
+  const userId = getUserIdFromRequest(req);
+  if (!userId) {
+    return { status: 401, message: 'User authentication is required.' };
+  }
+
+  const user = await store.getUserByUserId(userId);
+  if (!user || !user.isLoggedIn) {
+    return { status: 401, message: 'Invalid or expired session. Please log in again.' };
+  }
+
+  if (!userCanAccessInventory(user)) {
+    return { status: 403, message: 'Inventory is restricted to authorised staff.' };
+  }
+
+  return { user: user };
+}
 
 function clientWantsHtml(req) {
   const a = req.headers && (req.headers['accept'] || '');
@@ -245,10 +272,17 @@ function formatInventoryForResponse(item) {
 
 router.post(CREATE_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveInventoryUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
+
+    const activeUser = resolution.user;
     const payload = coerceInventoryPayload(req.body || {});
     if (!payload.createdDate) {
       payload.createdDate = new Date();
     }
+    payload.userId = activeUser.userId;
     const item = await store.createInventoryItem(payload);
     return res.status(201).json({ item: formatInventoryForResponse(item) });
   } catch (err) {
@@ -258,6 +292,10 @@ router.post(CREATE_PATH, async function (req, res, next) {
 
 router.get(LIST_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveInventoryUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
     const filters = parseListQuery(req.query);
     const result = await store.listInventory(filters);
     const items = result.items.map(formatInventoryForResponse);
@@ -269,6 +307,10 @@ router.get(LIST_PATH, async function (req, res, next) {
 
 router.get(GET_ONE_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveInventoryUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
     const item = await store.getInventoryItemById(req.params.inventoryId);
     if (!item) {
       return res.status(404).json({ error: 'Inventory item not found' });
@@ -281,6 +323,10 @@ router.get(GET_ONE_PATH, async function (req, res, next) {
 
 router.get(EXPIRING_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveInventoryUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
     const byDate = parseDate(req.query && req.query.by);
     if (!byDate) {
       throw new ValidationError(['Query parameter "by" must be a valid ISO date (YYYY-MM-DD).']);
@@ -311,6 +357,10 @@ router.get(EXPIRING_PATH, async function (req, res, next) {
 
 router.get(LOW_STOCK_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveInventoryUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
     const threshold = parseNumber(req.query && req.query.threshold);
     if (threshold === null) {
       throw new ValidationError(['Query parameter "threshold" must be a number.']);
@@ -339,6 +389,10 @@ router.get(LOW_STOCK_PATH, async function (req, res, next) {
 
 router.get(VALUE_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveInventoryUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
     const query = req.query || {};
     const rawGroup = typeof query.groupBy === 'string'
       ? query.groupBy.trim().toLowerCase()
@@ -376,6 +430,10 @@ router.get(VALUE_PATH, async function (req, res, next) {
 
 router.post(UPDATE_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveInventoryUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
     const body = req.body || {};
     if (body.diff !== undefined || body.set !== undefined) {
       if (body.diff !== undefined && body.set !== undefined) {
@@ -402,6 +460,7 @@ router.post(UPDATE_PATH, async function (req, res, next) {
     }
 
     const patch = coerceInventoryPayload(body);
+    delete patch.userId;
     const updated = await store.updateInventoryItem(req.params.inventoryId, patch);
     if (!updated) {
       return res.status(404).json({ error: 'Inventory item not found' });
@@ -427,6 +486,10 @@ router.post(UPDATE_PATH, async function (req, res, next) {
 
 router.delete(DELETE_PATH, async function (req, res, next) {
   try {
+    const resolution = await resolveInventoryUser(req);
+    if (!resolution.user) {
+      return res.status(resolution.status || 401).json({ error: resolution.message });
+    }
     const result = await store.deleteInventoryItem(req.params.inventoryId);
     if (!result || result.deletedCount === 0) {
       return res.status(404).json({ error: 'Inventory item not found' });
