@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Analytics-heavy dashboard showing personalised recipe suggestions. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="/pages.css" />
   </head>
   <body class="hd-task-page">
+    <!-- Primary navigation mirrors the main application shell for consistency. -->
     <nav class="navbar navbar-expand-lg bg-primary navbar-dark">
       <div class="container-fluid">
         <a class="navbar-brand" href="/home-<%= appId %>?userId=<%= userId %>">Recipe Hub</a>
@@ -101,6 +103,7 @@
           </ul>
         </div>
         <div class="d-flex align-items-center text-white">
+          <!-- Quick summary of who is logged in and a logout button. -->
           <div class="me-3 text-end">
             <div>Welcome, <%= username %></div>
             <small class="d-block">Email: <%= email %></small>
@@ -122,11 +125,13 @@
         </p>
       </div>
 
+      <!-- Hero cards summarising the latest recipes and personalised matches. -->
       <div class="row g-4 mb-4">
         <div class="col-lg-8">
           <div class="card shadow-sm h-100">
             <div class="card-header bg-success text-white">Latest Recipes</div>
             <div class="card-body">
+              <!-- Loop through the newest recipes to surface freshness and cookability. -->
               <% if (latestRecipes && latestRecipes.length) { %>
                 <% latestRecipes.forEach(function (recipe, index) { %>
                   <div class="pb-3 mb-3 <%= index === latestRecipes.length - 1 ? '' : 'border-bottom' %>">
@@ -159,6 +164,7 @@
             <div class="card-header bg-primary text-white">Smart Matches</div>
             <div class="card-body">
               <p class="small text-muted">Highest cookability scores using your current inventory.</p>
+              <!-- Show recommended recipes ranked by cookability. -->
               <% if (recommendations && recommendations.length) { %>
                 <% recommendations.forEach(function (recipe) { %>
                   <div class="border rounded-3 p-3 mb-3 hd-recommendation">
@@ -185,6 +191,7 @@
       <div class="card shadow-sm mb-4">
         <div class="card-header bg-warning">Items Expiring Soon (Use in Recipes)</div>
         <div class="card-body">
+          <!-- Encourage the user to consume ingredients before they spoil. -->
           <% if (expiringSoon && expiringSoon.length) { %>
             <div class="row g-3">
               <% expiringSoon.forEach(function (item) { %>
@@ -204,6 +211,7 @@
         </div>
       </div>
 
+      <!-- Additional insights for inventory and recipe optimisation. -->
       <div class="row g-4 mb-4">
         <div class="col-lg-6">
           <div class="card shadow-sm h-100">
@@ -231,6 +239,7 @@
       <div class="card shadow-sm mb-5">
         <div class="card-header bg-success text-white">Recipe Popularity Analysis (MongoDB Aggregation)</div>
         <div class="card-body">
+          <!-- Aggregated MongoDB stats highlight macro trends. -->
           <% if (popularity && popularity.length) { %>
             <div class="row g-3">
               <% popularity.forEach(function (stat) { %>
@@ -255,3 +264,4 @@
     <script src="/bootstrap.bundle.min.js"></script>
   </body>
 </html>
+

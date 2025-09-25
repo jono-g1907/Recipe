@@ -1,6 +1,10 @@
+// Error type used when user input fails validation (e.g. missing fields).
 const ValidationError = require('../../errors/ValidationError');
+// Convert any thrown error into something we can safely display to the user.
 const normaliseError = require('../../lib/normaliseError');
+// Helpers that centralise login checks so each route stays tidy.
 const { buildLoginRedirectUrl, resolveActiveUser } = require('../../lib/auth');
+// Shared form helpers for parsing, validating, and presenting recipe data.
 const {
   getEmptyRecipeFormValues,
   buildRecipeFormValuesFromBody,
@@ -9,6 +13,7 @@ const {
   parseRecipeForm,
   mapRecipeForView
 } = require('../../forms/recipeForm');
+// Validation constants ensure consistency between the server and the front end.
 const {
   MEAL_TYPE_OPTIONS,
   CUISINE_TYPE_OPTIONS,
@@ -16,9 +21,11 @@ const {
   RECIPE_ID_REGEX,
   RECIPE_TITLE_REGEX
 } = require('../../lib/validationConstants');
+// Sanitize anything that will be echoed back into an HTML template.
 const { sanitiseString } = require('../../lib/utils');
 
 function renderRecipeForm(res, user, values, errorMessage, status, appId) {
+  // Use safe defaults so the template can assume every field exists.
   const safeValues = values || getEmptyRecipeFormValues();
   const statusCode = status || 200;
   return res.status(statusCode).render('add-recipe-31477046.html', {
@@ -34,6 +41,7 @@ function renderRecipeForm(res, user, values, errorMessage, status, appId) {
 }
 
 function renderRecipeEditForm(res, user, recipes, selectedId, values, errorMessage, successMessage, status, appId) {
+  // The edit form needs a list of recipes for the dropdown plus any status messages.
   const safeValues = values || getEmptyRecipeFormValues();
   const statusCode = status || 200;
   return res.status(statusCode).render('edit-recipe-31477046.html', {
@@ -52,17 +60,21 @@ function renderRecipeEditForm(res, user, recipes, selectedId, values, errorMessa
 }
 
 function registerRecipeRoutes(app, dependencies) {
+  // Access to the shared store and app ID is provided through dependency injection.
   const store = dependencies.store;
   const appId = dependencies.appId;
 
   function renderAddForm(res, user, values, errorMessage, status) {
+    // Wrap the helper so we do not forget to pass the correct appId.
     return renderRecipeForm(res, user, values, errorMessage, status, appId);
   }
 
   function renderEditForm(res, user, recipes, selectedId, values, errorMessage, successMessage, status) {
+    // Same idea as above but for the edit variant of the form.
     return renderRecipeEditForm(res, user, recipes, selectedId, values, errorMessage, successMessage, status, appId);
   }
 
+  // Show the "add recipe" page. Only chefs are allowed to access it.
   app.get('/add-recipe-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
@@ -77,6 +89,7 @@ function registerRecipeRoutes(app, dependencies) {
     }
   });
 
+  // Show the "edit recipe" page, optionally pre-selecting a recipe by id.
   app.get('/edit-recipe-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
@@ -87,6 +100,7 @@ function registerRecipeRoutes(app, dependencies) {
       const user = result.user;
       const myRecipes = await store.getRecipesByOwner(user.userId);
 
+      // If the user passed a recipeId query parameter try to match it.
       const queryId = sanitiseString(req.query && req.query.recipeId);
       const requestedId = queryId ? queryId.toUpperCase() : '';
       let selectedRecipe = null;
@@ -108,6 +122,7 @@ function registerRecipeRoutes(app, dependencies) {
         selectedRecipe = myRecipes[0];
       }
 
+      // Fill the form with whichever recipe we ended up selecting.
       const values = selectedRecipe ? buildRecipeFormValuesFromRecipe(selectedRecipe) : getEmptyRecipeFormValues();
       const successMessage = sanitiseString(req.query && req.query.success) || '';
       const selectedId = selectedRecipe ? selectedRecipe.recipeId : '';
@@ -118,6 +133,7 @@ function registerRecipeRoutes(app, dependencies) {
     }
   });
 
+  // Table-style list of all recipes with optional success/failure messages.
   app.get('/recipes-list-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
@@ -133,6 +149,7 @@ function registerRecipeRoutes(app, dependencies) {
       const updatedId = sanitiseString(req.query && req.query.updated);
       const updatedTitle = sanitiseString(req.query && req.query.updatedTitle);
       const notices = [];
+      // Build a simple message string summarising any actions that just occurred.
       if (updatedId) {
         let text = 'Updated recipe ' + updatedId;
         if (updatedTitle) {
@@ -159,6 +176,7 @@ function registerRecipeRoutes(app, dependencies) {
     }
   });
 
+  // Confirmation form before deleting a recipe.
   app.get('/delete-recipe-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
@@ -180,6 +198,7 @@ function registerRecipeRoutes(app, dependencies) {
     }
   });
 
+  // Accepts the delete form submission and removes the recipe.
   app.post('/delete-recipe-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
@@ -196,6 +215,7 @@ function registerRecipeRoutes(app, dependencies) {
       const rawId = sanitiseString(req.body && req.body.recipeId);
       const id = rawId ? rawId.toUpperCase() : '';
       if (!id) {
+        // We need the recipe id to know what to delete.
         return res.render('delete-recipe-31477046.html', {
           error: 'recipeId is required',
           lastId: '',
@@ -213,6 +233,7 @@ function registerRecipeRoutes(app, dependencies) {
         });
       }
       const params = [];
+      // Preserve info about the deleted record so the list page can display a notice.
       params.push('userId=' + encodeURIComponent(activeUser.userId));
       params.push('deleted=' + encodeURIComponent(deletedRecipe.recipeId));
       if (deletedRecipe.title) {
@@ -244,6 +265,7 @@ function registerRecipeRoutes(app, dependencies) {
       payload.recipeId = payload.recipeId ? payload.recipeId.toUpperCase() : '';
 
       if (!payload.recipeId) {
+        // The user must pick a recipe from the dropdown before saving.
         return renderEditForm(res, activeUser, recipeOptions, '', formValues, 'Select a recipe to update.', '', 400);
       }
 
@@ -255,6 +277,7 @@ function registerRecipeRoutes(app, dependencies) {
       const validationErrors = collectRecipeErrors(payload);
 
       if (payload.title && RECIPE_TITLE_REGEX.test(payload.title)) {
+        // Prevent users from creating two recipes with the same title under their account.
         const duplicateTitle = await store.getRecipeByTitleForUser(payload.userId, payload.title);
         if (duplicateTitle && duplicateTitle.recipeId !== existingRecipe.recipeId) {
           validationErrors.push('You already have a recipe with this title.');
@@ -266,6 +289,7 @@ function registerRecipeRoutes(app, dependencies) {
       }
 
       const patch = {
+        // Only include the fields the user is allowed to change.
         title: payload.title,
         chef: payload.chef,
         mealType: payload.mealType,
@@ -302,12 +326,14 @@ function registerRecipeRoutes(app, dependencies) {
         }
         const message = normalised.errors && normalised.errors.length ? normalised.errors.join(' ') : 'Unable to update recipe.';
         const selectedId = formValues && formValues.recipeId ? formValues.recipeId : '';
+        // Re-render with the validation messages and preserve the user's inputs.
         return renderEditForm(res, activeUser, recipeOptions, selectedId, formValues, message, '', 400);
       }
       next(normalised);
     }
   });
 
+  // Create a brand new recipe from the form submission.
   app.post('/add-recipe-' + appId, async function (req, res, next) {
     let activeUser = null;
     let formValues = null;
@@ -327,6 +353,7 @@ function registerRecipeRoutes(app, dependencies) {
       const duplicateErrors = [];
 
       if (payload.recipeId && RECIPE_ID_REGEX.test(payload.recipeId)) {
+        // Check if the ID is already taken before we try to insert it.
         const existingId = await store.getRecipeByRecipeId(payload.recipeId);
         if (existingId) {
           duplicateErrors.push('Recipe ID already exists. Use a different ID.');
@@ -334,6 +361,7 @@ function registerRecipeRoutes(app, dependencies) {
       }
 
       if (payload.userId && payload.title && RECIPE_TITLE_REGEX.test(payload.title)) {
+        // Also avoid duplicate recipe titles owned by the same user.
         const existingTitle = await store.getRecipeByTitleForUser(payload.userId, payload.title);
         if (existingTitle) {
           duplicateErrors.push('You already have a recipe with this title.');
@@ -342,9 +370,11 @@ function registerRecipeRoutes(app, dependencies) {
 
       const errors = validationErrors.concat(duplicateErrors);
       if (errors.length) {
+        // Show the form again with the combined error messages.
         return renderAddForm(res, activeUser, formValues, errors.join(' '), 400);
       }
 
+      // Save the recipe then send the user back to the list page.
       await store.createRecipe(payload);
       const redirectUserId = activeUser.userId;
       const params = [];
@@ -360,6 +390,7 @@ function registerRecipeRoutes(app, dependencies) {
           formValues = buildRecipeFormValuesFromBody(req.body || {});
         }
         const message = normalised.errors && normalised.errors.length ? normalised.errors.join(' ') : 'Unable to add recipe.';
+        // Keep the user's inputs so they do not have to retype everything after a validation issue.
         return renderAddForm(res, activeUser, formValues, message, 400);
       }
       next(normalised);

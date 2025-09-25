@@ -1,12 +1,16 @@
 <!doctype html>
+<!-- HTML template rendered with EJS to add a new inventory item. -->
 <html lang="en" data-bs-theme="auto">
   <head>
+    <!-- Character encoding and page title help the browser render correctly. -->
     <meta charset="utf-8" />
     <title>Add Inventory Item</title>
+    <!-- Bootstrap provides quick form styling. -->
     <link rel="stylesheet" href="/bootstrap.min.css" />
   </head>
   <body>
     <div class="container py-4">
+      <!-- Quick navigation back to the dashboard for convenience. -->
       <div class="mb-3">
         <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
@@ -16,8 +20,10 @@
         Share your pantry additions with detailed information
       </p>
 
+      <!-- The main form posts to the server to create the inventory entry. -->
       <form action="/add-inventory-<%= appId %>" method="POST">
 
+        <!-- Card 1: capture the key identifiers for the new inventory item. -->
         <div class="card mb-4">
           <div class="card-header">Basic Information</div>
           <div class="card-body">
@@ -29,6 +35,7 @@
               </div>
               <div class="col-md-4 mb-3">
                 <label class="form-label">User ID</label>
+                <!-- Show the ID on screen but keep the real value in a hidden field. -->
                 <div class="form-control-plaintext fw-semibold"><%= defaultUserId %></div>
                 <input type="hidden" name="userId" value="<%= defaultUserId %>" />
               </div>
@@ -40,6 +47,7 @@
           </div>
         </div>
 
+        <!-- Card 2: core quantitative details about the inventory item. -->
         <div class="card mb-4">
           <div class="card-header">Item Details</div>
           <div class="card-body">
@@ -52,6 +60,7 @@
                 <label class="form-label">Unit</label>
                 <select class="form-select" name="unit" required>
                   <option value="">-- choose --</option>
+                  <!-- Loop through the units array provided by the server to populate options. -->
                   <% for (let i = 0; i < units.length; i++) { %>
                     <option value="<%= units[i] %>"><%= units[i] %></option>
                   <% } %>
@@ -61,6 +70,7 @@
                 <label class="form-label">Category</label>
                 <select class="form-select" name="category" required>
                   <option value="">-- choose --</option>
+                  <!-- categories is another EJS array that comes from the route handler. -->
                   <% for (let i = 0; i < categories.length; i++) { %>
                     <option value="<%= categories[i] %>"><%= categories[i] %></option>
                   <% } %>
@@ -74,6 +84,7 @@
           </div>
         </div>
 
+        <!-- Card 3: track the important dates for this ingredient. -->
         <div class="card mb-4">
           <div class="card-header">Dates</div>
           <div class="card-body">
@@ -94,11 +105,13 @@
           </div>
         </div>
 
+        <!-- Card 4: the storage location ties into inventory filtering elsewhere. -->
         <div class="card mb-4">
           <div class="card-header">Location</div>
           <div class="card-body">
             <select class="form-select" name="location" required>
               <option value="">-- choose --</option>
+              <!-- Populate the select element with all available locations. -->
               <% for (let i = 0; i < locations.length; i++) { %>
                 <option value="<%= locations[i] %>"><%= locations[i] %></option>
               <% } %>
@@ -107,6 +120,7 @@
           </div>
         </div>
 
+        <!-- Final call-to-action buttons for navigation and submission. -->
         <div class="d-flex justify-content-between">
           <a class="btn btn-outline-secondary" href="/inventory-dashboard-<%= appId %>?userId=<%= userId %>">View Inventory</a>
           <button class="btn btn-primary" type="submit">Add Item</button>
@@ -114,8 +128,10 @@
       </form>
       <script>
         (function () {
+          // Store the app ID locally so we can re-use it in AJAX calls.
           const APP_ID = '<%= appId %>';
 
+          // Cache commonly-used form elements once instead of querying repeatedly.
           const form = document.querySelector('form');
           if (!form) return;
 
@@ -125,6 +141,7 @@
           const purchaseDateInput = form.querySelector('input[name="purchaseDate"]');
           const expirationDateInput = form.querySelector('input[name="expirationDate"]');
 
+          // Hit the inventory API to make sure the ID has not been taken yet.
           function checkDuplicate(cb) {
             idInput.setCustomValidity('');
             const want = (idInput.value || '').trim();
@@ -153,6 +170,7 @@
             try { xhr.send(); } catch (e) { cb(false); }
           }
 
+          // Guard against invalid numeric inputs and date ranges.
           function validateNumbers() {
             qtyInput.setCustomValidity('');
             costInput.setCustomValidity('');

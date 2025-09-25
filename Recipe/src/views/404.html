@@ -1,18 +1,26 @@
 <!doctype html>
+<!-- The doctype tells the browser to use the modern HTML5 standard. -->
 <html lang="en">
   <head>
+    <!-- Basic metadata so the browser knows how to interpret characters. -->
     <meta charset="utf-8" />
     <title>404 - Page Not Found</title>
+    <!-- Pull in the shared page styles for consistent formatting. -->
     <link rel="stylesheet" href="/pages.css" />
   </head>
+  <!-- message-page gives this error view the neutral background defined in pages.css. -->
   <body class="message-page">
     <h1>404 Page not found</h1>
+    <!-- If we know which path failed, show it so the user can double-check the URL. -->
     <% if (requestedPath) { %>
       <p>The page <code><%= requestedPath %></code> could not be found.</p>
     <% } else { %>
+      <!-- Otherwise fall back to a more generic message. -->
       <p>The page you requested could not be found.</p>
     <% } %>
+    <!-- Offer a helpful link back to the user's previous location. -->
     <p><a href="<%= returnHref %>"><%= returnText %></a></p>
+    <!-- If there is no user ID we suspect their session expired, so hint at logging in again. -->
     <% if (!userId) { %>
       <p>You may need to log in again to access your dashboard.</p>
     <% } %>

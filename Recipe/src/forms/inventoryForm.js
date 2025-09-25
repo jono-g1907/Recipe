@@ -1,3 +1,4 @@
+// Reuse helper functions so every form treats text and dates the same way
 const { sanitiseString } = require('../lib/utils');
 const {
   INVENTORY_ID_REGEX,
@@ -9,7 +10,10 @@ const {
 } = require('../lib/validationConstants');
 const { toIsoDate } = require('../lib/date');
 
-// Default values used to reset the inventory form when no data is provided.
+
+// A template object that represents a completely blank inventory form.
+// We copy this whenever we need to render an empty form so we do not mutate
+// the original object by accident.
 const EMPTY_INVENTORY_FORM_VALUES = {
   inventoryId: '',
   userId: '',
@@ -24,21 +28,32 @@ const EMPTY_INVENTORY_FORM_VALUES = {
   createdDate: ''
 };
 
-// Returns a fresh copy of the empty inventory form object so callers don't mutate the template.
+// Returns a cloned copy of the blank form so each caller gets an independent
+// object. This prevents one caller from accidentally changing the defaults
+// for everyone else.
 function getEmptyInventoryFormValues() {
   return Object.assign({}, EMPTY_INVENTORY_FORM_VALUES);
 }
 
-// Converts raw request body data into a normalised inventory item with correctly typed fields.
+// Convert the raw HTTP request body into a normalised inventory object.
+// Every field is trimmed, converted to the right data type and given a
+// sensible default so downstream code can rely on it.
 function parseInventoryForm(body) {
   const item = {};
   item.inventoryId = (body.inventoryId || '').trim();
+
+  // Clean user input to avoid leading/trailing whitespace and enforce the
+  // uppercase convention used throughout the application.
   const userIdInput = sanitiseString(body && body.userId);
   item.userId = userIdInput ? userIdInput.toUpperCase() : '';
+
   item.ingredientName = (body.ingredientName || '').trim();
   item.quantity = Number(body.quantity);
   item.unit = (body.unit || '').trim().toLowerCase();
   item.category = (body.category || '').trim();
+
+  // Dates are stored as actual Date objects so later validation can compare
+  // them using getTime rather than working with strings.
   item.purchaseDate = body.purchaseDate ? new Date(body.purchaseDate) : new Date();
   item.expirationDate = body.expirationDate ? new Date(body.expirationDate) : new Date();
   item.location = (body.location || '').trim();
@@ -47,7 +62,9 @@ function parseInventoryForm(body) {
   return item;
 }
 
-// Validates a normalised inventory item and returns any validation messages to show the user.
+// Validate a parsed inventory item and return a list of friendly error
+// messages. Returning an array makes it easy for callers to display every
+// problem to the user at once.
 function collectInventoryErrors(item) {
   const errors = [];
   if (!item) {
@@ -55,6 +72,10 @@ function collectInventoryErrors(item) {
     return errors;
   }
 
+  // Each validation block follows the same pattern:
+  // 1. Clean up the input.
+  // 2. Check it exists.
+  // 3. Validate the format or value range.
   const inventoryId = sanitiseString(item.inventoryId).toUpperCase();
   if (!inventoryId) {
     errors.push('Inventory ID is required.');
@@ -102,6 +123,8 @@ function collectInventoryErrors(item) {
   } else if (cost < 0.01 || cost > 999.99) {
     errors.push('Cost must be between 0.01 and 999.99.');
   } else {
+    // Ensures we do not accept values like 9.999 which the UI cannot display
+    // correctly when rounded to two decimal places.
     const cents = Math.round(cost * 100);
     // Guard against floating point rounding problems when checking for two decimal places.
     if (Math.abs(cost * 100 - cents) > 1e-6) {
@@ -136,7 +159,9 @@ function collectInventoryErrors(item) {
   return errors;
 }
 
-// Takes an inventory record and builds the values to show when re-rendering the form.
+// Prepare an inventory item for display in a form. This function ensures
+// every field is a string or number that the template can render without
+// additional checks.
 function buildInventoryFormValuesFromItem(item) {
   const values = getEmptyInventoryFormValues();
   if (!item) {
@@ -162,6 +187,8 @@ function buildInventoryFormValuesFromItem(item) {
     values.cost = '';
   }
 
+  // Convert Date objects back into the YYYY-MM-DD format expected by
+  // `<input type="date">` fields in the browser.
   values.purchaseDate = toIsoDate(item.purchaseDate);
   values.expirationDate = toIsoDate(item.expirationDate);
   values.createdDate = toIsoDate(item.createdDate);

@@ -1,8 +1,14 @@
+// Recipe store functions wrap CRUD operations with validation and normalisation
+// so our routes can stay simple and focused on HTTP concerns.
 const Recipe = require('../models/Recipe');
 const ValidationError = require('../errors/ValidationError');
 const { ensureConnection, normaliseUserId } = require('./base');
 const { findUserDocumentByUserId } = require('./users');
 
+/**
+ * Fetch every recipe (optionally filtered by owner) with lean objects that are
+ * safe to send to the client.
+ */
 async function getAllRecipes(options) {
   await ensureConnection();
   const opts = options || {};
@@ -12,6 +18,8 @@ async function getAllRecipes(options) {
     query.userId = opts.ownerId;
   }
 
+  // Only request the fields we actually show in the UI to keep the response
+  // lean and avoid leaking private data.
   const projection = 'recipeId userId title mealType cuisineType prepTime difficulty servings chef createdDate ingredients instructions';
   let finder = Recipe.find(query, projection).sort({ createdDate: -1, recipeId: 1 });
 
@@ -26,11 +34,18 @@ async function getAllRecipes(options) {
   return finder.lean();
 }
 
+/**
+ * Look up a recipe via its public id (e.g. `R-1001`).
+ */
 async function getRecipeByRecipeId(recipeId) {
   await ensureConnection();
   return Recipe.findOne({ recipeId }).lean();
 }
 
+/**
+ * Prevent duplicate recipes by checking whether a chef already has a recipe
+ * with the same title.
+ */
 async function getRecipeByTitleForUser(userId, title) {
   await ensureConnection();
   const normalisedUserId = (userId || '').trim().toUpperCase();
@@ -41,6 +56,10 @@ async function getRecipeByTitleForUser(userId, title) {
   return Recipe.findOne({ userId: normalisedUserId, title: normalisedTitle }).lean();
 }
 
+/**
+ * Thin wrapper that normalises the owner id before delegating to
+ * `getAllRecipes`.
+ */
 async function getRecipesByOwner(userId, options) {
   const opts = options || {};
   const ownerId = normaliseUserId(userId);
@@ -50,9 +69,14 @@ async function getRecipesByOwner(userId, options) {
   return getAllRecipes({ ownerId: ownerId, limit: opts.limit, includeChefInfo: opts.includeChefInfo });
 }
 
+/**
+ * Create a brand new recipe, linking it to an existing chef account. Throws if
+ * the provided user cannot be found.
+ */
 async function createRecipe(data) {
   await ensureConnection();
   const payload = Object.assign({}, data || {});
+  // Recipes must be linked to a valid chef so we look them up by id.
   const ownerDoc = await findUserDocumentByUserId(payload.userId);
 
   if (!ownerDoc) {
@@ -71,6 +95,10 @@ async function createRecipe(data) {
   return saved.toObject();
 }
 
+/**
+ * Apply a partial update to a recipe. We ensure the requesting user owns the
+ * recipe (when a user id is provided) and keep the owner relationship valid.
+ */
 async function updateRecipe(recipeId, patch, options) {
   await ensureConnection();
 
@@ -79,6 +107,7 @@ async function updateRecipe(recipeId, patch, options) {
     return null;
   }
 
+  // Grab the current document so we can validate ownership and merge data.
   const existing = await Recipe.findOne({ recipeId: normalisedId }).lean();
   if (!existing) {
     return null;
@@ -115,6 +144,10 @@ async function updateRecipe(recipeId, patch, options) {
   return Recipe.findOneAndUpdate({ recipeId: normalisedId }, update, { new: true, runValidators: true }).lean();
 }
 
+/**
+ * Delete a recipe by id. If a user id is provided we only delete when the
+ * caller owns the record.
+ */
 async function deleteRecipe(recipeId, options) {
   await ensureConnection();
 
@@ -126,6 +159,7 @@ async function deleteRecipe(recipeId, options) {
   const opts = options || {};
   const editorId = normaliseUserId(opts.userId);
 
+  // Only delete this exact recipe; when a user id is supplied we add it below.
   const query = { recipeId: normalisedId };
   if (editorId) {
     query.userId = editorId;
