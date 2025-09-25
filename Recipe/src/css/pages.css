@@ -9,6 +9,40 @@ body.dashboard-page {
   background-color: #f5f6f8;
 }
 
+.hd-task-page {
+  margin: 0;
+  background-color: #f4f7fb;
+}
+
+.hd-task-page .card {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 0.5rem 1.25rem rgba(18, 38, 63, 0.08);
+}
+
+.hd-task-page .card-header {
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+
+.hd-task-page .hd-score-badge {
+  font-size: 0.85rem;
+}
+
+.hd-task-page .hd-recommendation {
+  background-color: #f5f8ff;
+}
+
+.hd-task-page .hd-recommendation:last-child {
+  margin-bottom: 0;
+}
+
+.hd-task-page .hd-suggestion:last-child {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
 .dashboard-page .navbar .dropdown-toggle::after {
   margin-left: 0.35rem;
 }

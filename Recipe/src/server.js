@@ -152,6 +152,32 @@ app.get('/home-' + APP_ID, async function (req, res, next) {
   }
 });
 
+app.get('/hd-task1-' + APP_ID, async function (req, res, next) {
+  try {
+    const result = await resolveActiveUser(req, store);
+    if (!result.user) {
+      return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
+    }
+
+    const user = result.user;
+    const insights = await store.getSmartRecipeDashboardData({ userId: user.userId });
+
+    res.render('hd-task1-31477046.html', {
+      appId: APP_ID,
+      userId: user.userId,
+      username: user.fullname,
+      email: sanitiseString(user.email),
+      recommendations: (insights && insights.recommendations) || [],
+      latestRecipes: (insights && insights.latestRecipes) || [],
+      expiringSoon: (insights && insights.expiringSoon) || [],
+      lowStock: (insights && insights.lowStock) || [],
+      popularity: (insights && insights.popularity) || []
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get('/register-' + APP_ID, function (req, res) {
   const values = { email: '', fullname: '', role: 'chef', phone: '' };
   res.render('register-31477046.html', {
