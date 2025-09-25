@@ -1,0 +1,85 @@
+/* Shared utility classes */
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Dashboard page */
+body.dashboard-page {
+  margin: 0;
+  background-color: #f5f6f8;
+}
+
+.dashboard-page .navbar .dropdown-toggle::after {
+  margin-left: 0.35rem;
+}
+
+.dashboard-page .quick-actions .card {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(18, 38, 63, 0.08);
+}
+
+.dashboard-page .quick-actions .card-title {
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.dashboard-page .quick-actions .card-text {
+  color: #6c757d;
+}
+
+/* Inventory dashboard */
+body.inventory-dashboard-page {
+  padding: 2rem;
+}
+
+.inventory-dashboard-page .status-badge {
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  font-size: 12px;
+}
+
+.inventory-dashboard-page .status-expired {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.inventory-dashboard-page .status-soon {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.inventory-dashboard-page .status-ok {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.inventory-dashboard-page .status-unknown {
+  background: #e2e3e5;
+  color: #41464b;
+}
+
+/* Recipes list */
+body.recipes-list-page {
+  padding: 2rem;
+}
+
+.recipes-list-page table {
+  font-size: 14px;
+}
+
+.recipes-list-page td pre {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Full-page message layouts (404, invalid, etc.) */
+body.message-page {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  text-align: center;
+  padding: 10vh 2rem;
+}
+
+.message-page a {
+  text-decoration: none;
+}

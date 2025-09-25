@@ -3,12 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <title>404 - Page Not Found</title>
-    <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; text-align:center; padding: 10vh 2rem; }
-      a { text-decoration: none; }
-    </style>
+    <link rel="stylesheet" href="/pages.css" />
   </head>
-  <body>
+  <body class="message-page">
     <h1>404 Page not found</h1>
     <% if (requestedPath) { %>
       <p>The page <code><%= requestedPath %></code> could not be found.</p>

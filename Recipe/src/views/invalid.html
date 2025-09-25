@@ -3,12 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <title>Invalid Data</title>
-    <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; text-align:center; padding: 10vh 2rem; }
-      a { text-decoration: none; }
-    </style>
+    <link rel="stylesheet" href="/pages.css" />
   </head>
-  <body>
+  <body class="message-page">
     <h1>Invalid data</h1>
     <p><%= message || 'Something about the request wasn’t valid. Please go back and check the input.' %></p>
     <p><a href="<%= returnHref %>"><%= returnText %></a></p>
