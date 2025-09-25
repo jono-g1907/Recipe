@@ -52,10 +52,12 @@ function isAustralianPhoneNumber(value) {
     if (cleaned.indexOf('+61') !== 0) {
       return false;
     }
+    // After removing the +61 prefix, Australian numbers should be 9 digits starting with the listed ranges.
     const rest = cleaned.slice(3);
     return rest.length === 9 && /^[2-478]\d{8}$/.test(rest);
   }
   if (cleaned.indexOf('0') === 0) {
+    // Local format must start with 0 and have 10 digits total to pass this regex.
     return cleaned.length === 10 && /^[2-478]\d{9}$/.test(cleaned);
   }
   return false;

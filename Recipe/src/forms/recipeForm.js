@@ -95,7 +95,7 @@ function buildRecipeFormValuesFromRecipe(recipe) {
   values.servings = Number.isFinite(servingsNumber) ? servingsNumber : '';
 
   values.createdDate = toIsoDate(recipe.createdDate);
-
+  
   // Recipes store ingredients as structured objects, but the form uses a
   // single textarea. We convert each ingredient into a pipe-delimited line
   // so it can be re-parsed later.
@@ -112,6 +112,7 @@ function buildRecipeFormValuesFromRecipe(recipe) {
   }
   values.ingredientsText = ingredientLines.join('\n');
 
+  // Clean up each instruction step so the textarea shows one step per line.
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
   const instructionLines = [];
   for (let j = 0; j < instructions.length; j++) {
@@ -276,6 +277,7 @@ function parseRecipeForm(body) {
   for (let i = 0; i < ingLines.length; i++) {
     const line = sanitiseString(ingLines[i]);
     if (!line) continue;
+    // Each line is expected to look like "name | quantity | unit", so split the chunks around the pipes.
     const parts = line.split('|');
     const name = sanitiseString(parts[0]);
     const quantityInput = sanitiseString(parts[1]);

@@ -1,7 +1,13 @@
+// Constants shared by validation logic across forms, models, and middleware.
+// Separating them from the actual validation code keeps those files short and
+// makes it easy to update the business rules later.
 const enums = require('../enums');
 
+// Whitelists for dropdowns so forms only show supported values.
 const ROLE_OPTIONS = ['admin', 'chef', 'manager'];
 
+// Regular expressions that describe valid input for various fields. Keeping
+// them named makes it easier to reuse and test.
 const EMAIL_REGEX = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}:;"'<>?,.\/]).{8,}$/;
 const NAME_REGEX = /^[A-Za-z\s\-']{2,100}$/;
@@ -12,6 +18,7 @@ const RECIPE_TITLE_REGEX = /^[A-Za-z0-9\s'\-\(\)]{3,100}$/;
 const CHEF_REGEX = /^[A-Za-z\s'\-]{2,50}$/;
 const INGREDIENT_NAME_REGEX = /^[A-Za-z\s'\-]{2,50}$/;
 
+// The enum helpers provide the canonical list of options for dropdown menus.
 const MEAL_TYPE_OPTIONS = Object.values(enums.MealType);
 const CUISINE_TYPE_OPTIONS = Object.values(enums.CuisineType);
 const DIFFICULTY_OPTIONS = Object.values(enums.Difficulty);
