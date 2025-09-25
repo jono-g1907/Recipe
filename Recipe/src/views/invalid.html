@@ -1,16 +1,20 @@
 <!doctype html>
+<!-- Simple error view shown when form data does not validate. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Invalid Data</title>
     <link rel="stylesheet" href="/pages.css" />
   </head>
+  <!-- Reuse the neutral message layout shared across error pages. -->
   <body class="message-page">
     <h1>Invalid data</h1>
     <p><%= message || 'Something about the request wasn’t valid. Please go back and check the input.' %></p>
     <p><a href="<%= returnHref %>"><%= returnText %></a></p>
     <% if (!userId) { %>
+      <!-- Without a userId the session likely expired, so prompt for login. -->
       <p>You may need to log in again to continue.</p>
     <% } %>
   </body>
 </html>
+

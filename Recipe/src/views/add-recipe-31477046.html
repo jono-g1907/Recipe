@@ -1,12 +1,16 @@
 <!doctype html>
+<!-- EJS template used to capture the details of a brand-new recipe. -->
 <html lang="en" data-bs-theme="auto">
   <head>
+    <!-- Standard metadata so the page renders correctly in all browsers. -->
     <meta charset="utf-8" />
     <title>Add New Recipe</title>
+    <!-- Bootstrap supplies responsive layout styles. -->
     <link href="/bootstrap.min.css" rel="stylesheet" />
   </head>
   <body>
     <div class="container py-4">
+      <!-- Shortcut back to the user's dashboard. -->
       <div class="mb-3">
         <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
@@ -16,10 +20,13 @@
         Share your culinary creation with detailed instructions and ingredients
       </p>
 
+      <!-- Show any validation error message passed down from the server. -->
       <div class="alert alert-danger" style="<%= error ? '' : 'display:none;' %>"><%= error %></div>
 
+      <!-- POST the completed form back to the add recipe route. -->
       <form action="/add-recipe-<%= appId %>" method="POST">
 
+        <!-- Section 1: high level metadata about the recipe. -->
         <div class="card mb-4">
           <div class="card-header">Basic Information</div>
           <div class="card-body">
@@ -35,6 +42,7 @@
               </div>
               <div class="col-md-3 mb-3">
                 <label class="form-label">User ID</label>
+                <!-- Display the current user's ID while also submitting it with the form. -->
                 <div class="form-control-plaintext fw-semibold"><%= defaultUserId %></div>
                 <input type="hidden" name="userId" value="<%= defaultUserId %>" />
                 <div class="form-text">Automatically linked to your account.</div>
@@ -49,6 +57,7 @@
                 <label class="form-label">Meal Type</label>
                 <select class="form-select" name="mealType" required>
                   <option value="">-- choose --</option>
+                  <!-- Create an option for every supported meal type and pre-select the saved value. -->
                   <% for (let i = 0; i < mealTypes.length; i++) { %>
                     <option value="<%= mealTypes[i] %>" <%= values.mealType === mealTypes[i] ? 'selected' : '' %>><%= mealTypes[i] %></option>
                   <% } %>
@@ -58,6 +67,7 @@
                 <label class="form-label">Cuisine Type</label>
                 <select class="form-select" name="cuisineType" required>
                   <option value="">-- choose --</option>
+                  <!-- cuisineTypes is provided by the controller; this loop renders each choice. -->
                   <% for (let i = 0; i < cuisineTypes.length; i++) { %>
                     <option value="<%= cuisineTypes[i] %>" <%= values.cuisineType === cuisineTypes[i] ? 'selected' : '' %>><%= cuisineTypes[i] %></option>
                   <% } %>
@@ -90,6 +100,7 @@
           </div>
         </div>
 
+        <!-- Section 2: ingredients stored as text for easy server parsing. -->
         <div class="card mb-4">
           <div class="card-header">Ingredients</div>
           <div class="card-body">
@@ -102,6 +113,7 @@ Whey Protein | 30 | g"><%= values.ingredientsText %></textarea>
           </div>
         </div>
 
+        <!-- Section 3: free-form instructions, one step per line. -->
         <div class="card mb-4">
           <div class="card-header">Instructions</div>
           <div class="card-body">
@@ -109,6 +121,7 @@ Whey Protein | 30 | g"><%= values.ingredientsText %></textarea>
           </div>
         </div>
 
+        <!-- Helpful navigation plus the primary submit action. -->
         <div class="d-flex justify-content-between">
           <a class="btn btn-outline-secondary" href="/recipes-list-<%= appId %>?userId=<%= userId %>">View Recipes</a>
           <button class="btn btn-primary" type="submit">Add Recipe</button>
@@ -118,8 +131,10 @@ Whey Protein | 30 | g"><%= values.ingredientsText %></textarea>
 
       <script>
         (function () {
+          // Reference the current application instance so API calls hit the right endpoint.
           const APP_ID = '<%= appId %>';
 
+          // Collect the elements we will need for client-side validation.
           const form = document.querySelector('form');
           const recipeIdInput = form.querySelector('input[name="recipeId"]');
           const ingredientsInput = form.querySelector('textarea[name="ingredientsText"]');
@@ -129,6 +144,7 @@ Whey Protein | 30 | g"><%= values.ingredientsText %></textarea>
             return str.trim();
           }
 
+          // Ensure every ingredient entry follows the "name | quantity | unit" rule.
           function validateIngredients() {
             ingredientsInput.setCustomValidity('');
             const text = ingredientsInput.value || '';
@@ -156,6 +172,7 @@ Whey Protein | 30 | g"><%= values.ingredientsText %></textarea>
             return ok;
           }
 
+          // Ping the recipes API to avoid duplicate recipe IDs.
           function checkDuplicateId(cb) {
             recipeIdInput.setCustomValidity('');
 
