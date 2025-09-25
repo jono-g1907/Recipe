@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>HD Task 1: Recipe Recommendations</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
+    <link rel="stylesheet" href="/pages.css" />
+  </head>
+  <body class="hd-task-page">
+    <nav class="navbar navbar-expand-lg bg-primary navbar-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/home-<%= appId %>?userId=<%= userId %>">Recipe Hub</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNavDropdown"
+          aria-controls="navbarNavDropdown"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="/home-<%= appId %>?userId=<%= userId %>">Home</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="recipesDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Recipes
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="recipesDropdown">
+                <li>
+                  <a class="dropdown-item" href="/recipes-list-<%= appId %>?userId=<%= userId %>">All Recipes</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/add-recipe-<%= appId %>?userId=<%= userId %>">Add Recipe</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/delete-recipe-<%= appId %>?userId=<%= userId %>">Delete Recipe</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="inventoryDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Inventory
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
+                <li>
+                  <a class="dropdown-item" href="/inventory-dashboard-<%= appId %>?userId=<%= userId %>">Inventory Dashboard</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/add-inventory-<%= appId %>?userId=<%= userId %>">Add Inventory Item</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/delete-inventory-<%= appId %>?userId=<%= userId %>">Delete Inventory</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle active"
+                href="#"
+                id="hdTasksDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                HD Tasks
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="hdTasksDropdown">
+                <li>
+                  <a class="dropdown-item active" href="/hd-task1-<%= appId %>?userId=<%= userId %>">Recipe Recommendations</a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="d-flex align-items-center text-white">
+          <div class="me-3 text-end">
+            <div>Welcome, <%= username %></div>
+            <small class="d-block">Email: <%= email %></small>
+            <small class="d-block">ID: <%= userId %></small>
+          </div>
+          <form class="d-flex" method="post" action="/logout-<%= appId %>">
+            <input type="hidden" name="userId" value="<%= userId %>" />
+            <button class="btn btn-outline-light btn-sm" type="submit">Logout</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container py-4">
+      <div class="text-center mb-4">
+        <h1 class="display-6">HD Task 1: Recipe Recommendations &amp; Advanced MongoDB Queries</h1>
+        <p class="lead text-muted">
+          Smart recipe suggestions based on available inventory and advanced aggregation analysis.
+        </p>
+      </div>
+
+      <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-success text-white">Latest Recipes</div>
+            <div class="card-body">
+              <% if (latestRecipes && latestRecipes.length) { %>
+                <% latestRecipes.forEach(function (recipe, index) { %>
+                  <div class="pb-3 mb-3 <%= index === latestRecipes.length - 1 ? '' : 'border-bottom' %>">
+                    <div class="d-flex justify-content-between flex-wrap gap-2 align-items-start">
+                      <div>
+                        <h2 class="h5 mb-1"><%= recipe.title %></h2>
+                        <p class="mb-1 text-muted">Chef: <%= recipe.chef %> • Cuisine: <%= recipe.cuisineType %></p>
+                        <small class="text-muted">Created on <%= recipe.createdDate ? recipe.createdDate.toLocaleDateString('en-AU') : 'N/A' %></small>
+                      </div>
+                      <span class="badge bg-success-subtle text-success-emphasis hd-score-badge">Cookability: <%= recipe.cookabilityScore %>%</span>
+                    </div>
+                    <div class="mt-2 small text-muted">Ingredient Coverage: <strong><%= recipe.matchedCount %> / <%= recipe.totalIngredients %></strong></div>
+                    <div class="mt-1 small">Missing Ingredients:
+                      <% if (recipe.missingIngredients && recipe.missingIngredients.length) { %>
+                        <span class="fw-semibold text-warning"><%= recipe.missingIngredients.join(', ') %></span>
+                      <% } else { %>
+                        <span class="fw-semibold text-success">None — fully stocked!</span>
+                      <% } %>
+                    </div>
+                  </div>
+                <% }); %>
+              <% } else { %>
+                <p class="mb-0 text-muted">No recipes available yet. Add a recipe to get started.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white">Smart Matches</div>
+            <div class="card-body">
+              <p class="small text-muted">Highest cookability scores using your current inventory.</p>
+              <% if (recommendations && recommendations.length) { %>
+                <% recommendations.forEach(function (recipe) { %>
+                  <div class="border rounded-3 p-3 mb-3 hd-recommendation">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <strong><%= recipe.title %></strong>
+                      <span class="badge bg-primary-subtle text-primary-emphasis"><%= recipe.cookabilityScore %>%</span>
+                    </div>
+                    <div class="small text-muted">Matches: <%= recipe.matchedCount %> / <%= recipe.totalIngredients %></div>
+                    <% if (recipe.missingIngredients && recipe.missingIngredients.length) { %>
+                      <div class="small text-warning mt-1">Missing: <%= recipe.missingIngredients.join(', ') %></div>
+                    <% } else { %>
+                      <div class="small text-success mt-1">All ingredients ready to go.</div>
+                    <% } %>
+                  </div>
+                <% }); %>
+              <% } else { %>
+                <p class="mb-0 text-muted">Add more inventory items to unlock personalised matches.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning">Items Expiring Soon (Use in Recipes)</div>
+        <div class="card-body">
+          <% if (expiringSoon && expiringSoon.length) { %>
+            <div class="row g-3">
+              <% expiringSoon.forEach(function (item) { %>
+                <div class="col-md-6 col-lg-4">
+                  <div class="border rounded-3 p-3 h-100 bg-light">
+                    <h3 class="h6 mb-1"><%= item.ingredientName %></h3>
+                    <p class="mb-1 small text-muted">Expires in <strong><%= item.daysUntil !== null ? item.daysUntil : 'N/A' %></strong> day(s)</p>
+                    <p class="mb-1 small">Quantity: <%= item.quantity %> <%= item.unit %></p>
+                    <p class="mb-0 small text-muted">Used in: <%= item.recipeTitles && item.recipeTitles.length ? item.recipeTitles.join(', ') : 'No recipes linked yet' %></p>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="alert alert-success mb-0">Great! No items expiring in the next 7 days.</div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-info text-white">Inventory Optimisation Suggestions</div>
+            <div class="card-body">
+              <% if (lowStock && lowStock.length) { %>
+                <% lowStock.forEach(function (item, index) { %>
+                  <div class="pb-3 mb-3 hd-suggestion <%= index === lowStock.length - 1 ? '' : 'border-bottom' %>">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <strong><%= item.ingredientName %></strong>
+                      <span class="badge bg-danger-subtle text-danger-emphasis">Qty: <%= item.quantity %> <%= item.unit %></span>
+                    </div>
+                    <div class="small text-muted">Appears in <strong><%= item.usageCount %></strong> recipe(s)</div>
+                    <div class="small">Recipes: <%= item.recipeTitles && item.recipeTitles.length ? item.recipeTitles.slice(0, 3).join(', ') : 'No recent usage' %></div>
+                  </div>
+                <% }); %>
+              <% } else { %>
+                <p class="mb-0 text-muted">Your frequently used ingredients are sufficiently stocked.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-secondary text-white">Quick Tips</div>
+            <div class="card-body">
+              <ul class="mb-0 small">
+                <li>Plan menus around ingredients that are about to expire.</li>
+                <li>Restock low inventory staples that power multiple favourite recipes.</li>
+                <li>Use cookability scores to prioritise dishes you can prepare immediately.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-5">
+        <div class="card-header bg-success text-white">Recipe Popularity Analysis (MongoDB Aggregation)</div>
+        <div class="card-body">
+          <% if (popularity && popularity.length) { %>
+            <div class="row g-3">
+              <% popularity.forEach(function (stat) { %>
+                <div class="col-md-6 col-lg-3">
+                  <div class="border rounded-3 h-100 p-3 bg-white">
+                    <h3 class="h6 text-primary mb-2"><%= stat.cuisineType %> Cuisine</h3>
+                    <p class="mb-1 small">Total Recipes: <strong><%= stat.totalRecipes %></strong></p>
+                    <p class="mb-1 small">Avg Prep Time: <strong><%= stat.avgPrepTime %></strong> mins</p>
+                    <p class="mb-1 small">Avg Ingredients: <strong><%= stat.avgIngredients %></strong></p>
+                    <p class="mb-0 small text-muted">Top Recipe: <%= stat.topRecipe %></p>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <p class="mb-0 text-muted">Add recipes to reveal popularity trends across cuisines.</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <script src="/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

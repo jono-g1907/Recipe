@@ -413,6 +413,413 @@ async function getDashboardStats() {
   };
 }
 
+function normaliseUserId(value) {
+  if (!value) {
+    return '';
+  }
+  return String(value).trim().toUpperCase();
+}
+
+async function getSmartRecipeDashboardData(options) {
+  const opts = options || {};
+  const userId = normaliseUserId(opts.userId);
+
+  await ensureConnection();
+
+  const inventoryCollectionName = InventoryItem.collection.name;
+  const recipeCollectionName = Recipe.collection.name;
+
+  const inventoryMatchExpression = userId
+    ? {
+        $expr: {
+          $and: [
+            { $eq: ['$ingredientName', '$$ingredientName'] },
+            { $eq: ['$userId', userId] }
+          ]
+        }
+      }
+    : {
+        $expr: {
+          $eq: ['$ingredientName', '$$ingredientName']
+        }
+      };
+
+  const cookabilityPipeline = [
+    {
+      $addFields: {
+        totalIngredients: { $size: { $ifNull: ['$ingredients', []] } }
+      }
+    },
+    {
+      $unwind: {
+        path: '$ingredients',
+        preserveNullAndEmptyArrays: false
+      }
+    },
+    {
+      $lookup: {
+        from: inventoryCollectionName,
+        let: { ingredientName: '$ingredients.ingredientName' },
+        pipeline: [
+          { $match: inventoryMatchExpression },
+          {
+            $project: {
+              ingredientName: 1,
+              quantity: 1,
+              unit: 1,
+              expirationDate: 1
+            }
+          }
+        ],
+        as: 'inventoryMatches'
+      }
+    },
+    {
+      $addFields: {
+        hasInventory: { $gt: [{ $size: '$inventoryMatches' }, 0] }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id',
+        recipeId: { $first: '$recipeId' },
+        title: { $first: '$title' },
+        chef: { $first: '$chef' },
+        cuisineType: { $first: '$cuisineType' },
+        createdDate: { $first: '$createdDate' },
+        totalIngredients: { $first: '$totalIngredients' },
+        matchedIngredients: {
+          $push: {
+            $cond: [{ $eq: ['$hasInventory', true] }, '$ingredients.ingredientName', null]
+          }
+        },
+        missingIngredients: {
+          $push: {
+            $cond: [{ $eq: ['$hasInventory', true] }, null, '$ingredients.ingredientName']
+          }
+        }
+      }
+    },
+    {
+      $addFields: {
+        matchedIngredients: {
+          $filter: {
+            input: '$matchedIngredients',
+            as: 'item',
+            cond: { $ne: ['$$item', null] }
+          }
+        },
+        missingIngredients: {
+          $filter: {
+            input: '$missingIngredients',
+            as: 'item',
+            cond: { $ne: ['$$item', null] }
+          }
+        }
+      }
+    },
+    {
+      $addFields: {
+        matchedCount: { $size: '$matchedIngredients' },
+        missingCount: { $size: '$missingIngredients' },
+        cookabilityScore: {
+          $cond: [
+            { $gt: ['$totalIngredients', 0] },
+            {
+              $round: [
+                {
+                  $multiply: [
+                    {
+                      $divide: [{ $size: '$matchedIngredients' }, '$totalIngredients']
+                    },
+                    100
+                  ]
+                },
+                0
+              ]
+            },
+            0
+          ]
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        recipeId: 1,
+        title: 1,
+        chef: 1,
+        cuisineType: 1,
+        createdDate: 1,
+        totalIngredients: 1,
+        matchedCount: 1,
+        missingCount: 1,
+        cookabilityScore: 1,
+        matchedIngredients: 1,
+        missingIngredients: 1
+      }
+    },
+    {
+      $sort: {
+        cookabilityScore: -1,
+        createdDate: -1
+      }
+    }
+  ];
+
+  const cookabilityResults = await Recipe.aggregate(cookabilityPipeline);
+
+  const cookability = cookabilityResults.map(function (entry) {
+    return {
+      recipeId: entry.recipeId,
+      title: entry.title,
+      chef: entry.chef,
+      cuisineType: entry.cuisineType,
+      createdDate: entry.createdDate ? new Date(entry.createdDate) : null,
+      totalIngredients: entry.totalIngredients || 0,
+      matchedCount: entry.matchedCount || 0,
+      missingCount: entry.missingCount || 0,
+      cookabilityScore: entry.cookabilityScore || 0,
+      matchedIngredients: Array.isArray(entry.matchedIngredients) ? entry.matchedIngredients : [],
+      missingIngredients: Array.isArray(entry.missingIngredients) ? entry.missingIngredients : []
+    };
+  });
+
+  const now = new Date();
+  const soon = new Date(now);
+  soon.setDate(soon.getDate() + 7);
+
+  const expiringMatch = {
+    expirationDate: { $gte: now, $lte: soon }
+  };
+  if (userId) {
+    expiringMatch.userId = userId;
+  }
+
+  const expiringPipeline = [
+    { $match: expiringMatch },
+    {
+      $lookup: {
+        from: recipeCollectionName,
+        let: { ingredientName: '$ingredientName' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $in: [
+                  '$$ingredientName',
+                  {
+                    $map: {
+                      input: { $ifNull: ['$ingredients', []] },
+                      as: 'ingredient',
+                      in: '$$ingredient.ingredientName'
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            $project: {
+              title: 1,
+              recipeId: 1
+            }
+          }
+        ],
+        as: 'recipeUsage'
+      }
+    },
+    {
+      $addFields: {
+        recipeCount: { $size: '$recipeUsage' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        inventoryId: '$inventoryId',
+        ingredientName: '$ingredientName',
+        quantity: '$quantity',
+        unit: '$unit',
+        expirationDate: '$expirationDate',
+        recipeCount: 1,
+        recipeTitles: {
+          $map: {
+            input: '$recipeUsage',
+            as: 'recipe',
+            in: '$$recipe.title'
+          }
+        }
+      }
+    },
+    { $sort: { expirationDate: 1 } },
+    { $limit: 6 }
+  ];
+
+  const expiringSoonResults = await InventoryItem.aggregate(expiringPipeline);
+
+  const expiringSoon = expiringSoonResults.map(function (entry) {
+    const expirationDate = entry.expirationDate ? new Date(entry.expirationDate) : null;
+    let daysUntil = null;
+    if (expirationDate) {
+      const diffMs = expirationDate.getTime() - now.getTime();
+      daysUntil = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      if (daysUntil < 0) {
+        daysUntil = 0;
+      }
+    }
+    return {
+      inventoryId: entry.inventoryId,
+      ingredientName: entry.ingredientName,
+      quantity: entry.quantity,
+      unit: entry.unit,
+      expirationDate,
+      daysUntil,
+      recipeCount: entry.recipeCount || 0,
+      recipeTitles: Array.isArray(entry.recipeTitles) ? entry.recipeTitles : []
+    };
+  });
+
+  const lowStockMatch = { quantity: { $lte: 2 } };
+  if (userId) {
+    lowStockMatch.userId = userId;
+  }
+
+  const lowStockPipeline = [
+    { $match: lowStockMatch },
+    {
+      $lookup: {
+        from: recipeCollectionName,
+        let: { ingredientName: '$ingredientName' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $in: [
+                  '$$ingredientName',
+                  {
+                    $map: {
+                      input: { $ifNull: ['$ingredients', []] },
+                      as: 'ingredient',
+                      in: '$$ingredient.ingredientName'
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            $project: {
+              title: 1,
+              recipeId: 1
+            }
+          }
+        ],
+        as: 'recipesUsing'
+      }
+    },
+    {
+      $addFields: {
+        usageCount: { $size: '$recipesUsing' }
+      }
+    },
+    { $match: { usageCount: { $gt: 0 } } },
+    {
+      $project: {
+        _id: 0,
+        inventoryId: '$inventoryId',
+        ingredientName: '$ingredientName',
+        quantity: '$quantity',
+        unit: '$unit',
+        usageCount: 1,
+        recipeTitles: {
+          $map: {
+            input: '$recipesUsing',
+            as: 'recipe',
+            in: '$$recipe.title'
+          }
+        }
+      }
+    },
+    { $sort: { usageCount: -1, quantity: 1 } },
+    { $limit: 6 }
+  ];
+
+  const lowStockResults = await InventoryItem.aggregate(lowStockPipeline);
+
+  const lowStockSuggestions = lowStockResults.map(function (entry) {
+    return {
+      inventoryId: entry.inventoryId,
+      ingredientName: entry.ingredientName,
+      quantity: entry.quantity,
+      unit: entry.unit,
+      usageCount: entry.usageCount || 0,
+      recipeTitles: Array.isArray(entry.recipeTitles) ? entry.recipeTitles : []
+    };
+  });
+
+  const popularityPipeline = [
+    {
+      $addFields: {
+        ingredientCount: { $size: { $ifNull: ['$ingredients', []] } }
+      }
+    },
+    { $sort: { createdDate: -1 } },
+    {
+      $group: {
+        _id: '$cuisineType',
+        totalRecipes: { $sum: 1 },
+        avgPrepTime: { $avg: '$prepTime' },
+        avgIngredients: { $avg: '$ingredientCount' },
+        topRecipe: { $first: '$title' }
+      }
+    },
+    { $sort: { totalRecipes: -1, _id: 1 } }
+  ];
+
+  const popularityResults = await Recipe.aggregate(popularityPipeline);
+
+  const popularityStats = popularityResults.map(function (entry) {
+    return {
+      cuisineType: entry._id || 'Unspecified',
+      totalRecipes: entry.totalRecipes || 0,
+      avgPrepTime: Math.round(entry.avgPrepTime || 0),
+      avgIngredients: Math.round(entry.avgIngredients || 0),
+      topRecipe: entry.topRecipe || 'N/A'
+    };
+  });
+
+  const latestRecipes = cookability
+    .slice()
+    .sort(function (a, b) {
+      const aTime = a.createdDate ? a.createdDate.getTime() : 0;
+      const bTime = b.createdDate ? b.createdDate.getTime() : 0;
+      return bTime - aTime;
+    })
+    .slice(0, 4);
+
+  const recommendations = cookability
+    .slice()
+    .sort(function (a, b) {
+      if (b.cookabilityScore !== a.cookabilityScore) {
+        return b.cookabilityScore - a.cookabilityScore;
+      }
+      const aTime = a.createdDate ? a.createdDate.getTime() : 0;
+      const bTime = b.createdDate ? b.createdDate.getTime() : 0;
+      return bTime - aTime;
+    })
+    .slice(0, 4);
+
+  return {
+    cookability,
+    latestRecipes,
+    recommendations,
+    expiringSoon,
+    lowStock: lowStockSuggestions,
+    popularity: popularityStats
+  };
+}
+
 module.exports = {
   seedDatabase,
   getNextUserId,
@@ -437,5 +844,6 @@ module.exports = {
   findExpiringInventory,
   findLowStockInventory,
   calculateInventoryValue,
-  getDashboardStats
+  getDashboardStats,
+  getSmartRecipeDashboardData
 };
