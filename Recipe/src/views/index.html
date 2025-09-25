@@ -211,7 +211,7 @@
                     <strong><%= recipe.title %></strong>
                     <div class="text-muted small">ID: <%= recipe.recipeId %> · Cuisine: <%= recipe.cuisineType %></div>
                   </div>
-                  <a class="btn btn-sm btn-outline-primary" href="/recipes/<%= recipe.recipeId %>-<%= appId %>?userId=<%= id %>">View</a>
+                  <a class="btn btn-sm btn-outline-primary" href="/recipes-list-<%= appId %>?userId=<%= id %>">View</a>
                 </li>
               <% }); %>
             </ul>

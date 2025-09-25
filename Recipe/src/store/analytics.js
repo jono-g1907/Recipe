@@ -26,14 +26,6 @@ async function getDashboardStats() {
     inventoryValue: totalValue
   };
 }
-
-function normaliseUserId(value) {
-  if (!value) {
-    return '';
-  }
-  return String(value).trim().toUpperCase();
-}
-
 async function getSmartRecipeDashboardData(options) {
   const opts = options || {};
   const userId = normaliseUserId(opts.userId);
