@@ -43,6 +43,22 @@ body.dashboard-page {
   padding-bottom: 0 !important;
 }
 
+.hd-analytics-page {
+  margin: 0;
+  background-color: #f2f5f9;
+}
+
+.hd-analytics-page .card {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 0.5rem 1.25rem rgba(15, 29, 57, 0.08);
+}
+
+.hd-analytics-page .card-header {
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+
 .dashboard-page .navbar .dropdown-toggle::after {
   margin-left: 0.35rem;
 }

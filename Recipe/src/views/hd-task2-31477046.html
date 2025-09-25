@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>HD Task 2: Recipe Intelligence Dashboard</title>
+    <link rel="stylesheet" href="/bootstrap.min.css" />
+    <link rel="stylesheet" href="/pages.css" />
+  </head>
+  <body class="hd-analytics-page">
+    <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/home-<%= appId %>?userId=<%= userId %>">Recipe Hub</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNavDropdown"
+          aria-controls="navbarNavDropdown"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="/home-<%= appId %>?userId=<%= userId %>">Home</a>
+            </li>
+            <% if (canManageRecipes || canViewAnalytics) { %>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle active"
+                  href="#"
+                  id="hdTasksDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  HD Tasks
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="hdTasksDropdown">
+                  <% if (canManageRecipes) { %>
+                    <li>
+                      <a class="dropdown-item" href="/hd-task1-<%= appId %>?userId=<%= userId %>">Recipe Recommendations</a>
+                    </li>
+                  <% } %>
+                  <% if (canViewAnalytics) { %>
+                    <li>
+                      <a class="dropdown-item active" href="/hd-task2-<%= appId %>?userId=<%= userId %>">Recipe Intelligence Dashboard</a>
+                    </li>
+                  <% } %>
+                </ul>
+              </li>
+            <% } %>
+          </ul>
+        </div>
+        <div class="d-flex align-items-center text-white">
+          <div class="me-3 text-end">
+            <div>Welcome, <%= username %></div>
+            <small class="d-block">Email: <%= email %></small>
+            <small class="d-block">ID: <%= userId %></small>
+            <small class="d-block text-uppercase">Role: <%= role %></small>
+          </div>
+          <form class="d-flex" method="post" action="/logout-<%= appId %>">
+            <input type="hidden" name="userId" value="<%= userId %>" />
+            <button class="btn btn-outline-light btn-sm" type="submit">Logout</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container py-4">
+      <div class="text-center mb-4">
+        <h1 class="display-6">Recipe Intelligence Dashboard</h1>
+        <p class="lead text-muted">Multi-layer analytics for executive decision making and chef coaching.</p>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">Advanced Filtering</div>
+        <div class="card-body">
+          <form class="row g-3" method="get" action="/hd-task2-<%= appId %>">
+            <input type="hidden" name="userId" value="<%= userId %>" />
+            <div class="col-md-4 col-lg-2">
+              <label class="form-label" for="cuisineFilter">Cuisine</label>
+              <select class="form-select" id="cuisineFilter" name="cuisine">
+                <option value="">All</option>
+                <% cuisineOptions.forEach(function (option) { %>
+                  <option value="<%= option %>" <%= filters && filters.cuisine === option ? 'selected' : '' %>><%= option %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-4 col-lg-2">
+              <label class="form-label" for="difficultyFilter">Difficulty</label>
+              <select class="form-select" id="difficultyFilter" name="difficulty">
+                <option value="">All</option>
+                <% difficultyOptions.forEach(function (option) { %>
+                  <option value="<%= option %>" <%= filters && filters.difficulty === option ? 'selected' : '' %>><%= option %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-4 col-lg-2">
+              <label class="form-label" for="mealTypeFilter">Meal Type</label>
+              <select class="form-select" id="mealTypeFilter" name="mealType">
+                <option value="">All</option>
+                <% mealTypeOptions.forEach(function (option) { %>
+                  <option value="<%= option %>" <%= filters && filters.mealType === option ? 'selected' : '' %>><%= option %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-4 col-lg-2">
+              <label class="form-label" for="maxPrepFilter">Max Prep (mins)</label>
+              <input
+                class="form-control"
+                type="number"
+                min="1"
+                max="480"
+                id="maxPrepFilter"
+                name="maxPrep"
+                value="<%= filters && filters.maxPrep !== '' ? filters.maxPrep : '' %>"
+              />
+            </div>
+            <div class="col-md-4 col-lg-2">
+              <label class="form-label" for="searchFilter">Recipe Title</label>
+              <input
+                class="form-control"
+                type="text"
+                id="searchFilter"
+                name="search"
+                value="<%= filters && filters.search ? filters.search : '' %>"
+                placeholder="Search title"
+              />
+            </div>
+            <div class="col-md-4 col-lg-2">
+              <label class="form-label" for="chefFilter">Chef</label>
+              <input
+                class="form-control"
+                type="text"
+                id="chefFilter"
+                name="chef"
+                value="<%= filters && filters.chef ? filters.chef : '' %>"
+                placeholder="e.g. Mario"
+              />
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+              <button class="btn btn-primary" type="submit">Apply Filters</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+          <div class="card h-100 shadow-sm">
+            <div class="card-header bg-success text-white">Cuisine Performance Overview</div>
+            <div class="card-body">
+              <% if (performance && performance.length) { %>
+                <div class="row g-3">
+                  <% performance.forEach(function (row) { %>
+                    <div class="col-md-6">
+                      <div class="border rounded-3 p-3 bg-light h-100">
+                        <h3 class="h6 text-uppercase text-success"><%= row.cuisineType %></h3>
+                        <p class="mb-1 small text-muted">Total Recipes: <strong><%= row.totalRecipes %></strong></p>
+                        <p class="mb-1 small">Avg Prep Time: <strong><%= row.avgPrepTime %></strong> mins</p>
+                        <p class="mb-0 small">Avg Servings: <strong><%= row.avgServings %></strong></p>
+                      </div>
+                    </div>
+                  <% }); %>
+                </div>
+              <% } else { %>
+                <p class="mb-0 text-muted">Add more recipes to unlock cuisine performance analytics.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-header bg-info text-white">Difficulty Distribution</div>
+            <div class="card-body">
+              <% if (difficultySummary && difficultySummary.length) { %>
+                <ul class="list-group list-group-flush">
+                  <% difficultySummary.forEach(function (item) { %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      <span><%= item.difficulty %></span>
+                      <span class="badge bg-info text-dark"><%= item.total %> recipes</span>
+                    </li>
+                  <% }); %>
+                </ul>
+              <% } else { %>
+                <p class="mb-0 text-muted">Difficulty analytics will appear after recipes are recorded.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">High Performing Recipes</div>
+        <div class="card-body">
+          <% if (topRecipes && topRecipes.length) { %>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Recipe</th>
+                    <th>Cuisine</th>
+                    <th>Difficulty</th>
+                    <th>Servings</th>
+                    <th>Ingredients</th>
+                    <th>Chef</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% topRecipes.forEach(function (recipe) { %>
+                    <tr>
+                      <td><%= recipe.title %></td>
+                      <td><%= recipe.cuisineType %></td>
+                      <td><%= recipe.difficulty %></td>
+                      <td><%= recipe.servings %></td>
+                      <td><%= recipe.ingredientCount %></td>
+                      <td><%= recipe.chef %></td>
+                      <td><%= recipe.createdDate ? recipe.createdDate.toDateString() : 'N/A' %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="mb-0 text-muted">No high performing recipes yet. Encourage chefs to submit their creations.</p>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning">Ingredient Usage &amp; Cost Impact</div>
+        <div class="card-body">
+          <% if (ingredientUsage && ingredientUsage.length) { %>
+            <div class="table-responsive">
+              <table class="table table-striped table-sm">
+                <thead>
+                  <tr>
+                    <th>Ingredient</th>
+                    <th>Times Used</th>
+                    <th>Avg Qty</th>
+                    <th>Units</th>
+                    <th>Avg Cost</th>
+                    <th>Recipes Referenced</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% ingredientUsage.forEach(function (row) { %>
+                    <tr>
+                      <td><strong><%= row.ingredientName %></strong></td>
+                      <td><%= row.usageCount %></td>
+                      <td><%= row.avgQuantity %></td>
+                      <td><%= row.units %></td>
+                      <td>$<%= row.averageCost.toFixed(2) %></td>
+                      <td><%= row.recipeCount %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="mb-0 text-muted">Ingredient usage analytics will display when recipes list their ingredients.</p>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-dark text-white">Chef Preference Patterns</div>
+            <div class="card-body">
+              <% if (chefInsights && chefInsights.length) { %>
+                <% chefInsights.forEach(function (chef) { %>
+                  <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <h3 class="h6 mb-0"><%= chef.chef %> (<%= chef.userId %>)</h3>
+                      <span class="badge bg-secondary"><%= chef.totalRecipes %> recipes</span>
+                    </div>
+                    <p class="small mb-1">Avg Prep Time: <strong><%= chef.avgPrepTime %></strong> mins</p>
+                    <p class="small mb-1">Favourite Cuisines: <%= chef.cuisinePreferences.length ? chef.cuisinePreferences.join(', ') : 'Not enough data' %></p>
+                    <div class="small text-muted">Difficulty Mix:</div>
+                    <ul class="small mb-0">
+                      <% chef.difficultyBreakdown.forEach(function (item) { %>
+                        <li><%= item.difficulty %>: <%= item.total %></li>
+                      <% }); %>
+                    </ul>
+                  </div>
+                <% }); %>
+              <% } else { %>
+                <p class="mb-0 text-muted">Chef analytics will appear when recipe history is available.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">Seasonal Recipe Trends</div>
+            <div class="card-body">
+              <% if (seasonalTrends && seasonalTrends.length) { %>
+                <ul class="list-group list-group-flush">
+                  <% seasonalTrends.forEach(function (trend) { %>
+                    <li class="list-group-item">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold"><%= trend.label %></span>
+                        <span class="badge bg-light text-dark"><%= trend.totalRecipes %> recipes</span>
+                      </div>
+                      <div class="small text-muted">Cuisines: <%= trend.cuisines.length ? trend.cuisines.join(', ') : 'Not recorded' %></div>
+                    </li>
+                  <% }); %>
+                </ul>
+              <% } else { %>
+                <p class="mb-0 text-muted">Seasonal trends will populate as new recipes are added over time.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">Cost Efficiency Reports</div>
+        <div class="card-body">
+          <% if (costReports && costReports.length) { %>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Recipe</th>
+                    <th>Cuisine</th>
+                    <th>Difficulty</th>
+                    <th>Estimated Cost</th>
+                    <th>Inventory Coverage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% costReports.forEach(function (report) { %>
+                    <tr>
+                      <td><%= report.title %></td>
+                      <td><%= report.cuisineType %></td>
+                      <td><%= report.difficulty %></td>
+                      <td>$<%= report.totalCost.toFixed(2) %></td>
+                      <td><%= report.coverage %>% of ingredients stocked</td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="mb-0 text-muted">Add pricing information to inventory items to unlock cost insights.</p>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">Smart Recipe Suggestions (90%+ Inventory Match)</div>
+        <div class="card-body">
+          <% if (recommendations && recommendations.length) { %>
+            <div class="row g-3">
+              <% recommendations.forEach(function (item) { %>
+                <div class="col-md-6 col-xl-4">
+                  <div class="border rounded-3 p-3 h-100 bg-light">
+                    <h3 class="h6"><%= item.title %></h3>
+                    <p class="small mb-1 text-muted">Cuisine: <%= item.cuisineType %></p>
+                    <p class="small mb-1">Cookability: <strong><%= item.cookabilityScore %>%</strong></p>
+                    <p class="small mb-1">Matched Ingredients: <%= item.matchedCount %> / <%= item.totalIngredients %></p>
+                    <p class="small mb-0 text-muted">
+                      Missing: <%= item.missingIngredients.length ? item.missingIngredients.join(', ') : 'None' %>
+                    </p>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <p class="mb-0 text-muted">No recipes currently meet the 90% inventory threshold. Consider restocking key ingredients.</p>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-5">
+        <div class="card-header bg-dark text-white">Filtered Recipe Results</div>
+        <div class="card-body">
+          <% if (filteredRecipes && filteredRecipes.length) { %>
+            <div class="table-responsive">
+              <table class="table table-hover table-sm">
+                <thead>
+                  <tr>
+                    <th>Recipe</th>
+                    <th>Cuisine</th>
+                    <th>Difficulty</th>
+                    <th>Meal Type</th>
+                    <th>Prep Time</th>
+                    <th>Servings</th>
+                    <th>Chef</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% filteredRecipes.forEach(function (recipe) { %>
+                    <tr>
+                      <td><%= recipe.title %></td>
+                      <td><%= recipe.cuisineType %></td>
+                      <td><%= recipe.difficulty %></td>
+                      <td><%= recipe.mealType %></td>
+                      <td><%= recipe.prepTime %> mins</td>
+                      <td><%= recipe.servings %></td>
+                      <td><%= recipe.chef %></td>
+                      <td><%= recipe.createdDate ? recipe.createdDate.toDateString() : 'N/A' %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="mb-0 text-muted">No recipes matched the selected filters. Try broadening your criteria.</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <script src="/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
