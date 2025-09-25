@@ -1,6 +1,10 @@
+// Validation error class used when the submitted form data is not valid.
 const ValidationError = require('../../errors/ValidationError');
+// Converts low-level errors into a friendly object we can work with.
 const normaliseError = require('../../lib/normaliseError');
+// Authentication helpers to check roles and redirect unauthenticated users.
 const { buildLoginRedirectUrl, resolveActiveUser } = require('../../lib/auth');
+// Shared form helpers keep the parsing and validation logic consistent across routes.
 const {
   getEmptyInventoryFormValues,
   parseInventoryForm,
@@ -8,14 +12,17 @@ const {
   buildInventoryFormValuesFromItem,
   mapInventoryForView
 } = require('../../forms/inventoryForm');
+// Enumerations of allowed dropdown values used for validation and rendering.
 const {
   INVENTORY_CATEGORY_OPTIONS,
   LOCATION_OPTIONS,
   UNIT_OPTIONS
 } = require('../../lib/validationConstants');
+// Sanitize user text before placing it back into HTML.
 const { sanitiseString } = require('../../lib/utils');
 
 function renderInventoryEditForm(res, user, items, selectedId, values, errorMessage, successMessage, status, appId) {
+  // Make sure the template receives a full set of form values plus the latest status info.
   const safeValues = values || getEmptyInventoryFormValues();
   const statusCode = status || 200;
   return res.status(statusCode).render('edit-inventory-31477046.html', {
@@ -34,13 +41,16 @@ function renderInventoryEditForm(res, user, items, selectedId, values, errorMess
 }
 
 function registerInventoryRoutes(app, dependencies) {
+  // Dependency injection allows us to supply a fake store for automated tests.
   const store = dependencies.store;
   const appId = dependencies.appId;
 
   function renderEdit(res, user, items, selectedId, values, errorMessage, successMessage, status) {
+    // Wrap the helper so the appId is automatically included every time we render.
     return renderInventoryEditForm(res, user, items, selectedId, values, errorMessage, successMessage, status, appId);
   }
 
+  // Simple form for adding a new inventory item.
   app.get('/add-inventory-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
@@ -63,6 +73,7 @@ function registerInventoryRoutes(app, dependencies) {
     }
   });
 
+  // Allow users to pick an existing item and edit its details.
   app.get('/edit-inventory-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
@@ -74,6 +85,7 @@ function registerInventoryRoutes(app, dependencies) {
       const listResult = await store.listInventory({ page: 1, limit: 500, sort: '-createdDate' });
       const items = Array.isArray(listResult.items) ? listResult.items : [];
 
+      // Try to find the inventory item requested in the query string.
       const queryId = sanitiseString(req.query && req.query.inventoryId);
       const requestedId = queryId ? queryId.toUpperCase() : '';
       let selectedItem = null;
@@ -95,6 +107,7 @@ function registerInventoryRoutes(app, dependencies) {
         selectedItem = items[0];
       }
 
+      // Fill the form with the selected inventory item.
       const values = selectedItem ? buildInventoryFormValuesFromItem(selectedItem) : getEmptyInventoryFormValues();
       const successMessage = sanitiseString(req.query && req.query.success) || '';
       const selectedId = selectedItem ? selectedItem.inventoryId : '';
@@ -105,6 +118,7 @@ function registerInventoryRoutes(app, dependencies) {
     }
   });
 
+  // Small confirmation form before removing an item completely.
   app.get('/delete-inventory-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
@@ -126,6 +140,7 @@ function registerInventoryRoutes(app, dependencies) {
     }
   });
 
+  // Perform the deletion once the user confirms.
   app.post('/delete-inventory-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
@@ -141,6 +156,7 @@ function registerInventoryRoutes(app, dependencies) {
       const activeUser = result.user;
       const idInput = (req.body.inventoryId || '').trim().toUpperCase();
       if (!idInput) {
+        // Without an ID we do not know which record to delete.
         return res.render('delete-inventory-31477046.html', {
           error: 'inventoryId is required',
           lastId: '',
@@ -160,6 +176,7 @@ function registerInventoryRoutes(app, dependencies) {
       }
 
       const params = [];
+      // Pass context to the dashboard so it can display a status message.
       params.push('userId=' + encodeURIComponent(activeUser.userId));
       params.push('deleted=' + encodeURIComponent(idInput));
       const redirectTarget = '/inventory-dashboard-' + appId + '?' + params.join('&');
@@ -169,6 +186,7 @@ function registerInventoryRoutes(app, dependencies) {
     }
   });
 
+  // Show a grouped inventory overview with optional success messages.
   app.get('/inventory-dashboard-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
@@ -182,6 +200,7 @@ function registerInventoryRoutes(app, dependencies) {
 
       const groupBy = req.query.group === 'category' ? 'category' : 'location';
       const groups = {};
+      // Build a dictionary keyed by either location or category so the template can group rows.
       for (let i = 0; i < rows.length; i++) {
         const key = rows[i][groupBy] || 'Unspecified';
         if (!groups[key]) {
@@ -194,6 +213,7 @@ function registerInventoryRoutes(app, dependencies) {
       }
 
       let totalValue = 0;
+      // Calculate the combined cost of every inventory item.
       for (let j = 0; j < rows.length; j++) {
         if (Number.isFinite(rows[j].cost)) {
           totalValue += rows[j].cost;
@@ -204,6 +224,7 @@ function registerInventoryRoutes(app, dependencies) {
       const updatedId = sanitiseString(req.query && req.query.updated);
       const updatedName = sanitiseString(req.query && req.query.updatedName);
       const notices = [];
+      // Build a list of status strings that summarise recent actions.
       if (updatedId) {
         let text = 'Updated inventory item ' + updatedId;
         if (updatedName) {
@@ -230,6 +251,7 @@ function registerInventoryRoutes(app, dependencies) {
     }
   });
 
+  // Update an existing inventory item.
   app.post('/edit-inventory-' + appId, async function (req, res, next) {
     let activeUser = null;
     let inventoryOptions = [];
@@ -250,6 +272,7 @@ function registerInventoryRoutes(app, dependencies) {
       formValues = buildInventoryFormValuesFromItem(payload);
 
       if (!payload.inventoryId) {
+        // Force the user to pick which inventory item they want to update.
         return renderEdit(res, activeUser, inventoryOptions, '', formValues, 'Select an inventory item to update.', '', 400);
       }
 
@@ -264,6 +287,7 @@ function registerInventoryRoutes(app, dependencies) {
       }
 
       const patch = {
+        // Only expose the fields we allow the user to modify.
         ingredientName: payload.ingredientName,
         quantity: payload.quantity,
         unit: payload.unit,
@@ -304,12 +328,14 @@ function registerInventoryRoutes(app, dependencies) {
         }
         const message = normalised.errors && normalised.errors.length ? normalised.errors.join(' ') : 'Unable to update inventory item.';
         const selectedId = formValues && formValues.inventoryId ? formValues.inventoryId : '';
+        // Re-render the form with the captured values and validation feedback.
         return renderEdit(res, activeUser, inventoryOptions, selectedId, formValues, message, '', 400);
       }
       next(normalised);
     }
   });
 
+  // Insert a new inventory record.
   app.post('/add-inventory-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
@@ -320,6 +346,7 @@ function registerInventoryRoutes(app, dependencies) {
       const payload = parseInventoryForm(req.body || {});
       payload.userId = result.user.userId;
 
+      // Persist to the data store then head back to the dashboard.
       await store.createInventoryItem(payload);
       const redirectUserId = result.user.userId;
       const params = [];
