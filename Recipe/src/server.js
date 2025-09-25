@@ -53,6 +53,10 @@ app.use('/bootstrap', express.static(
   path.join(__dirname, '../node_modules/bootstrap/dist/css/bootstrap.min.css')
 ));
 
+app.get('/bootstrap.bundle.min.js', function (req, res) {
+  res.sendFile(path.join(__dirname, '../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js'));
+});
+
 app.set('views', path.join(__dirname, 'views'));
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
