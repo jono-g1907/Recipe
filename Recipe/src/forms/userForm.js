@@ -1,3 +1,4 @@
+// Utility helpers shared by multiple form modules.
 const { sanitiseString } = require('../lib/utils');
 const {
   ROLE_OPTIONS,
@@ -6,11 +7,16 @@ const {
   NAME_REGEX
 } = require('../lib/validationConstants');
 
+// Take the raw request body submitted from the registration page and tidy it
+// up into a predictable object. We keep most values as strings because
+// that is what HTML inputs expect when redisplaying validation errors.
 function parseRegistrationForm(body) {
   const form = {};
   const emailInput = sanitiseString(body && body.email);
   form.email = emailInput ? emailInput.toLowerCase() : '';
 
+  // Passwords are left untouched (apart from ensuring they are strings) so we
+  // do not accidentally strip characters the user intended to include.
   if (body && typeof body.password === 'string') {
     form.password = body.password;
   } else {
@@ -30,10 +36,13 @@ function parseRegistrationForm(body) {
   return form;
 }
 
+// Remove common phone number formatting so validation can focus on the digits.
 function stripPhoneFormatting(value) {
   return (value || '').replace(/[\s()-]/g, '');
 }
 
+// Basic checks for Australian phone numbers. We support both local (0...) and
+// international (+61...) formats used for landlines and mobiles.
 function isAustralianPhoneNumber(value) {
   const cleaned = stripPhoneFormatting(value);
   if (!cleaned) {
@@ -52,6 +61,8 @@ function isAustralianPhoneNumber(value) {
   return false;
 }
 
+// Validate each registration field and return the messages that should be
+// shown to the user. Grouping the logic here keeps controllers very small.
 function collectRegistrationErrors(form) {
   const errors = [];
 
@@ -94,6 +105,7 @@ function collectRegistrationErrors(form) {
   return errors;
 }
 
+// Small helper for repopulating the form after a failed registration attempt.
 function buildRegistrationValues(form) {
   return {
     email: form.email || '',
@@ -103,6 +115,8 @@ function buildRegistrationValues(form) {
   };
 }
 
+// Parse the login form into a predictable shape. Passwords are left untouched
+// because the login logic will handle hashing/comparison later.
 function parseLoginForm(body) {
   const form = {};
   const emailInput = sanitiseString(body && body.email);
@@ -115,6 +129,9 @@ function parseLoginForm(body) {
   return form;
 }
 
+// Login forms show a single message if either field is missing to avoid
+// overwhelming the user, and only perform format validation when both values
+// are present.
 function collectLoginErrors(form) {
   const errors = [];
 
@@ -124,9 +141,9 @@ function collectLoginErrors(form) {
   // If either is missing, show one combined message and skip the rest
   if (missingEmail || missingPassword) {
     errors.push('Email or password is required');
-  } else if (!EMAIL_REGEX.test(form.email)){
+  } else if (!EMAIL_REGEX.test(form.email)) {
     // Only validate formats when both are present
-      errors.push('Enter a valid email address');
+    errors.push('Enter a valid email address');
   }
   return errors;
 }
