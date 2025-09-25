@@ -4,17 +4,9 @@
     <meta charset="utf-8" />
     <title>Inventory - Dashboard</title>
     <link rel="stylesheet" href="/bootstrap.min.css" />
-    <style>
-      body { padding: 2rem; }
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-      .status-badge { padding: 0.2rem 0.45rem; border-radius: 0.35rem; font-size: 12px; }
-      .status-expired { background: #f8d7da; color: #842029; }
-      .status-soon { background: #fff3cd; color: #664d03; }
-      .status-ok { background: #d1e7dd; color: #0f5132; }
-      .status-unknown { background: #e2e3e5; color: #41464b; }
-    </style>
+    <link rel="stylesheet" href="/pages.css" />
   </head>
-  <body>
+  <body class="inventory-dashboard-page">
     <div class="container">
       <div class="mb-3">
         <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
