@@ -951,6 +951,459 @@ async function getSmartRecipeDashboardData(options) {
   };
 }
 
+async function getAdvancedAnalyticsDashboard(options) {
+  const opts = options || {};
+  await ensureConnection();
+
+  const inventoryCollectionName = InventoryItem.collection.name;
+
+  const performancePipeline = [
+    {
+      $project: {
+        cuisineType: 1,
+        difficulty: 1,
+        prepTime: 1,
+        servings: 1,
+        title: 1,
+        chef: 1,
+        createdDate: 1,
+        ingredientCount: {
+          $size: { $ifNull: ['$ingredients', []] }
+        }
+      }
+    },
+    {
+      $facet: {
+        byCuisine: [
+          {
+            $group: {
+              _id: '$cuisineType',
+              totalRecipes: { $sum: 1 },
+              avgPrepTime: { $avg: '$prepTime' },
+              avgServings: { $avg: '$servings' }
+            }
+          },
+          { $sort: { totalRecipes: -1, _id: 1 } }
+        ],
+        difficultySpread: [
+          {
+            $group: {
+              _id: '$difficulty',
+              total: { $sum: 1 }
+            }
+          },
+          { $sort: { total: -1, _id: 1 } }
+        ],
+        topRecipes: [
+          { $sort: { servings: -1, ingredientCount: -1 } },
+          {
+            $project: {
+              _id: 0,
+              title: '$title',
+              cuisineType: '$cuisineType',
+              difficulty: '$difficulty',
+              servings: '$servings',
+              ingredientCount: '$ingredientCount',
+              createdDate: '$createdDate',
+              chef: '$chef'
+            }
+          },
+          { $limit: 6 }
+        ]
+      }
+    }
+  ];
+
+  const ingredientPipeline = [
+    { $unwind: '$ingredients' },
+    {
+      $group: {
+        _id: '$ingredients.ingredientName',
+        usageCount: { $sum: 1 },
+        avgQuantity: { $avg: '$ingredients.quantity' },
+        units: { $addToSet: '$ingredients.unit' },
+        recipes: { $addToSet: '$title' }
+      }
+    },
+    {
+      $lookup: {
+        from: inventoryCollectionName,
+        localField: '_id',
+        foreignField: 'ingredientName',
+        as: 'inventoryPricing'
+      }
+    },
+    {
+      $addFields: {
+        averageCost: { $avg: '$inventoryPricing.cost' },
+        inventoryCount: { $size: '$inventoryPricing' }
+      }
+    },
+    { $sort: { usageCount: -1, _id: 1 } },
+    { $limit: 8 }
+  ];
+
+  const chefPipeline = [
+    {
+      $group: {
+        _id: { userId: '$userId', difficulty: '$difficulty' },
+        chef: { $first: '$chef' },
+        cuisine: { $first: '$cuisineType' },
+        recipes: { $sum: 1 },
+        avgPrep: { $avg: '$prepTime' }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id.userId',
+        chef: { $first: '$chef' },
+        totalRecipes: { $sum: '$recipes' },
+        avgPrepTime: { $avg: '$avgPrep' },
+        cuisinePreferences: { $addToSet: '$cuisine' },
+        difficultyBreakdown: {
+          $push: {
+            difficulty: '$_id.difficulty',
+            total: '$recipes'
+          }
+        }
+      }
+    },
+    { $sort: { totalRecipes: -1, chef: 1 } }
+  ];
+
+  const seasonalPipeline = [
+    {
+      $project: {
+        year: { $year: '$createdDate' },
+        month: { $month: '$createdDate' },
+        cuisineType: 1
+      }
+    },
+    {
+      $group: {
+        _id: { year: '$year', month: '$month' },
+        totalRecipes: { $sum: 1 },
+        cuisines: { $addToSet: '$cuisineType' }
+      }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1 } }
+  ];
+
+  const costPipeline = [
+    {
+      $unwind: {
+        path: '$ingredients',
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: inventoryCollectionName,
+        localField: 'ingredients.ingredientName',
+        foreignField: 'ingredientName',
+        as: 'pricing'
+      }
+    },
+    {
+      $addFields: {
+        hasInventory: { $gt: [{ $size: '$pricing' }, 0] },
+        estimatedIngredientCost: {
+          $cond: [
+            { $gt: [{ $size: '$pricing' }, 0] },
+            {
+              $multiply: [
+                { $ifNull: ['$ingredients.quantity', 0] },
+                {
+                  $avg: {
+                    $map: {
+                      input: '$pricing',
+                      as: 'item',
+                      in: { $ifNull: ['$$item.cost', 0] }
+                    }
+                  }
+                }
+              ]
+            },
+            0
+          ]
+        }
+      }
+    },
+    {
+      $project: {
+        recipeId: '$recipeId',
+        title: '$title',
+        cuisineType: '$cuisineType',
+        difficulty: '$difficulty',
+        estimatedIngredientCost: '$estimatedIngredientCost',
+        hasInventory: '$hasInventory'
+      }
+    },
+    {
+      $group: {
+        _id: '$recipeId',
+        title: { $first: '$title' },
+        cuisineType: { $first: '$cuisineType' },
+        difficulty: { $first: '$difficulty' },
+        totalCost: { $sum: '$estimatedIngredientCost' },
+        matchedIngredients: {
+          $sum: {
+            $cond: ['$hasInventory', 1, 0]
+          }
+        },
+        totalIngredients: { $sum: 1 }
+      }
+    },
+    {
+      $addFields: {
+        coverage: {
+          $cond: [
+            { $gt: ['$totalIngredients', 0] },
+            {
+              $round: [
+                {
+                  $multiply: [
+                    { $divide: ['$matchedIngredients', '$totalIngredients'] },
+                    100
+                  ]
+                },
+                0
+              ]
+            },
+            0
+          ]
+        }
+      }
+    },
+    { $sort: { totalCost: 1, title: 1 } }
+  ];
+
+  const [performanceData, ingredientResults, chefResults, seasonalResults, costResults] = await Promise.all([
+    Recipe.aggregate(performancePipeline),
+    Recipe.aggregate(ingredientPipeline),
+    Recipe.aggregate(chefPipeline),
+    Recipe.aggregate(seasonalPipeline),
+    Recipe.aggregate(costPipeline)
+  ]);
+
+  const difficultyOrder = { Easy: 1, Medium: 2, Hard: 3 };
+  const performanceDoc = performanceData && performanceData.length ? performanceData[0] : {};
+
+  const cuisinePerformance = Array.isArray(performanceDoc.byCuisine)
+    ? performanceDoc.byCuisine.map(function (entry) {
+        return {
+          cuisineType: entry._id || 'Unspecified',
+          totalRecipes: entry.totalRecipes || 0,
+          avgPrepTime: Math.round(entry.avgPrepTime || 0),
+          avgServings: Math.round(entry.avgServings || 0)
+        };
+      })
+    : [];
+
+  const difficultySummary = Array.isArray(performanceDoc.difficultySpread)
+    ? performanceDoc.difficultySpread
+        .slice()
+        .sort(function (a, b) {
+          const orderA = difficultyOrder[a._id] || 99;
+          const orderB = difficultyOrder[b._id] || 99;
+          if (orderA === orderB) {
+            return (b.total || 0) - (a.total || 0);
+          }
+          return orderA - orderB;
+        })
+        .map(function (entry) {
+          return {
+            difficulty: entry._id || 'Unknown',
+            total: entry.total || 0
+          };
+        })
+    : [];
+
+  const topRecipes = Array.isArray(performanceDoc.topRecipes)
+    ? performanceDoc.topRecipes.map(function (entry) {
+        return {
+          title: entry.title,
+          cuisineType: entry.cuisineType,
+          difficulty: entry.difficulty,
+          servings: entry.servings || 0,
+          ingredientCount: entry.ingredientCount || 0,
+          chef: entry.chef || 'Unknown',
+          createdDate: entry.createdDate ? new Date(entry.createdDate) : null
+        };
+      })
+    : [];
+
+  const ingredientUsage = ingredientResults.map(function (entry) {
+    return {
+      ingredientName: entry._id,
+      usageCount: entry.usageCount || 0,
+      avgQuantity: Math.round((entry.avgQuantity || 0) * 100) / 100,
+      units: Array.isArray(entry.units) ? entry.units.join(', ') : '',
+      recipeCount: Array.isArray(entry.recipes) ? entry.recipes.length : 0,
+      recipes: Array.isArray(entry.recipes) ? entry.recipes : [],
+      averageCost: Math.round((entry.averageCost || 0) * 100) / 100,
+      inventoryCount: entry.inventoryCount || 0
+    };
+  });
+
+  const chefInsights = chefResults.map(function (entry) {
+    const difficulties = Array.isArray(entry.difficultyBreakdown)
+      ? entry.difficultyBreakdown
+          .slice()
+          .sort(function (a, b) {
+            const orderA = difficultyOrder[a.difficulty] || 99;
+            const orderB = difficultyOrder[b.difficulty] || 99;
+            return orderA - orderB;
+          })
+          .map(function (item) {
+            return {
+              difficulty: item.difficulty || 'Unknown',
+              total: item.total || 0
+            };
+          })
+      : [];
+
+    return {
+      userId: entry._id,
+      chef: entry.chef || 'Unknown',
+      totalRecipes: entry.totalRecipes || 0,
+      avgPrepTime: Math.round(entry.avgPrepTime || 0),
+      cuisinePreferences: Array.isArray(entry.cuisinePreferences)
+        ? entry.cuisinePreferences.sort()
+        : [],
+      difficultyBreakdown: difficulties
+    };
+  });
+
+  const seasonalTrends = seasonalResults.map(function (entry) {
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    const monthIndex = entry._id && entry._id.month ? entry._id.month - 1 : 0;
+    const label = monthNames[monthIndex] + ' ' + (entry._id && entry._id.year ? entry._id.year : '');
+    return {
+      label: label.trim(),
+      totalRecipes: entry.totalRecipes || 0,
+      cuisines: Array.isArray(entry.cuisines) ? entry.cuisines.sort() : []
+    };
+  });
+
+  const costReports = costResults.map(function (entry) {
+    return {
+      recipeId: entry._id,
+      title: entry.title,
+      cuisineType: entry.cuisineType,
+      difficulty: entry.difficulty,
+      totalCost: Math.round((entry.totalCost || 0) * 100) / 100,
+      coverage: entry.coverage || 0
+    };
+  });
+
+  const coverageThreshold = Number.isFinite(opts.minCoverage) ? opts.minCoverage : 90;
+  const smartData = await getSmartRecipeDashboardData({ userId: opts.inventoryUserId });
+  const recommendations = Array.isArray(smartData && smartData.cookability)
+    ? smartData.cookability
+        .filter(function (item) {
+          return (item.cookabilityScore || 0) >= coverageThreshold;
+        })
+        .slice(0, 6)
+        .map(function (item) {
+          return {
+            title: item.title,
+            cuisineType: item.cuisineType,
+            cookabilityScore: item.cookabilityScore || 0,
+            matchedCount: item.matchedCount || 0,
+            totalIngredients: item.totalIngredients || 0,
+            missingIngredients: Array.isArray(item.missingIngredients)
+              ? item.missingIngredients
+              : []
+          };
+        })
+    : [];
+
+  const appliedFilters = {
+    cuisine: opts.filterCuisine || '',
+    difficulty: opts.filterDifficulty || '',
+    mealType: opts.filterMealType || '',
+    maxPrep: Number.isFinite(opts.maxPrepMinutes) ? opts.maxPrepMinutes : '',
+    search: opts.searchTerm || '',
+    chef: opts.chefName || ''
+  };
+
+  const recipeQuery = {};
+  if (appliedFilters.cuisine) {
+    recipeQuery.cuisineType = appliedFilters.cuisine;
+  }
+  if (appliedFilters.difficulty) {
+    recipeQuery.difficulty = appliedFilters.difficulty;
+  }
+  if (appliedFilters.mealType) {
+    recipeQuery.mealType = appliedFilters.mealType;
+  }
+  if (Number.isFinite(opts.maxPrepMinutes) && opts.maxPrepMinutes > 0) {
+    recipeQuery.prepTime = { $lte: opts.maxPrepMinutes };
+  }
+  if (appliedFilters.search) {
+    recipeQuery.title = new RegExp(appliedFilters.search, 'i');
+  }
+  if (appliedFilters.chef) {
+    recipeQuery.chef = new RegExp(appliedFilters.chef, 'i');
+  }
+
+  const filteredRecipes = await Recipe.find(recipeQuery, {
+    recipeId: 1,
+    title: 1,
+    cuisineType: 1,
+    difficulty: 1,
+    prepTime: 1,
+    mealType: 1,
+    servings: 1,
+    chef: 1,
+    createdDate: 1
+  })
+    .sort({ createdDate: -1, title: 1 })
+    .limit(20)
+    .lean();
+
+  const advancedResults = filteredRecipes.map(function (recipe) {
+    return {
+      recipeId: recipe.recipeId,
+      title: recipe.title,
+      cuisineType: recipe.cuisineType,
+      difficulty: recipe.difficulty,
+      prepTime: recipe.prepTime || 0,
+      mealType: recipe.mealType,
+      servings: recipe.servings || 0,
+      chef: recipe.chef || 'Unknown',
+      createdDate: recipe.createdDate ? new Date(recipe.createdDate) : null
+    };
+  });
+
+  return {
+    performance: cuisinePerformance,
+    difficultySummary: difficultySummary,
+    topRecipes: topRecipes,
+    ingredientUsage: ingredientUsage,
+    chefInsights: chefInsights,
+    seasonalTrends: seasonalTrends,
+    costReports: costReports,
+    recommendations: recommendations,
+    appliedFilters: appliedFilters,
+    filteredRecipes: advancedResults
+  };
+}
+
 module.exports = {
   seedDatabase,
   getNextUserId,
@@ -978,6 +1431,7 @@ module.exports = {
   calculateInventoryValue,
   getDashboardStats,
   getSmartRecipeDashboardData,
+  getAdvancedAnalyticsDashboard,
   getSharedInventorySnapshot,
   getInventoryBasedSuggestions
 };

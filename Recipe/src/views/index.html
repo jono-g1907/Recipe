@@ -76,7 +76,7 @@
                 </ul>
               </li>
             <% } %>
-            <% if (canManageRecipes) { %>
+            <% if (canManageRecipes || canViewAnalytics) { %>
               <li class="nav-item dropdown">
                 <a
                   class="nav-link dropdown-toggle"
@@ -89,9 +89,16 @@
                   HD Tasks
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="hdTasksDropdown">
-                  <li>
-                    <a class="dropdown-item" href="/hd-task1-<%= appId %>?userId=<%= id %>">Recipe Recommendations</a>
-                  </li>
+                  <% if (canManageRecipes) { %>
+                    <li>
+                      <a class="dropdown-item" href="/hd-task1-<%= appId %>?userId=<%= id %>">Recipe Recommendations</a>
+                    </li>
+                  <% } %>
+                  <% if (canViewAnalytics) { %>
+                    <li>
+                      <a class="dropdown-item" href="/hd-task2-<%= appId %>?userId=<%= id %>">Recipe Intelligence Dashboard</a>
+                    </li>
+                  <% } %>
                 </ul>
               </li>
             <% } %>

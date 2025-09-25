@@ -72,23 +72,32 @@
                 </li>
               </ul>
             </li>
-            <li class="nav-item dropdown">
-              <a
-                class="nav-link dropdown-toggle active"
-                href="#"
-                id="hdTasksDropdown"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                HD Tasks
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="hdTasksDropdown">
-                <li>
-                  <a class="dropdown-item active" href="/hd-task1-<%= appId %>?userId=<%= userId %>">Recipe Recommendations</a>
-                </li>
-              </ul>
-            </li>
+            <% if (canManageRecipes || canViewAnalytics) { %>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle active"
+                  href="#"
+                  id="hdTasksDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  HD Tasks
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="hdTasksDropdown">
+                  <% if (canManageRecipes) { %>
+                    <li>
+                      <a class="dropdown-item active" href="/hd-task1-<%= appId %>?userId=<%= userId %>">Recipe Recommendations</a>
+                    </li>
+                  <% } %>
+                  <% if (canViewAnalytics) { %>
+                    <li>
+                      <a class="dropdown-item" href="/hd-task2-<%= appId %>?userId=<%= userId %>">Recipe Intelligence Dashboard</a>
+                    </li>
+                  <% } %>
+                </ul>
+              </li>
+            <% } %>
           </ul>
         </div>
         <div class="d-flex align-items-center text-white">
