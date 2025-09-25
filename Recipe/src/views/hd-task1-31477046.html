@@ -198,7 +198,7 @@
       <div class="row g-4 mb-4">
         <div class="col-lg-6">
           <div class="card shadow-sm h-100">
-            <div class="card-header bg-info text-white">Inventory Optimisation Suggestions</div>
+            <div class="card-header bg-info text-white">Inventory Optimisation</div>
             <div class="card-body">
               <% if (lowStock && lowStock.length) { %>
                 <% lowStock.forEach(function (item, index) { %>
@@ -214,18 +214,6 @@
               <% } else { %>
                 <p class="mb-0 text-muted">Your frequently used ingredients are sufficiently stocked.</p>
               <% } %>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-secondary text-white">Quick Tips</div>
-            <div class="card-body">
-              <ul class="mb-0 small">
-                <li>Plan menus around ingredients that are about to expire.</li>
-                <li>Restock low inventory staples that power multiple favourite recipes.</li>
-                <li>Use cookability scores to prioritise dishes you can prepare immediately.</li>
-              </ul>
             </div>
           </div>
         </div>
