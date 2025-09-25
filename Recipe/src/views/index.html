@@ -4,15 +4,100 @@
     <meta charset="utf-8" />
     <title>Recipe Hub - Dashboard</title>
     <link rel="stylesheet" href="/bootstrap.min.css" />
+    <style>
+      body {
+        margin: 0;
+        background-color: #f5f6f8;
+      }
+
+      .navbar .dropdown-toggle::after {
+        margin-left: 0.35rem;
+      }
+
+      .quick-actions .card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 0.25rem 0.75rem rgba(18, 38, 63, 0.08);
+      }
+
+      .quick-actions .card-title {
+        font-weight: 600;
+        font-size: 1.2rem;
+      }
+
+      .quick-actions .card-text {
+        color: #6c757d;
+      }
+    </style>
   </head>
-  <body style="margin:0;">
-    <nav class="navbar navbar-expand bg-primary navbar-dark">
+  <body>
+    <nav class="navbar navbar-expand-lg bg-primary navbar-dark">
       <div class="container-fluid">
         <a class="navbar-brand" href="/home-<%= appId %>?userId=<%= id %>">Recipe Hub</a>
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link active" href="/home-<%= appId %>?userId=<%= id %>">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">Inventory</a></li>
-        </ul>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNavDropdown"
+          aria-controls="navbarNavDropdown"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" href="/home-<%= appId %>?userId=<%= id %>">Home</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="recipesDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Recipes
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="recipesDropdown">
+                <li>
+                  <a class="dropdown-item" href="/recipes-list-<%= appId %>?userId=<%= id %>">All Recipes</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/add-recipe-<%= appId %>?userId=<%= id %>">Add Recipe</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/delete-recipe-<%= appId %>?userId=<%= id %>">Delete Recipe</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="inventoryDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Inventory
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
+                <li>
+                  <a class="dropdown-item" href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">Inventory Dashboard</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/add-inventory-<%= appId %>?userId=<%= id %>">Add Inventory Item</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/delete-inventory-<%= appId %>?userId=<%= id %>">Delete Inventory</a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
         <div class="d-flex align-items-center text-white">
           <div class="me-3 text-end">
             <div>Welcome, <%= username %></div>
@@ -77,28 +162,28 @@
       </div>
 
       <h2 class="text-center mb-3">Quick Actions</h2>
-      <div class="row">
-        <div class="col-md-4 mb-3">
+      <div class="row quick-actions g-3 justify-content-center">
+        <div class="col-md-6 col-lg-5">
           <div class="card h-100">
             <div class="card-body">
-              <h3 class="card-title">Recipe Actions</h3>
-              <ul class="list-unstyled mb-0">
-                <li><a href="/recipes-list-<%= appId %>?userId=<%= id %>">All Recipes</a></li>
-                <li><a href="/add-recipe-<%= appId %>?userId=<%= id %>">Add New Recipe</a></li>
-                <li><a href="/delete-recipe-<%= appId %>?userId=<%= id %>">Delete Recipe</a></li>
-              </ul>
+              <h3 class="card-title">Recipe Management</h3>
+              <p class="card-text">Create, view, and manage your recipes.</p>
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" href="/add-recipe-<%= appId %>?userId=<%= id %>">Add Recipe</a>
+                <a class="btn btn-outline-primary" href="/recipes-list-<%= appId %>?userId=<%= id %>">View Recipes</a>
+              </div>
             </div>
           </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-6 col-lg-5">
           <div class="card h-100">
             <div class="card-body">
-              <h3 class="card-title">Inventory Actions</h3>
-              <ul class="list-unstyled mb-0">
-                <li><a href="/add-inventory-<%= appId %>?userId=<%= id %>">Add Inventory Item</a></li>
-                <li><a href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">Inventory List</a></li>
-                <li><a href="/delete-inventory-<%= appId %>?userId=<%= id %>">Delete Inventory</a></li>
-              </ul>
+              <h3 class="card-title">Inventory Management</h3>
+              <p class="card-text">Track and manage your inventory items.</p>
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-success" href="/add-inventory-<%= appId %>?userId=<%= id %>">Add Item</a>
+                <a class="btn btn-outline-success" href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">View Inventory</a>
+              </div>
             </div>
           </div>
         </div>
@@ -108,5 +193,6 @@
         <p>Built by <%= username %> (Student ID: <%= appId %>)</p>
       </footer>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76A2z02tPqdjfq6w0l0F8EwQ0nPEzvFZV6jDQm9Kl8yYh7vHk/tz1FQ0bOSGb12" crossorigin="anonymous"></script>
   </body>
 </html>
