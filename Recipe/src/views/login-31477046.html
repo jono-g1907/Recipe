@@ -8,7 +8,7 @@
   <body class="bg-light">
     <div class="container py-5" style="max-width: 480px;">
       <h1 class="mb-3 text-center">Login</h1>
-      <p class="text-center">Enter your credentials to access Recipe Hub.</p>
+      <p class="text-center">Access your Recipe & Inventory Management account</p>
 
       <% if (message) { %>
         <div class="alert alert-info"><%= message %></div>
@@ -24,11 +24,11 @@
 
       <form class="card p-4 shadow-sm" method="post" action="/login-31477046" novalidate>
         <div class="mb-3">
-          <label class="form-label" for="loginEmail">Email address</label>
+          <label class="form-label" for="loginEmail">Email Address:</label>
           <input class="form-control" type="email" id="loginEmail" name="email" value="<%= email %>" required />
         </div>
         <div class="mb-3">
-          <label class="form-label" for="loginPassword">Password</label>
+          <label class="form-label" for="loginPassword">Password:</label>
           <input class="form-control" type="password" id="loginPassword" name="password" required />
         </div>
         <button class="btn btn-secondary w-100" type="submit">Login</button>

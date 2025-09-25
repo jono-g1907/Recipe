@@ -117,13 +117,16 @@ function parseLoginForm(body) {
 
 function collectLoginErrors(form) {
   const errors = [];
-  if (!form.email) {
-    errors.push('Email is required');
-  } else if (!EMAIL_REGEX.test(form.email)) {
-    errors.push('Enter a valid email address');
-  }
-  if (!form.password) {
-    errors.push('Password is required');
+
+  const missingEmail = !form.email || !form.email.trim();
+  const missingPassword = !form.password || !form.password.trim();
+
+  // If either is missing, show one combined message and skip the rest
+  if (missingEmail || missingPassword) {
+    errors.push('Email or password is required');
+  } else if (!EMAIL_REGEX.test(form.email)){
+    // Only validate formats when both are present
+      errors.push('Enter a valid email address');
   }
   return errors;
 }

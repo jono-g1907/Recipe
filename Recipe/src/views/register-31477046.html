@@ -7,22 +7,21 @@
   </head>
   <body class="bg-light">
     <div class="container py-5" style="max-width: 640px;">
-      <h1 class="mb-3 text-center">Create Your Account</h1>
-      <p class="text-center mb-4">Fill in the details below to access Recipe Hub.</p>
+      <h1 class="mb-3 text-center">Register</h1>
+      <p class="text-center mb-4">Create your Recipe & Inventory Management account</p>
 
       <div id="errorBox" class="alert alert-danger" style="<%= error ? '' : 'display:none;' %>"><%= error %></div>
 
       <form id="registrationForm" method="post" action="/register-31477046" novalidate>
         <div class="mb-3">
-          <label class="form-label" for="email">Email address</label>
-          <input class="form-control" type="email" id="email" name="email" value="<%= values.email %>" required />
-          <div class="form-text">Use a valid email (e.g. name@example.com).</div>
+          <label class="form-label" for="email">Email Address:</label>
+          <input class="form-control" type="text" id="email" name="email" value="<%= values.email %>" placeholder="name@example.com" required />
         </div>
 
         <div class="mb-3">
           <label class="form-label" for="password">Password</label>
           <input class="form-control" type="password" id="password" name="password" minlength="8" required />
-          <div class="form-text">Must include uppercase, lowercase, number, and special character.</div>
+          <div class="form-text">Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
         </div>
 
         <div class="mb-3">
@@ -31,7 +30,7 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label" for="fullname">Full name</label>
+          <label class="form-label" for="fullname">Full Name:</label>
           <input class="form-control" type="text" id="fullname" name="fullname" value="<%= values.fullname %>" required />
         </div>
 
@@ -46,15 +45,14 @@
         </div>
 
         <div class="mb-4">
-          <label class="form-label" for="phone">Phone number</label>
-          <input class="form-control" type="text" id="phone" name="phone" value="<%= values.phone %>" placeholder="e.g. +61 412 345 678" required />
-          <div class="form-text">Australian numbers only. You can use spaces or dashes.</div>
+          <label class="form-label" for="phone">Phone Number:</label>
+          <input class="form-control" type="text" id="phone" name="phone" value="<%= values.phone %>" placeholder="+61 412 345 678" required />
         </div>
 
         <button class="btn btn-primary w-100" type="submit">Create Account</button>
       </form>
 
-      <p class="mt-4 text-center">Already registered? <a href="/login-31477046">Login</a>.</p>
+      <p class="mt-4 text-center">Already have an account? <a href="/login-31477046">Login here</a></p>
     </div>
 
     <script>

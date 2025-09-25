@@ -237,7 +237,7 @@ app.post('/login-' + APP_ID, async function (req, res, next) {
     if (!user) {
       return res.status(404).render('login-31477046.html', {
         message: '',
-        error: 'Account not found. Please check your email or register.',
+        error: 'Account not found.',
         success: '',
         email: form.email
       });
