@@ -12,6 +12,7 @@ const {
 } = require('../lib/validationConstants');
 const { toIsoDate } = require('../lib/date');
 
+// Template of default values used to clear or initialise the recipe form.
 const EMPTY_RECIPE_FORM_VALUES = {
   recipeId: '',
   title: '',
@@ -26,10 +27,12 @@ const EMPTY_RECIPE_FORM_VALUES = {
   instructionsText: ''
 };
 
+// Provides a brand new copy of the empty form so mutations don't leak between requests.
 function getEmptyRecipeFormValues() {
   return Object.assign({}, EMPTY_RECIPE_FORM_VALUES);
 }
 
+// Attempts to match user input against allowed select options while keeping the original case.
 function normaliseSelectValue(value, options) {
   const trimmed = sanitiseString(value);
   if (!trimmed) {
@@ -43,6 +46,7 @@ function normaliseSelectValue(value, options) {
   return trimmed;
 }
 
+// Normalises raw request body data into strings ready to re-populate the recipe form.
 function buildRecipeFormValuesFromBody(body) {
   const values = getEmptyRecipeFormValues();
   if (!body) {
@@ -62,6 +66,7 @@ function buildRecipeFormValuesFromBody(body) {
   return values;
 }
 
+// Converts a recipe record from the database into form-friendly values (strings and numbers).
 function buildRecipeFormValuesFromRecipe(recipe) {
   const values = getEmptyRecipeFormValues();
   if (!recipe) {
@@ -83,6 +88,7 @@ function buildRecipeFormValuesFromRecipe(recipe) {
 
   values.createdDate = toIsoDate(recipe.createdDate);
 
+  // Turn the structured ingredient objects into text lines the textarea expects.
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const ingredientLines = [];
   for (let i = 0; i < ingredients.length; i++) {
@@ -96,6 +102,7 @@ function buildRecipeFormValuesFromRecipe(recipe) {
   }
   values.ingredientsText = ingredientLines.join('\n');
 
+  // Clean up each instruction step so the textarea shows one step per line.
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
   const instructionLines = [];
   for (let j = 0; j < instructions.length; j++) {
@@ -109,6 +116,7 @@ function buildRecipeFormValuesFromRecipe(recipe) {
   return values;
 }
 
+// Validates every part of a parsed recipe and accumulates user-friendly error messages.
 function collectRecipeErrors(recipe) {
   const errors = [];
 
@@ -229,6 +237,7 @@ function collectRecipeErrors(recipe) {
   return errors;
 }
 
+// Turns submitted form text back into a structured recipe object with numbers and dates.
 function parseRecipeForm(body) {
   const recipe = {};
   const recipeIdInput = sanitiseString(body && body.recipeId);
@@ -253,6 +262,7 @@ function parseRecipeForm(body) {
   for (let i = 0; i < ingLines.length; i++) {
     const line = sanitiseString(ingLines[i]);
     if (!line) continue;
+    // Each line is expected to look like "name | quantity | unit", so split the chunks around the pipes.
     const parts = line.split('|');
     const name = sanitiseString(parts[0]);
     const quantityInput = sanitiseString(parts[1]);
@@ -278,6 +288,7 @@ function parseRecipeForm(body) {
   return recipe;
 }
 
+// Formats the recipe data for templates by ensuring optional lists default to arrays.
 function mapRecipeForView(recipe) {
   return {
     recipeId: recipe.recipeId,

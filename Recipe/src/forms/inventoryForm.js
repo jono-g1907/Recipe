@@ -9,6 +9,7 @@ const {
 } = require('../lib/validationConstants');
 const { toIsoDate } = require('../lib/date');
 
+// Default values used to reset the inventory form when no data is provided.
 const EMPTY_INVENTORY_FORM_VALUES = {
   inventoryId: '',
   userId: '',
@@ -23,10 +24,12 @@ const EMPTY_INVENTORY_FORM_VALUES = {
   createdDate: ''
 };
 
+// Returns a fresh copy of the empty inventory form object so callers don't mutate the template.
 function getEmptyInventoryFormValues() {
   return Object.assign({}, EMPTY_INVENTORY_FORM_VALUES);
 }
 
+// Converts raw request body data into a normalised inventory item with correctly typed fields.
 function parseInventoryForm(body) {
   const item = {};
   item.inventoryId = (body.inventoryId || '').trim();
@@ -44,6 +47,7 @@ function parseInventoryForm(body) {
   return item;
 }
 
+// Validates a normalised inventory item and returns any validation messages to show the user.
 function collectInventoryErrors(item) {
   const errors = [];
   if (!item) {
@@ -99,11 +103,13 @@ function collectInventoryErrors(item) {
     errors.push('Cost must be between 0.01 and 999.99.');
   } else {
     const cents = Math.round(cost * 100);
+    // Guard against floating point rounding problems when checking for two decimal places.
     if (Math.abs(cost * 100 - cents) > 1e-6) {
       errors.push('Cost must have no more than two decimal places.');
     }
   }
 
+  // Support both Date objects and strings by converting anything that's not already a Date.
   const purchaseDate = item.purchaseDate instanceof Date ? item.purchaseDate : new Date(item.purchaseDate);
   if (!(purchaseDate instanceof Date) || Number.isNaN(purchaseDate.getTime())) {
     errors.push('Purchase date must be a valid date.');
@@ -111,6 +117,7 @@ function collectInventoryErrors(item) {
     errors.push('Purchase date cannot be in the future.');
   }
 
+  // Reuse the same "accept Date or string" logic for expiration checks.
   const expirationDate = item.expirationDate instanceof Date ? item.expirationDate : new Date(item.expirationDate);
   if (!(expirationDate instanceof Date) || Number.isNaN(expirationDate.getTime())) {
     errors.push('Expiration date must be a valid date.');
@@ -118,6 +125,7 @@ function collectInventoryErrors(item) {
     errors.push('Expiration date must be after the purchase date.');
   }
 
+  // Created date also needs to become a Date object before validation.
   const createdDate = item.createdDate instanceof Date ? item.createdDate : new Date(item.createdDate);
   if (!(createdDate instanceof Date) || Number.isNaN(createdDate.getTime())) {
     errors.push('Created date must be a valid date.');
@@ -128,6 +136,7 @@ function collectInventoryErrors(item) {
   return errors;
 }
 
+// Takes an inventory record and builds the values to show when re-rendering the form.
 function buildInventoryFormValuesFromItem(item) {
   const values = getEmptyInventoryFormValues();
   if (!item) {
@@ -147,6 +156,7 @@ function buildInventoryFormValuesFromItem(item) {
 
   const costNumber = Number(item.cost);
   if (Number.isFinite(costNumber)) {
+    // Round to cents and force two decimal places so the input shows a money-friendly value.
     values.cost = (Math.round(costNumber * 100) / 100).toFixed(2);
   } else {
     values.cost = '';
@@ -159,11 +169,13 @@ function buildInventoryFormValuesFromItem(item) {
   return values;
 }
 
+// Prepares inventory data with helper fields (like expiry status) for rendering templates.
 function mapInventoryForView(item) {
   const now = new Date();
   const expiration = item.expirationDate instanceof Date ? item.expirationDate : new Date(item.expirationDate);
   let daysLeft = null;
   if (expiration && !Number.isNaN(expiration.getTime())) {
+    // Convert the millisecond difference into whole days remaining until the item expires.
     const diff = expiration.getTime() - now.getTime();
     daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
   }

@@ -6,6 +6,7 @@ const {
   NAME_REGEX
 } = require('../lib/validationConstants');
 
+// Pulls the relevant registration fields out of the request body and normalises casing.
 function parseRegistrationForm(body) {
   const form = {};
   const emailInput = sanitiseString(body && body.email);
@@ -30,10 +31,12 @@ function parseRegistrationForm(body) {
   return form;
 }
 
+// Removes spaces, parentheses and dashes so phone numbers can be validated consistently.
 function stripPhoneFormatting(value) {
   return (value || '').replace(/[\s()-]/g, '');
 }
 
+// Checks whether a phone number matches the basic Australian formats (with or without +61).
 function isAustralianPhoneNumber(value) {
   const cleaned = stripPhoneFormatting(value);
   if (!cleaned) {
@@ -43,15 +46,18 @@ function isAustralianPhoneNumber(value) {
     if (cleaned.indexOf('+61') !== 0) {
       return false;
     }
+    // After removing the +61 prefix, Australian numbers should be 9 digits starting with the listed ranges.
     const rest = cleaned.slice(3);
     return rest.length === 9 && /^[2-478]\d{8}$/.test(rest);
   }
   if (cleaned.indexOf('0') === 0) {
+    // Local format must start with 0 and have 10 digits total to pass this regex.
     return cleaned.length === 10 && /^[2-478]\d{9}$/.test(cleaned);
   }
   return false;
 }
 
+// Validates the completed registration form and returns any messages to display.
 function collectRegistrationErrors(form) {
   const errors = [];
 
@@ -94,6 +100,7 @@ function collectRegistrationErrors(form) {
   return errors;
 }
 
+// Picks the non-sensitive registration fields for re-rendering the form after validation errors.
 function buildRegistrationValues(form) {
   return {
     email: form.email || '',
@@ -103,6 +110,7 @@ function buildRegistrationValues(form) {
   };
 }
 
+// Extracts only the fields needed for logging in and normalises the email casing.
 function parseLoginForm(body) {
   const form = {};
   const emailInput = sanitiseString(body && body.email);
@@ -115,6 +123,7 @@ function parseLoginForm(body) {
   return form;
 }
 
+// Performs simple validation on the login form before attempting authentication.
 function collectLoginErrors(form) {
   const errors = [];
 
