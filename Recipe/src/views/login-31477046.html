@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Login form for returning Recipe Hub users. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -11,14 +12,17 @@
       <p class="text-center">Access your Recipe & Inventory Management account</p>
 
       <% if (message) { %>
+        <!-- Neutral info message, often used for logout notices. -->
         <div class="alert alert-info"><%= message %></div>
       <% } %>
 
       <% if (error) { %>
+        <!-- Display credential or validation errors. -->
         <div class="alert alert-danger"><%= error %></div>
       <% } %>
 
       <% if (success) { %>
+        <!-- Confirmation when an account was just created. -->
         <div class="alert alert-success"><%= success %></div>
       <% } %>
 

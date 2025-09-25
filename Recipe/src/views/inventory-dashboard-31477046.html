@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Inventory overview listing items grouped by location or category. -->
 <html lang="en" data-bs-theme="auto">
   <head>
     <meta charset="utf-8" />
@@ -9,16 +10,19 @@
   <body class="inventory-dashboard-page">
     <div class="container">
       <div class="mb-3">
+        <!-- Quick exit back to the dashboard. -->
         <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
 
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="btn-group">
+          <!-- Shortcut buttons for common inventory tasks. -->
           <a class="btn btn-outline-secondary" href="/home-<%= appId %>?userId=<%= userId %>">Home</a>
           <a class="btn btn-primary" href="/add-inventory-<%= appId %>?userId=<%= userId %>">Add Inventory</a>
           <a class="btn btn-danger" href="/delete-inventory-<%= appId %>?userId=<%= userId %>">Delete Inventory</a>
         </div>
         <div>
+          <!-- Allow the user to change the grouping without leaving the page. -->
           <form class="d-flex" method="get" action="/inventory-dashboard-<%= appId %>">
             <input type="hidden" name="userId" value="<%= userId %>">
             <label class="me-2">Group by</label>
@@ -32,6 +36,7 @@
       </div>
 
       <% if (typeof msg !== 'undefined' && msg) { %>
+        <!-- Feedback banner for recent inventory actions. -->
         <div class="alert alert-success"><%= msg %></div>
       <% } %>
 
@@ -40,14 +45,14 @@
         $<span class="mono"><%= (Math.round(totalValue * 100) / 100).toFixed(2) %></span>
       </div>
 
-      <% 
+      <%
         // render one table per group
         var groupKeys = Object.keys(groups);
         if (groupKeys.length === 0) { %>
           <div class="alert alert-warning">No inventory items yet. Add some to see them here.</div>
       <% } %>
 
-      <% for (var gi = 0; gi < groupKeys.length; gi++) { 
+      <% for (var gi = 0; gi < groupKeys.length; gi++) {
            var gkey = groupKeys[gi];
            var bucket = groups[gkey] || { items: [], value: 0 };
       %>
@@ -79,6 +84,7 @@
               </tr>
             </thead>
             <tbody>
+            <!-- Render each inventory row and decorate with expiry status badges. -->
             <% for (var i = 0; i < bucket.items.length; i++) {
                  var r = bucket.items[i];
                  var badgeClass = 'status-unknown', statusText = 'Unknown';
@@ -113,6 +119,7 @@
     </div>
 
     <script>
+      // Call the DELETE API for the given inventory ID and refresh on success.
       function deleteInventory(id) {
         if (!id) return;
         if (!confirm('Delete inventory item ' + id + '?')) return;
@@ -133,6 +140,7 @@
     </script>
   </body>
 </html>
+
 
 
 
