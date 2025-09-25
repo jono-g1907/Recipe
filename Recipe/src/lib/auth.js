@@ -5,7 +5,8 @@ function buildLoginRedirectUrl(appId, message) {
   return '/login-' + appId + '?error=' + encodeURIComponent(text);
 }
 
-async function resolveActiveUser(req, store) {
+async function resolveActiveUser(req, store, options) {
+  const opts = options || {};
   const queryUserId = sanitiseString(req.query && req.query.userId);
   const bodyUserId = sanitiseString(req.body && req.body.userId);
   const sourceId = queryUserId || bodyUserId;
@@ -23,6 +24,17 @@ async function resolveActiveUser(req, store) {
 
   if (!user.isLoggedIn) {
     return { error: 'Your session has ended. Please log in again.' };
+  }
+
+  if (Array.isArray(opts.allowedRoles) && opts.allowedRoles.length) {
+    const role = (user.role || '').toString().toLowerCase();
+    const allowed = opts.allowedRoles.some(function (allowedRole) {
+      return (allowedRole || '').toString().toLowerCase() === role;
+    });
+
+    if (!allowed) {
+      return { error: 'You are not allowed to access this page.' };
+    }
   }
 
   return { user: user };

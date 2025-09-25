@@ -48,6 +48,12 @@ const inventorySchema = new mongoose.Schema({
       message: 'User Id must exist before creating an inventory item.'
     }
   },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
   ingredientName: {
     type: String,
     required: true,
@@ -131,6 +137,9 @@ inventorySchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
+
+inventorySchema.index({ inventoryId: 1 });
+inventorySchema.index({ userId: 1 });
 
 module.exports = mongoose.model('InventoryItem', inventorySchema);
 

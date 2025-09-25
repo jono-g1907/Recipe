@@ -42,6 +42,7 @@ const {
   RECIPE_TITLE_REGEX
 } = require('./lib/validationConstants');
 const { sanitiseString } = require('./lib/utils');
+const { userCanAccessRecipes, userCanAccessInventory } = require('./lib/permissions');
 
 const app = express();
 app.set('port', 8080);
@@ -134,15 +135,40 @@ app.get('/home-' + APP_ID, async function (req, res, next) {
     const successMessage = req.query && req.query.success === '1' ? 'Login successful. Your account details are now loaded for new submissions.' : sanitiseString(req.query && req.query.successMessage);
     const errorMessage = sanitiseString(req.query && req.query.errorMessage);
 
+    const canManageRecipes = userCanAccessRecipes(user);
+    const canManageInventory = userCanAccessInventory(user);
+
+    let myRecipes = [];
+    let recipeSuggestions = [];
+    if (canManageRecipes) {
+      const [mine, suggestions] = await Promise.all([
+        store.getRecipesByOwner(user.userId, { limit: 5 }),
+        store.getInventoryBasedSuggestions(3)
+      ]);
+      myRecipes = mine;
+      recipeSuggestions = suggestions;
+    }
+
+    let sharedInventory = [];
+    if (canManageInventory) {
+      sharedInventory = await store.getSharedInventorySnapshot(5);
+    }
+
     res.render('index.html', {
       username: user.fullname,
       email: sanitiseString(user.email),
       id: user.userId,
+      role: user.role,
       totalRecipes: stats.recipeCount,
       totalInventory: stats.inventoryCount,
       userCount: stats.userCount,
       cuisineCount: stats.cuisineCount,
       inventoryValue: Number(stats.inventoryValue || 0),
+      canManageRecipes: canManageRecipes,
+      canManageInventory: canManageInventory,
+      myRecipes: myRecipes,
+      sharedInventory: sharedInventory,
+      recipeSuggestions: recipeSuggestions,
       successMessage: successMessage || '',
       errorMessage: errorMessage || '',
       appId: APP_ID
@@ -154,13 +180,13 @@ app.get('/home-' + APP_ID, async function (req, res, next) {
 
 app.get('/hd-task1-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
-    const insights = await store.getSmartRecipeDashboardData({ userId: user.userId });
+    const insights = await store.getSmartRecipeDashboardData({});
 
     res.render('hd-task1-31477046.html', {
       appId: APP_ID,
@@ -316,7 +342,7 @@ app.post('/logout-' + APP_ID, async function (req, res, next) {
 
 app.get('/add-recipe-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
@@ -330,16 +356,13 @@ app.get('/add-recipe-' + APP_ID, async function (req, res, next) {
 
 app.get('/edit-recipe-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
-    const allRecipes = await store.getAllRecipes();
-    const myRecipes = allRecipes.filter(function (recipe) {
-      return recipe && recipe.userId === user.userId;
-    });
+    const myRecipes = await store.getRecipesByOwner(user.userId);
 
     const queryId = sanitiseString(req.query && req.query.recipeId);
     const requestedId = queryId ? queryId.toUpperCase() : '';
@@ -374,7 +397,7 @@ app.get('/edit-recipe-' + APP_ID, async function (req, res, next) {
 
 app.get('/add-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
@@ -396,13 +419,13 @@ app.get('/add-inventory-' + APP_ID, async function (req, res, next) {
 
 app.get('/edit-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
-    const listResult = await store.listInventory({ userId: user.userId, page: 1, limit: 500, sort: '-createdDate' });
+    const listResult = await store.listInventory({ page: 1, limit: 500, sort: '-createdDate' });
     const items = Array.isArray(listResult.items) ? listResult.items : [];
 
     const queryId = sanitiseString(req.query && req.query.inventoryId);
@@ -417,7 +440,7 @@ app.get('/edit-inventory-' + APP_ID, async function (req, res, next) {
 
     let errorMessage = sanitiseString(req.query && req.query.error);
     if (!items.length) {
-      errorMessage = (errorMessage ? errorMessage + ' ' : '') + 'You have no inventory items to edit yet. Add an item first.';
+      errorMessage = (errorMessage ? errorMessage + ' ' : '') + 'There are no inventory items to edit yet. Add an item first.';
     } else if (requestedId && !selectedItem) {
       errorMessage = (errorMessage ? errorMessage + ' ' : '') + 'Inventory item ' + requestedId + ' was not found. Showing your first item.';
     }
@@ -438,13 +461,13 @@ app.get('/edit-inventory-' + APP_ID, async function (req, res, next) {
 
 app.get('/recipes-list-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     const user = result.user;
-    const recipes = await store.getAllRecipes();
+    const recipes = await store.getAllRecipes({ includeChefInfo: true });
     const rows = recipes.map(mapRecipeForView);
     const deletedId = sanitiseString(req.query && req.query.deleted);
     const deletedTitle = sanitiseString(req.query && req.query.deletedTitle);
@@ -479,7 +502,7 @@ app.get('/recipes-list-' + APP_ID, async function (req, res, next) {
 
 app.get('/delete-recipe-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
@@ -500,7 +523,7 @@ app.get('/delete-recipe-' + APP_ID, async function (req, res, next) {
 
 app.get('/delete-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
@@ -521,31 +544,40 @@ app.get('/delete-inventory-' + APP_ID, async function (req, res, next) {
 
 app.post('/delete-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const id = (req.body.inventoryId || '').trim();
-    const bodyUserId = sanitiseString(req.body && req.body.userId);
-    const userId = bodyUserId ? bodyUserId.toUpperCase() : '';
-    if (!id) {
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
+    if (!result.user) {
+      return res.render('delete-inventory-31477046.html', {
+        error: result.error || 'You must be logged in to delete inventory items.',
+        lastId: '',
+        userId: '',
+        appId: APP_ID
+      });
+    }
+
+    const activeUser = result.user;
+    const idInput = (req.body.inventoryId || '').trim().toUpperCase();
+    if (!idInput) {
       return res.render('delete-inventory-31477046.html', {
         error: 'inventoryId is required',
         lastId: '',
-        userId: userId,
+        userId: activeUser.userId,
         appId: APP_ID
       });
     }
-    const result = await store.deleteInventoryItem(id);
-    if (!result || result.deletedCount === 0) {
+
+    const deletion = await store.deleteInventoryItem(idInput);
+    if (!deletion || deletion.deletedCount === 0) {
       return res.render('delete-inventory-31477046.html', {
         error: 'Inventory item not found',
-        lastId: id,
-        userId: userId,
+        lastId: idInput,
+        userId: activeUser.userId,
         appId: APP_ID
       });
     }
+
     const params = [];
-    if (userId) {
-      params.push('userId=' + encodeURIComponent(userId));
-    }
-    params.push('deleted=' + encodeURIComponent(id));
+    params.push('userId=' + encodeURIComponent(activeUser.userId));
+    params.push('deleted=' + encodeURIComponent(idInput));
     const redirectTarget = '/inventory-dashboard-' + APP_ID + '?' + params.join('&');
     return res.redirect(302, redirectTarget);
   } catch (err) {
@@ -555,7 +587,7 @@ app.post('/delete-inventory-' + APP_ID, async function (req, res, next) {
 
 app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
@@ -616,31 +648,38 @@ app.get('/inventory-dashboard-' + APP_ID, async function (req, res, next) {
 
 app.post('/delete-recipe-' + APP_ID, async function (req, res, next) {
   try {
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
+    if (!result.user) {
+      return res.render('delete-recipe-31477046.html', {
+        error: result.error || 'You must be logged in to delete recipes.',
+        lastId: '',
+        userId: '',
+        appId: APP_ID
+      });
+    }
+
+    const activeUser = result.user;
     const rawId = sanitiseString(req.body && req.body.recipeId);
     const id = rawId ? rawId.toUpperCase() : '';
-    const bodyUserId = sanitiseString(req.body && req.body.userId);
-    const userId = bodyUserId ? bodyUserId.toUpperCase() : '';
     if (!id) {
       return res.render('delete-recipe-31477046.html', {
         error: 'recipeId is required',
         lastId: '',
-        userId: userId,
+        userId: activeUser.userId,
         appId: APP_ID
       });
     }
-    const deletedRecipe = await store.deleteRecipe(id);
+    const deletedRecipe = await store.deleteRecipe(id, { userId: activeUser.userId });
     if (!deletedRecipe) {
       return res.render('delete-recipe-31477046.html', {
         error: 'Recipe not found',
         lastId: rawId,
-        userId: userId,
+        userId: activeUser.userId,
         appId: APP_ID
       });
     }
     const params = [];
-    if (userId) {
-      params.push('userId=' + encodeURIComponent(userId));
-    }
+    params.push('userId=' + encodeURIComponent(activeUser.userId));
     params.push('deleted=' + encodeURIComponent(deletedRecipe.recipeId));
     if (deletedRecipe.title) {
       params.push('deletedTitle=' + encodeURIComponent(deletedRecipe.title));
@@ -657,16 +696,13 @@ app.post('/edit-recipe-' + APP_ID, async function (req, res, next) {
   let recipeOptions = [];
   let formValues = null;
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     activeUser = result.user;
-    const allRecipes = await store.getAllRecipes();
-    recipeOptions = allRecipes.filter(function (recipe) {
-      return recipe && recipe.userId === activeUser.userId;
-    });
+    recipeOptions = await store.getRecipesByOwner(activeUser.userId);
 
     formValues = buildRecipeFormValuesFromBody(req.body || {});
     const payload = parseRecipeForm(req.body || {});
@@ -709,7 +745,7 @@ app.post('/edit-recipe-' + APP_ID, async function (req, res, next) {
       userId: existingRecipe.userId
     };
 
-    const updatedRecipe = await store.updateRecipe(existingRecipe.recipeId, patch);
+    const updatedRecipe = await store.updateRecipe(existingRecipe.recipeId, patch, { userId: activeUser.userId });
     if (!updatedRecipe) {
       return renderRecipeEditForm(res, activeUser, recipeOptions, existingRecipe.recipeId, formValues, 'Recipe could not be updated. Try again.', '', 500);
     }
@@ -742,7 +778,7 @@ app.post('/add-recipe-' + APP_ID, async function (req, res, next) {
   let activeUser = null;
   let formValues = null;
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
@@ -798,7 +834,7 @@ app.post('/add-recipe-' + APP_ID, async function (req, res, next) {
 
 app.post('/add-inventory-' + APP_ID, async function (req, res, next) {
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
@@ -824,13 +860,13 @@ app.post('/edit-inventory-' + APP_ID, async function (req, res, next) {
   let inventoryOptions = [];
   let formValues = null;
   try {
-    const result = await resolveActiveUser(req, store);
+    const result = await resolveActiveUser(req, store, { allowedRoles: ['chef', 'manager', 'admin'] });
     if (!result.user) {
       return res.redirect(302, buildLoginRedirectUrl(APP_ID, result.error));
     }
 
     activeUser = result.user;
-    const listResult = await store.listInventory({ userId: activeUser.userId, page: 1, limit: 500, sort: '-createdDate' });
+    const listResult = await store.listInventory({ page: 1, limit: 500, sort: '-createdDate' });
     inventoryOptions = Array.isArray(listResult.items) ? listResult.items : [];
 
     const payload = parseInventoryForm(req.body || {});
@@ -843,8 +879,8 @@ app.post('/edit-inventory-' + APP_ID, async function (req, res, next) {
     }
 
     const existingItem = await store.getInventoryItemById(payload.inventoryId);
-    if (!existingItem || existingItem.userId !== activeUser.userId) {
-      return renderInventoryEditForm(res, activeUser, inventoryOptions, payload.inventoryId, formValues, 'Inventory item ' + payload.inventoryId + ' was not found for your account.', '', 404);
+    if (!existingItem) {
+      return renderInventoryEditForm(res, activeUser, inventoryOptions, payload.inventoryId, formValues, 'Inventory item ' + payload.inventoryId + ' was not found.', '', 404);
     }
 
     const validationErrors = collectInventoryErrors(payload);

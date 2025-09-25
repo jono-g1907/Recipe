@@ -26,69 +26,75 @@
             <li class="nav-item">
               <a class="nav-link active" href="/home-<%= appId %>?userId=<%= id %>">Home</a>
             </li>
-            <li class="nav-item dropdown">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                id="recipesDropdown"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                Recipes
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="recipesDropdown">
-                <li>
-                  <a class="dropdown-item" href="/recipes-list-<%= appId %>?userId=<%= id %>">All Recipes</a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="/add-recipe-<%= appId %>?userId=<%= id %>">Add Recipe</a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="/delete-recipe-<%= appId %>?userId=<%= id %>">Delete Recipe</a>
-                </li>
-              </ul>
-            </li>
-            <li class="nav-item dropdown">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                id="inventoryDropdown"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                Inventory
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
-                <li>
-                  <a class="dropdown-item" href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">Inventory Dashboard</a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="/add-inventory-<%= appId %>?userId=<%= id %>">Add Inventory Item</a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="/delete-inventory-<%= appId %>?userId=<%= id %>">Delete Inventory</a>
-                </li>
-              </ul>
-            </li>
-            <li class="nav-item dropdown">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                id="hdTasksDropdown"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                HD Tasks
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="hdTasksDropdown">
-                <li>
-                  <a class="dropdown-item" href="/hd-task1-<%= appId %>?userId=<%= id %>">Recipe Recommendations</a>
-                </li>
-              </ul>
-            </li>
+            <% if (canManageRecipes) { %>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="recipesDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Recipes
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="recipesDropdown">
+                  <li>
+                    <a class="dropdown-item" href="/recipes-list-<%= appId %>?userId=<%= id %>">All Recipes</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/add-recipe-<%= appId %>?userId=<%= id %>">Add Recipe</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/delete-recipe-<%= appId %>?userId=<%= id %>">Delete Recipe</a>
+                  </li>
+                </ul>
+              </li>
+            <% } %>
+            <% if (canManageInventory) { %>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="inventoryDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Inventory
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
+                  <li>
+                    <a class="dropdown-item" href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">Inventory Dashboard</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/add-inventory-<%= appId %>?userId=<%= id %>">Add Inventory Item</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/delete-inventory-<%= appId %>?userId=<%= id %>">Delete Inventory</a>
+                  </li>
+                </ul>
+              </li>
+            <% } %>
+            <% if (canManageRecipes) { %>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="hdTasksDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  HD Tasks
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="hdTasksDropdown">
+                  <li>
+                    <a class="dropdown-item" href="/hd-task1-<%= appId %>?userId=<%= id %>">Recipe Recommendations</a>
+                  </li>
+                </ul>
+              </li>
+            <% } %>
           </ul>
         </div>
         <div class="d-flex align-items-center text-white">
@@ -96,6 +102,7 @@
             <div>Welcome, <%= username %></div>
             <small class="d-block">Email: <%= email %></small>
             <small class="d-block">ID: <%= id %></small>
+            <small class="d-block text-uppercase">Role: <%= role %></small>
           </div>
           <form class="d-flex" method="post" action="/logout-<%= appId %>">
             <input type="hidden" name="userId" value="<%= id %>" />
@@ -156,31 +163,113 @@
 
       <h2 class="text-center mb-3">Quick Actions</h2>
       <div class="row quick-actions g-3 justify-content-center">
-        <div class="col-md-6 col-lg-5">
-          <div class="card h-100">
-            <div class="card-body">
-              <h3 class="card-title">Recipe Management</h3>
-              <p class="card-text">Create, view, and manage your recipes.</p>
-              <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-primary" href="/add-recipe-<%= appId %>?userId=<%= id %>">Add Recipe</a>
-                <a class="btn btn-outline-primary" href="/recipes-list-<%= appId %>?userId=<%= id %>">View Recipes</a>
+        <% if (canManageRecipes) { %>
+          <div class="col-md-6 col-lg-5">
+            <div class="card h-100">
+              <div class="card-body">
+                <h3 class="card-title">Recipe Management</h3>
+                <p class="card-text">Create, view, and manage your recipes.</p>
+                <div class="d-flex flex-wrap gap-2">
+                  <a class="btn btn-primary" href="/add-recipe-<%= appId %>?userId=<%= id %>">Add Recipe</a>
+                  <a class="btn btn-outline-primary" href="/recipes-list-<%= appId %>?userId=<%= id %>">View Recipes</a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="col-md-6 col-lg-5">
-          <div class="card h-100">
-            <div class="card-body">
-              <h3 class="card-title">Inventory Management</h3>
-              <p class="card-text">Track and manage your inventory items.</p>
-              <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-success" href="/add-inventory-<%= appId %>?userId=<%= id %>">Add Item</a>
-                <a class="btn btn-outline-success" href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">View Inventory</a>
+        <% } %>
+        <% if (canManageInventory) { %>
+          <div class="col-md-6 col-lg-5">
+            <div class="card h-100">
+              <div class="card-body">
+                <h3 class="card-title">Inventory Management</h3>
+                <p class="card-text">Track and manage your inventory items.</p>
+                <div class="d-flex flex-wrap gap-2">
+                  <a class="btn btn-success" href="/add-inventory-<%= appId %>?userId=<%= id %>">Add Item</a>
+                  <a class="btn btn-outline-success" href="/inventory-dashboard-<%= appId %>?userId=<%= id %>">View Inventory</a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        <% } %>
       </div>
+
+      <% if (canManageRecipes) { %>
+        <section class="mt-4">
+          <h2 class="mb-3">My Recipes</h2>
+          <% if (Array.isArray(myRecipes) && myRecipes.length) { %>
+            <ul class="list-group mb-3">
+              <% myRecipes.forEach(function(recipe) { %>
+                <li class="list-group-item d-flex justify-content-between align-items-start">
+                  <div>
+                    <strong><%= recipe.title %></strong>
+                    <div class="text-muted small">ID: <%= recipe.recipeId %> · Cuisine: <%= recipe.cuisineType %></div>
+                  </div>
+                  <a class="btn btn-sm btn-outline-primary" href="/recipes/<%= recipe.recipeId %>-<%= appId %>?userId=<%= id %>">View</a>
+                </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="text-muted">You have not added any recipes yet. Start by creating one above.</p>
+          <% } %>
+        </section>
+
+        <section class="mt-4">
+          <h2 class="mb-3">Inventory-Based Suggestions</h2>
+          <% if (Array.isArray(recipeSuggestions) && recipeSuggestions.length) { %>
+            <div class="list-group mb-3">
+              <% recipeSuggestions.forEach(function(suggestion) { %>
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong><%= suggestion.title %></strong>
+                      <div class="small text-muted">Match Score: <%= suggestion.cookabilityScore %>%</div>
+                    </div>
+                    <span class="badge bg-primary rounded-pill"><%= suggestion.matchedCount %>/<%= suggestion.totalIngredients %> ingredients on hand</span>
+                  </div>
+                  <% if (suggestion.missingIngredients && suggestion.missingIngredients.length) { %>
+                    <div class="small mt-2">Missing: <%= suggestion.missingIngredients.join(', ') %></div>
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <p class="text-muted">No recipe suggestions available yet. Keep building your shared inventory.</p>
+          <% } %>
+        </section>
+      <% } %>
+
+      <% if (canManageInventory) { %>
+        <section class="mt-4">
+          <h2 class="mb-3">Shared Inventory Highlights</h2>
+          <% if (Array.isArray(sharedInventory) && sharedInventory.length) { %>
+            <div class="table-responsive">
+              <table class="table table-sm table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col">Ingredient</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Expires</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% sharedInventory.forEach(function(item) { %>
+                    <% const expiryDate = item && item.expirationDate ? new Date(item.expirationDate) : null; %>
+                    <tr>
+                      <td><%= item.ingredientName %></td>
+                      <td><%= item.quantity %> <%= item.unit %></td>
+                      <td><%= item.category %></td>
+                      <td><%= expiryDate && !isNaN(expiryDate.getTime()) ? expiryDate.toISOString().split('T')[0] : '—' %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="text-muted">No shared inventory items available yet. Add an item to get started.</p>
+          <% } %>
+        </section>
+      <% } %>
       <footer class="text-center mt-4">
         <p>Recipe Hub - FTT2095 Assignment 1</p>
         <p>Built by <%= username %> (Student ID: <%= appId %>)</p>

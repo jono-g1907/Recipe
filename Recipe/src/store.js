@@ -3,9 +3,20 @@ const User = require('./models/User');
 const Recipe = require('./models/Recipe');
 const InventoryItem = require('./models/InventoryItem');
 const seed = require('./seed');
+const ValidationError = require('./errors/ValidationError');
 
 async function ensureConnection() {
   await connectToDatabase();
+}
+
+async function findUserDocumentByUserId(userId) {
+  const normalised = normaliseUserId(userId);
+  if (!normalised) {
+    return null;
+  }
+
+  await ensureConnection();
+  return User.findOne({ userId: normalised });
 }
 
 async function seedDatabase() {
@@ -16,14 +27,31 @@ async function seedDatabase() {
     await User.insertMany(seed.USERS);
   }
 
+  const userDocs = await User.find({}, { _id: 1, userId: 1 }).lean();
+  const userMap = {};
+  for (let i = 0; i < userDocs.length; i++) {
+    const entry = userDocs[i];
+    if (entry && entry.userId) {
+      userMap[entry.userId] = entry._id;
+    }
+  }
+
   const recipeCount = await Recipe.estimatedDocumentCount();
   if (recipeCount === 0) {
-    await Recipe.insertMany(seed.RECIPE_SEED);
+    const recipeSeed = seed.RECIPE_SEED.map(function (recipe) {
+      const ownerId = userMap[recipe.userId];
+      return Object.assign({}, recipe, ownerId ? { user: ownerId } : {});
+    });
+    await Recipe.insertMany(recipeSeed);
   }
 
   const inventoryCount = await InventoryItem.estimatedDocumentCount();
   if (inventoryCount === 0) {
-    await InventoryItem.insertMany(seed.INVENTORY_SEED);
+    const inventorySeed = seed.INVENTORY_SEED.map(function (item) {
+      const ownerId = userMap[item.userId];
+      return Object.assign({}, item, ownerId ? { user: ownerId } : {});
+    });
+    await InventoryItem.insertMany(inventorySeed);
   }
 }
 
@@ -69,14 +97,27 @@ async function createUser(data) {
   return saved.toObject();
 }
 
-async function getAllRecipes() {
+async function getAllRecipes(options) {
   await ensureConnection();
-  return Recipe.find(
-    {},
-    'recipeId userId title mealType cuisineType prepTime difficulty servings chef createdDate ingredients instructions'
-  )
-    .sort({ createdDate: -1, recipeId: 1 })
-    .lean();
+  const opts = options || {};
+  const query = {};
+
+  if (opts.ownerId) {
+    query.userId = opts.ownerId;
+  }
+
+  const projection = 'recipeId userId title mealType cuisineType prepTime difficulty servings chef createdDate ingredients instructions';
+  let finder = Recipe.find(query, projection).sort({ createdDate: -1, recipeId: 1 });
+
+  if (opts.includeChefInfo) {
+    finder = finder.populate('user', 'userId fullname role');
+  }
+
+  if (Number.isFinite(opts.limit) && opts.limit > 0) {
+    finder = finder.limit(opts.limit);
+  }
+
+  return finder.lean();
 }
 
 async function getRecipeByRecipeId(recipeId) {
@@ -94,32 +135,81 @@ async function getRecipeByTitleForUser(userId, title) {
   return Recipe.findOne({ userId: normalisedUserId, title: normalisedTitle }).lean();
 }
 
+async function getRecipesByOwner(userId, options) {
+  const opts = options || {};
+  const ownerId = normaliseUserId(userId);
+  if (!ownerId) {
+    return [];
+  }
+  return getAllRecipes({ ownerId: ownerId, limit: opts.limit, includeChefInfo: opts.includeChefInfo });
+}
+
 async function createRecipe(data) {
   await ensureConnection();
-  const recipe = new Recipe(data);
+  const payload = Object.assign({}, data || {});
+  const ownerDoc = await findUserDocumentByUserId(payload.userId);
+
+  if (!ownerDoc) {
+    throw new ValidationError(['A valid chef account is required to create recipes.']);
+  }
+
+  payload.userId = ownerDoc.userId;
+  payload.user = ownerDoc._id;
+
+  if (payload.recipeId) {
+    payload.recipeId = String(payload.recipeId).trim().toUpperCase();
+  }
+
+  const recipe = new Recipe(payload);
   const saved = await recipe.save();
   return saved.toObject();
 }
 
-async function updateRecipe(recipeId, patch) {
+async function updateRecipe(recipeId, patch, options) {
   await ensureConnection();
 
   const normalisedId = recipeId ? String(recipeId).trim().toUpperCase() : '';
   if (!normalisedId) {
+    return null;
+  }
+
+  const existing = await Recipe.findOne({ recipeId: normalisedId }).lean();
+  if (!existing) {
+    return null;
+  }
+
+  const opts = options || {};
+  const editorId = normaliseUserId(opts.userId);
+  if (editorId && existing.userId !== editorId) {
     return null;
   }
 
   const update = Object.assign({}, patch || {});
   delete update.recipeId;
+
   if (update.userId) {
     update.userId = String(update.userId).trim().toUpperCase();
+    if (editorId && update.userId !== editorId) {
+      throw new ValidationError(['You cannot reassign another chef to this recipe.']);
+    }
   }
+
+  if (update.userId || !existing.user) {
+    const targetUserId = update.userId || existing.userId;
+    const ownerDoc = await findUserDocumentByUserId(targetUserId);
+    if (!ownerDoc) {
+      throw new ValidationError(['A valid chef account is required for this recipe.']);
+    }
+    update.user = ownerDoc._id;
+    update.userId = ownerDoc.userId;
+  }
+
   update.updatedAt = new Date();
 
   return Recipe.findOneAndUpdate({ recipeId: normalisedId }, update, { new: true, runValidators: true }).lean();
 }
 
-async function deleteRecipe(recipeId) {
+async function deleteRecipe(recipeId, options) {
   await ensureConnection();
 
   const normalisedId = recipeId ? String(recipeId).trim().toUpperCase() : '';
@@ -127,8 +217,30 @@ async function deleteRecipe(recipeId) {
     return null;
   }
 
-  const deletedRecipe = await Recipe.findOneAndDelete({ recipeId: normalisedId }).lean();
+  const opts = options || {};
+  const editorId = normaliseUserId(opts.userId);
+
+  const query = { recipeId: normalisedId };
+  if (editorId) {
+    query.userId = editorId;
+  }
+
+  const deletedRecipe = await Recipe.findOneAndDelete(query).lean();
   return deletedRecipe || null;
+}
+
+async function getSharedInventorySnapshot(limit) {
+  const result = await listInventory({ page: 1, limit: limit || 5, sort: '-createdDate' });
+  return result.items;
+}
+
+async function getInventoryBasedSuggestions(limit) {
+  const insights = await getSmartRecipeDashboardData({});
+  const items = (insights && Array.isArray(insights.recommendations)) ? insights.recommendations : [];
+  if (!Number.isFinite(limit) || limit <= 0) {
+    return items;
+  }
+  return items.slice(0, limit);
 }
 
 function escapeRegExp(value) {
@@ -252,7 +364,20 @@ async function getInventoryItemById(inventoryId) {
 
 async function createInventoryItem(data) {
   await ensureConnection();
-  const item = new InventoryItem(data);
+  const payload = Object.assign({}, data || {});
+  if (payload.inventoryId) {
+    payload.inventoryId = String(payload.inventoryId).trim().toUpperCase();
+  }
+
+  const ownerDoc = await findUserDocumentByUserId(payload.userId);
+  if (!ownerDoc) {
+    throw new ValidationError(['A valid user is required to add inventory items.']);
+  }
+
+  payload.userId = ownerDoc.userId;
+  payload.user = ownerDoc._id;
+
+  const item = new InventoryItem(payload);
   const saved = await item.save();
   return saved.toObject();
 }
@@ -269,6 +394,12 @@ async function updateInventoryItem(inventoryId, patch) {
   delete update.inventoryId;
   if (update.userId) {
     update.userId = String(update.userId).trim().toUpperCase();
+    const ownerDoc = await findUserDocumentByUserId(update.userId);
+    if (!ownerDoc) {
+      throw new ValidationError(['Inventory items must belong to a valid user account.']);
+    }
+    update.user = ownerDoc._id;
+    update.userId = ownerDoc.userId;
   }
   update.updatedAt = new Date();
 
@@ -830,6 +961,7 @@ module.exports = {
   getAllRecipes,
   getRecipeByRecipeId,
   getRecipeByTitleForUser,
+  getRecipesByOwner,
   createRecipe,
   updateRecipe,
   deleteRecipe,
@@ -845,5 +977,7 @@ module.exports = {
   findLowStockInventory,
   calculateInventoryValue,
   getDashboardStats,
-  getSmartRecipeDashboardData
+  getSmartRecipeDashboardData,
+  getSharedInventorySnapshot,
+  getInventoryBasedSuggestions
 };
