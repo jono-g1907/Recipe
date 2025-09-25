@@ -132,6 +132,9 @@ inventorySchema.pre('save', function (next) {
   next();
 });
 
+inventorySchema.index({ ingredientName: 1, userId: 1 });
+inventorySchema.index({ expirationDate: 1 });
+
 module.exports = mongoose.model('InventoryItem', inventorySchema);
 
 

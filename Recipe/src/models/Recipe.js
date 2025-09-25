@@ -147,6 +147,8 @@ const recipeSchema = new mongoose.Schema({
 });
 
 recipeSchema.index({ userId: 1, title: 1 }, { unique: true });
+recipeSchema.index({ userId: 1 });
+recipeSchema.index({ 'ingredients.ingredientName': 1 });
 
 recipeSchema.pre('save', function (next) {
   this.updatedAt = new Date();
