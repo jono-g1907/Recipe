@@ -1,5 +1,8 @@
 # Development Technology Usage Policy
 
+## Assignment Overview
+Building upon the current MongoDB backend, you will develop a modern, responsive Angular frontend that provides a complete user interface for the Recipe-Inventory Management System. This new update focuses on Angular framework, Progressive Web App (PWA) development, and seamless API integration with the existing backend.
+
 ## What you CAN and CANNOT use when developing the Angular frontend application
 
 ### You CAN Use
