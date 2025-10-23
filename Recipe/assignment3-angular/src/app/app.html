@@ -4,6 +4,9 @@
       <a class="navbar-brand" routerLink="/dashboard">Recipe Hub</a>
       <div class="navbar-nav ms-auto align-items-center">
         @if (currentUser()) {
+          <span class="navbar-text text-white small me-3">Hi, {{ currentUser()?.fullname }}</span>
+        }
+        @if (currentUser()) {
           <a class="nav-link" routerLink="/recipes-list-31477046" routerLinkActive="active">Recipes</a>
         }
         @if (!currentUser()) {
@@ -11,9 +14,6 @@
         }
         @if (!currentUser()) {
           <a class="nav-link" routerLink="/login" routerLinkActive="active">Login</a>
-        }
-        @if (currentUser()) {
-          <span class="navbar-text text-white small me-3">Hi, {{ currentUser()?.fullname }}</span>
         }
         @if (currentUser()) {
           <a class="nav-link" routerLink="/logout" routerLinkActive="active">Logout</a>
