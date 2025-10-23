@@ -1,1 +1,115 @@
-<p>register works!</p>
+<div class="auth-wrapper">
+  <h1 class="text-center mb-3">Register</h1>
+  <p class="text-center mb-4">Create your Recipe &amp; Inventory Management account</p>
+
+  <div *ngIf="serverError" class="alert alert-danger">{{ serverError }}</div>
+
+  <form class="card shadow-sm p-4" [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
+    <div class="mb-3">
+      <label class="form-label" for="email">Email Address:</label>
+      <input
+        class="form-control"
+        id="email"
+        type="email"
+        formControlName="email"
+        placeholder="name@example.com"
+        autocomplete="email"
+        required
+      />
+      <div class="form-text text-danger" *ngIf="submitted && email?.hasError('required')">Email is required</div>
+      <div class="form-text text-danger" *ngIf="submitted && !email?.hasError('required') && email?.hasError('pattern')">
+        Enter a valid email address
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="password">Password</label>
+      <input
+        class="form-control"
+        id="password"
+        type="password"
+        formControlName="password"
+        minlength="8"
+        autocomplete="new-password"
+        required
+      />
+      <div class="form-text">Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
+      <div class="form-text text-danger" *ngIf="submitted && password?.hasError('required')">
+        Password is required
+      </div>
+      <div class="form-text text-danger" *ngIf="submitted && !password?.hasError('required') && password?.hasError('pattern')">
+        Password must be at least 8 characters with upper, lower, number and special character
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="confirmPassword">Confirm password</label>
+      <input
+        class="form-control"
+        id="confirmPassword"
+        type="password"
+        formControlName="confirmPassword"
+        minlength="8"
+        autocomplete="new-password"
+        required
+      />
+      <div class="form-text text-danger" *ngIf="submitted && confirmPassword?.hasError('required')">
+        Confirm your password
+      </div>
+      <div
+        class="form-text text-danger"
+        *ngIf="submitted && !confirmPassword?.hasError('required') && registerForm.hasError('passwordMismatch')"
+      >
+        Passwords do not match
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="fullname">Full Name:</label>
+      <input
+        class="form-control"
+        id="fullname"
+        type="text"
+        formControlName="fullname"
+        required
+      />
+      <div class="form-text text-danger" *ngIf="submitted && fullname?.hasError('required')">Full name is required</div>
+      <div class="form-text text-danger" *ngIf="submitted && !fullname?.hasError('required') && fullname?.hasError('pattern')">
+        Full name can only include letters, spaces, hyphens and apostrophes
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="role">Role</label>
+      <select class="form-select" id="role" formControlName="role" required>
+        <option value="">Select a role</option>
+        <option *ngFor="let option of roles" [value]="option">{{ option | titlecase }}</option>
+      </select>
+      <div class="form-text text-danger" *ngIf="submitted && roleControl?.hasError('required')">Select a role</div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label" for="phone">Phone Number:</label>
+      <input
+        class="form-control"
+        id="phone"
+        type="text"
+        formControlName="phone"
+        placeholder="+61 412 345 678"
+        required
+      />
+      <div class="form-text text-danger" *ngIf="submitted && phone?.hasError('required')">
+        Phone number is required
+      </div>
+      <div class="form-text text-danger" *ngIf="submitted && !phone?.hasError('required') && phone?.hasError('invalidPhone')">
+        Enter a valid Australian phone number
+      </div>
+    </div>
+
+    <button class="btn btn-primary w-100" type="submit" [disabled]="submitting">
+      {{ submitting ? 'Creating Account…' : 'Create Account' }}
+    </button>
+  </form>
+
+  <p class="mt-4 text-center">Already have an account? <a routerLink="/login">Login here</a></p>
+</div>

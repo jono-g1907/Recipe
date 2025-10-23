@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+.auth-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.auth-wrapper .card {
+  background-color: #ffffff;
+}

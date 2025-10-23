@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.auth-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.auth-wrapper form {
+  background-color: #ffffff;
+}
+
+.auth-wrapper .form-text {
+  font-size: 0.875rem;
+}
