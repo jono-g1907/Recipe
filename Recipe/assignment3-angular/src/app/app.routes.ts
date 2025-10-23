@@ -17,6 +17,6 @@ export const routes: Routes = [
   { path: 'recipes-list-31477046', component: RecipeList },
   { path: 'add-recipe-31477046', component: RecipeCreate },
   { path: 'recipes/:recipeId/update-31477046', component: RecipeEdit },
-  { path: 'recipes/:recipeId-31477046', component: RecipeDetail },
+  { path: 'recipes/:recipeKey', component: RecipeDetail },
   { path: '**', redirectTo: 'dashboard' }
 ];

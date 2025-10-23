@@ -18,6 +18,7 @@ export class RecipeDetail implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly recipeService = inject(RecipeService);
   private readonly auth = inject(Auth);
+  private readonly appIdSuffix = '-31477046';
 
   private subscription?: Subscription;
 
@@ -28,7 +29,8 @@ export class RecipeDetail implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subscription = this.route.paramMap.subscribe((params) => {
-      const recipeId = params.get('recipeId');
+      const recipeKey = params.get('recipeKey') ?? params.get('recipeId');
+      const recipeId = this.extractRecipeId(recipeKey);
       if (!recipeId) {
         this.error.set('Recipe not found.');
         this.loading.set(false);
@@ -59,5 +61,21 @@ export class RecipeDetail implements OnInit, OnDestroy {
 
   goToEdit(recipe: Recipe): void {
     this.router.navigate(['/recipes', recipe.recipeId, 'update-31477046']);
+  }
+  private extractRecipeId(raw: string | null): string | null {
+    if (!raw) {
+      return null;
+    }
+
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (trimmed.endsWith(this.appIdSuffix)) {
+      return trimmed.slice(0, -this.appIdSuffix.length).toUpperCase();
+    }
+
+    return trimmed.toUpperCase();
   }
 }

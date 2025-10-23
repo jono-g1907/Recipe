@@ -101,10 +101,35 @@ export class RecipeService {
   }
 
   private handleError(error: HttpErrorResponse) {
-    const message =
-      (error.error && (error.error.error || error.error.message)) ||
-      error.message ||
-      'Something went wrong. Please try again.';
+    const serverError = error.error as {
+      error?: unknown;
+      message?: unknown;
+      details?: unknown;
+    };
+
+    const defaultMessage = 'Something went wrong. Please try again.';
+    let message = defaultMessage;
+
+    if (serverError) {
+      const details = Array.isArray(serverError.details)
+        ? serverError.details
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .filter((item) => item)
+        : [];
+
+      if (details.length) {
+        message = details.join(' ');
+      } else if (typeof serverError.message === 'string' && serverError.message.trim()) {
+        message = serverError.message.trim();
+      } else if (typeof serverError.error === 'string' && serverError.error.trim()) {
+        message = serverError.error.trim();
+      }
+    }
+
+    if (message === defaultMessage && error.message) {
+      message = error.message;
+    }
+    
     return throwError(() => new Error(message));
   }
 
