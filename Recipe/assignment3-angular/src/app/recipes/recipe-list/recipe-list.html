@@ -1,0 +1,111 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+  <div>
+    <h1 class="mb-1">Recipe Library</h1>
+    <p class="text-muted mb-0">Browse all available recipes or focus on the ones you created.</p>
+  </div>
+  <a class="btn btn-primary mt-3 mt-md-0" routerLink="/add-recipe-31477046">+ Add Recipe</a>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <button
+    class="btn"
+    [ngClass]="{ 'btn-outline-primary': scope() !== 'mine', 'btn-primary': scope() === 'mine' }"
+    (click)="loadRecipes('mine')"
+    type="button"
+  >
+    My Recipes
+  </button>
+  <button
+    class="btn"
+    [ngClass]="{ 'btn-outline-primary': scope() !== 'all', 'btn-primary': scope() === 'all' }"
+    (click)="loadRecipes('all')"
+    type="button"
+  >
+    All Recipes
+  </button>
+  <a class="btn btn-outline-secondary ms-auto" routerLink="/dashboard">Back to Dashboard</a>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger" role="alert">{{ error() }}</div>
+}
+
+@if (loading()) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+    <p class="mt-3 mb-0 text-muted">Loading recipes...</p>
+  </div>
+} @else {
+  @if (recipes().length === 0) {
+    <div class="alert alert-info" role="alert">No recipes found for this view.</div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Recipe ID</th>
+            <th scope="col">Title</th>
+            <th scope="col">Chef</th>
+            <th scope="col">Meal</th>
+            <th scope="col">Cuisine</th>
+            <th scope="col">Difficulty</th>
+            <th scope="col">Created</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (recipe of recipes(); track trackByRecipeId($index, recipe); let i = $index) {
+            <tr>
+              <td class="fw-semibold">{{ recipe.recipeId }}</td>
+              <td>{{ recipe.title }}</td>
+              <td>{{ recipe.chef || recipe.user?.fullname }}</td>
+              <td>{{ recipe.mealType }}</td>
+              <td>{{ recipe.cuisineType }}</td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'text-bg-success': recipe.difficulty === 'Easy',
+                  'text-bg-warning': recipe.difficulty === 'Medium',
+                  'text-bg-danger': recipe.difficulty === 'Hard'
+                }">{{ recipe.difficulty }}</span>
+              </td>
+              <td>{{ recipe.createdDate | date:'mediumDate' }}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm" role="group">
+                  <a class="btn btn-outline-secondary" [routerLink]="['/recipes', recipe.recipeId + '-31477046']">View</a>
+                  <a class="btn btn-outline-primary" [routerLink]="['/recipes', recipe.recipeId, 'update-31477046']">Edit</a>
+                  <button type="button" class="btn btn-outline-danger" (click)="openDeleteModal(recipe)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@if (selectedRecipe()) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Delete Recipe</h5>
+          <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeDeleteModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Are you sure you want to delete <strong>{{ selectedRecipe()?.title }}</strong> ({{ selectedRecipe()?.recipeId }})?
+          </p>
+          @if (deleteError()) {
+            <div class="alert alert-danger" role="alert">{{ deleteError() }}</div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeDeleteModal()">Cancel</button>
+          <button type="button" class="btn btn-danger" (click)="deleteSelectedRecipe()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

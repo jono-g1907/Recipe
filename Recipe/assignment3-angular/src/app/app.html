@@ -3,6 +3,9 @@
     <div class="container">
       <a class="navbar-brand" routerLink="/dashboard">Recipe Hub</a>
       <div class="navbar-nav ms-auto align-items-center">
+        @if (currentUser()) {
+          <a class="nav-link" routerLink="/recipes-list-31477046" routerLinkActive="active">Recipes</a>
+        }
         @if (!currentUser()) {
           <a class="nav-link" routerLink="/register" routerLinkActive="active">Register</a>
         }
