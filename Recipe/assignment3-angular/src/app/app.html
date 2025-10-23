@@ -9,6 +9,9 @@
         @if (currentUser()) {
           <a class="nav-link" routerLink="/recipes-list-31477046" routerLinkActive="active">Recipes</a>
         }
+        @if (currentUser()) {
+          <a class="nav-link" routerLink="/inventory-dashboard-31477046" routerLinkActive="active">Inventory</a>
+        }
         @if (!currentUser()) {
           <a class="nav-link" routerLink="/register" routerLinkActive="active">Register</a>
         }

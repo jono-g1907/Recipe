@@ -10,6 +10,18 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    path: 'inventory-dashboard-31477046',
+    renderMode: RenderMode.Client
+  },
+  {
+    path: 'add-inventory-31477046',
+    renderMode: RenderMode.Client
+  },
+  {
+    path: 'inventory-dashboard/:inventoryId/update-31477046',
+    renderMode: RenderMode.Client
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender
   }

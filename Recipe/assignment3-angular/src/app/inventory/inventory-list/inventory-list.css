@@ -1,0 +1,28 @@
+:host {
+  display: block;
+}
+
+.filter-panel .card-header {
+  background-color: #f1f5ff;
+  font-weight: 600;
+}
+
+.inventory-row-expired {
+  background-color: rgba(220, 53, 69, 0.05);
+}
+
+.inventory-row-soon {
+  background-color: rgba(255, 193, 7, 0.08);
+}
+
+.inventory-row-low {
+  border-left: 4px solid #ffc107;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.modal.d-block {
+  z-index: 1050;
+}
