@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- Main dashboard landing page rendered with EJS. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -8,7 +7,6 @@
     <link rel="stylesheet" href="/pages.css" />
   </head>
   <body class="dashboard-page">
-    <!-- Global navigation shared across the authenticated experience. -->
     <nav class="navbar navbar-expand-lg bg-primary navbar-dark">
       <div class="container-fluid">
         <a class="navbar-brand" href="/home-<%= appId %>?userId=<%= id %>">Recipe Hub</a>
@@ -107,7 +105,7 @@
           </ul>
         </div>
         <div class="d-flex align-items-center text-white">
-          <!-- Snapshot of the logged-in user with a logout action. -->
+          <!-- snapshot of the logged-in user with a logout action -->
           <div class="me-3 text-end">
             <div>Welcome, <%= username %></div>
             <small class="d-block">Email: <%= email %></small>
@@ -124,11 +122,11 @@
 
     <div class="container py-4">
       <% if (successMessage) { %>
-        <!-- Flash message for recent successful actions. -->
+        <!-- flash message for recent successful actions -->
         <div class="alert alert-success text-center"><%= successMessage %></div>
       <% } %>
       <% if (errorMessage) { %>
-        <!-- Flash message for errors that occurred while loading the dashboard. -->
+        <!-- flash message for errors that occurred while loading the dashboard -->
         <div class="alert alert-danger text-center"><%= errorMessage %></div>
       <% } %>
 
@@ -140,7 +138,7 @@
       </div>
 
       <h2 class="text-center mb-3">Your Recipe Hub at a Glance</h2>
-      <!-- KPI summary cards showing overall app health. -->
+      <!-- KPI summary cards showing overall app health -->
       <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-5 g-3 text-center mb-4">
         <div class="col">
           <div class="bg-secondary text-white p-3 rounded">
@@ -209,7 +207,7 @@
       <% if (canManageRecipes) { %>
         <section class="mt-4">
           <h2 class="mb-3">My Recipes</h2>
-          <!-- Highlight the current user's own recipes so they can jump back in. -->
+          <!-- highlight the current user's own recipes so they can jump back in -->
           <% if (Array.isArray(myRecipes) && myRecipes.length) { %>
             <ul class="list-group mb-3">
               <% myRecipes.forEach(function(recipe) { %>
@@ -229,7 +227,7 @@
 
         <section class="mt-4">
           <h2 class="mb-3">Inventory-Based Suggestions</h2>
-          <!-- Suggest recipes based on overlap between shared inventory and recipe needs. -->
+          <!-- suggest recipes based on overlap between shared inventory and recipe needs -->
           <% if (Array.isArray(recipeSuggestions) && recipeSuggestions.length) { %>
             <div class="list-group mb-3">
               <% recipeSuggestions.forEach(function(suggestion) { %>
@@ -256,7 +254,7 @@
       <% if (canManageInventory) { %>
         <section class="mt-4">
           <h2 class="mb-3">Shared Inventory Highlights</h2>
-          <!-- Give managers a quick peek at important inventory data. -->
+          <!-- give managers a quick peek at important inventory data -->
           <% if (Array.isArray(sharedInventory) && sharedInventory.length) { %>
             <div class="table-responsive">
               <table class="table table-sm table-striped">
@@ -294,4 +292,3 @@
     <script src="/bootstrap.bundle.min.js"></script>
   </body>
 </html>
-

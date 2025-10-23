@@ -1,24 +1,25 @@
-// Import mongoose to define the schema for users in MongoDB.
 const mongoose = require('mongoose');
 
-// Regular expressions define valid formats for different string fields.
-const EMAIL_REGEX = /^\S+@\S+\.\S+$/; // Basic email pattern (not perfect, but effective).
-// Password must include lowercase, uppercase, number, and special character.
+// regex constants for exact format each string must follow
+// basic email pattern
+const EMAIL_REGEX = /^\S+@\S+\.\S+$/; 
+// password must include lowercase, uppercase, number, and special character
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}:;"'<>?,.\/]).{8,}$/;
-// Stored passwords might already be hashed. This regex checks for bcrypt format.
-const BCRYPT_REGEX = /^\$2[aby]\$\d{2}\$.{53}$/;
-const NAME_REGEX = /^[A-Za-z\s\-']{2,100}$/; // Allow letters, spaces, hyphens, apostrophes.
-const PHONE_REGEX = /^\+?[0-9\s\-()]{7,20}$/; // Flexible pattern for international numbers.
-const USER_ID_REGEX = /^U-\d{5}$/; // Matches ids like "U-00001".
+// allow letters, spaces, hyphens, apostrophes
+const NAME_REGEX = /^[A-Za-z\s\-']{2,100}$/; 
+// flexible pattern for international numbers
+const PHONE_REGEX = /^\+?[0-9\s\-()]{7,20}$/; 
+// e.g. U-00001
+const USER_ID_REGEX = /^U-\d{5}$/; 
 
-// Helper function used by defaults below so we always get "now" when needed.
+// helper function used by defaults so we always get now when needed
 function defaultToNow() {
   return new Date();
 }
 
-// Schema blueprint for user accounts.
+// schema for user accounts
 const userSchema = new mongoose.Schema({
-  // Human-readable id we can expose to clients.
+  // id we can expose to clients
   userId: {
     type: String,
     required: true,
@@ -26,7 +27,7 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: USER_ID_REGEX
   },
-  // Contact email address and unique login identifier.
+  // contact email address and unique login identifier
   email: {
     type: String,
     required: true,
@@ -35,19 +36,19 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     match: EMAIL_REGEX
   },
-  // Raw password (for initial creation) or bcrypt hash.
+  // raw password (for initial creation)
   password: {
     type: String,
     required: true,
     validate: {
       validator: function (value) {
         const pwd = value || '';
-        return PASSWORD_REGEX.test(pwd) || BCRYPT_REGEX.test(pwd);
+        return PASSWORD_REGEX.test(pwd);
       },
-      message: 'Password must be complex or a bcrypt hash.'
+      message: 'Password must be complex'
     }
   },
-  // Full name displayed within the app.
+  // full name displayed within the app
   fullname: {
     type: String,
     required: true,
@@ -56,53 +57,49 @@ const userSchema = new mongoose.Schema({
     maxlength: 100,
     match: NAME_REGEX
   },
-  // Application role determines permissions (admin/chef/manager).
+  // application role determines permissions
   role: {
     type: String,
     required: true,
     enum: ['admin', 'chef', 'manager']
   },
-  // Phone number used for contact or alerts.
+  // phone number used for contact or alerts
   phone: {
     type: String,
     required: true,
     trim: true,
     match: PHONE_REGEX
   },
-  // Simple flag we can toggle when the user is online.
+  // simple flag we can toggle when the user is logged in
   isLoggedIn: {
     type: Boolean,
     default: false
   },
-  // Timestamp recorded when the document is created.
+  // timestamp recorded when the document is created
   createdAt: {
     type: Date,
     default: defaultToNow
   },
-  // Timestamp updated whenever we manually call save().
+  // timestamp updated whenever we manually call save()
   updatedAt: {
     type: Date,
     default: defaultToNow
   }
 }, {
-  // Let mongoose automatically manage createdAt/updatedAt as well.
+  // let mongoose automatically manage createdAt/updatedAt as well
   timestamps: true
 });
 
 
-// Pre-save hook keeps updatedAt fresh every time we save the document.
+// pre-save hook keeps updatedAt updated every time we save the document
 userSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
 
-// Helpful indexes for quick lookups and uniqueness enforcement.
+// helpful indexes for quick lookups and uniqueness enforcement
 userSchema.index({ email: 1 });
 userSchema.index({ userId: 1 });
 userSchema.index({ role: 1 });
 
-// Export the model to interact with the "users" collection elsewhere.
 module.exports = mongoose.model('User', userSchema);
-
-
-

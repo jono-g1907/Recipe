@@ -1,20 +1,21 @@
-const constants = require('./src/lib/constants');
-const enums = require('./src/enums');
-const ValidationError = require('./src/errors/ValidationError');
-const Recipe = require('./src/models/Recipe');
-const InventoryItem = require('./src/models/InventoryItem');
-const User = require('./src/models/User');
-const seed = require('./src/seed');
+const  constants = require('./src/lib/constants');
+const  enums = require('./src/enums');
+const  ValidationError = require('./src/errors/ValidationError');
+const  Recipe = require('./src/models/Recipe');
+const  InventoryItem = require('./src/models/InventoryItem');
+const  User = require('./src/models/User');
+const  seed = require('./src/seed');
 
-const APP_ID = constants.APP_ID;
-const AUTHOR_NAME = constants.AUTHOR_NAME;
-const Difficulty = enums.Difficulty;
-const MealType = enums.MealType;
-const Location = enums.Location;
+const  APP_ID = constants.APP_ID;
+const  AUTHOR_NAME = constants.AUTHOR_NAME;
+const  Difficulty = enums.Difficulty;
+const  MealType = enums.MealType;
+const  Location = enums.Location;
 const InventoryCategory = enums.InventoryCategory;
 const Unit = enums.Unit;
 const CuisineType = enums.CuisineType;
 
+// seed for previous behaviour
 const { USERS, INVENTORY_SEED, RECIPE_SEED, DEFAULT_USER_ID, SECOND_USER_ID } = seed;
 
 module.exports = {

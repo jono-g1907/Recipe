@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- Page for updating an existing inventory record. -->
 <html lang="en" data-bs-theme="auto">
   <head>
     <meta charset="utf-8" />
@@ -9,7 +8,6 @@
   <body>
     <div class="container py-4">
       <div class="mb-3">
-        <!-- Shortcut back to the dashboard to maintain navigation flow. -->
         <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
 
@@ -17,12 +15,12 @@
       <p class="text-center text-muted mb-4">Adjust stock levels, dates and storage details</p>
 
       <% if (success) { %>
-        <!-- Positive feedback after a successful update. -->
+        <!-- positive feedback after a successful update -->
         <div class="alert alert-success"><%= success %></div>
       <% } %>
 
       <% if (error) { %>
-        <!-- Server-side validation errors bubble up here. -->
+        <!-- server-side validation errors -->
         <div class="alert alert-danger"><%= error %></div>
       <% } %>
 
@@ -37,7 +35,7 @@
           <div class="card-body">
             <label class="form-label" for="inventorySelection">Select an item to edit</label>
             <select class="form-select" id="inventorySelection">
-              <!-- Build an option for each inventory record the server provided. -->
+              <!-- build an option for each inventory record the server provided -->
               <% for (let i = 0; i < items.length; i++) { const item = items[i] || {}; %>
                 <option value="<%= item.inventoryId %>" <%= selectedInventoryId === item.inventoryId ? 'selected' : '' %>>
                   <%= item.inventoryId %>
@@ -51,10 +49,10 @@
         </div>
 
         <form action="/edit-inventory-<%= appId %>" method="POST">
-          <!-- Keep the update scoped to the signed-in user. -->
+          <!-- keep the update scoped to the signed-in user -->
           <input type="hidden" name="userId" value="<%= defaultUserId %>" />
 
-          <!-- Section 1: immutable identifiers and high-level details. -->
+          <!-- section 1 immutable identifiers and high-level details -->
           <div class="card mb-4">
             <div class="card-header">Basic Information</div>
             <div class="card-body">
@@ -76,7 +74,7 @@
             </div>
           </div>
 
-          <!-- Section 2: editable numeric and categorical details. -->
+          <!-- section 2 editable numeric and categorical details -->
           <div class="card mb-4">
             <div class="card-header">Item Details</div>
             <div class="card-body">
@@ -111,7 +109,7 @@
             </div>
           </div>
 
-          <!-- Section 3: important date tracking. -->
+          <!-- section 3 important date tracking -->
           <div class="card mb-4">
             <div class="card-header">Dates</div>
             <div class="card-body">
@@ -132,7 +130,7 @@
             </div>
           </div>
 
-          <!-- Section 4: location ties into the inventory dashboard filters. -->
+          <!-- section 4 location ties into the inventory dashboard filters -->
           <div class="card mb-4">
             <div class="card-header">Location</div>
             <div class="card-body">
@@ -160,7 +158,7 @@
         const USER_ID = '<%= userId %>';
         const select = document.getElementById('inventorySelection');
         if (select) {
-          // Reload the page with the chosen inventoryId so the form updates.
+          // reload the page with the chosen inventoryId so the form updates
           select.addEventListener('change', function () {
             if (!USER_ID) return;
             let target = '/edit-inventory-' + APP_ID + '?userId=' + encodeURIComponent(USER_ID);
@@ -178,7 +176,7 @@
         const purchaseDateInput = form.querySelector('input[name="purchaseDate"]');
         const expirationDateInput = form.querySelector('input[name="expirationDate"]');
 
-        // Shared validator that keeps the numeric fields and dates sensible.
+        // shared validator that keeps the numeric fields and dates sensible
         function validateNumbers() {
           if (qtyInput) qtyInput.setCustomValidity('');
           if (costInput) costInput.setCustomValidity('');
@@ -235,4 +233,3 @@
     </script>
   </body>
 </html>
-

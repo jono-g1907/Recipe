@@ -1,17 +1,15 @@
 <!doctype html>
-<!-- Confirmation page for removing an inventory record. -->
 <html lang="en" data-bs-theme="auto">
   <head>
     <meta charset="utf-8" />
     <title>Delete Inventory Item</title>
-    <!-- Bootstrap keeps the layout consistent with the other forms. -->
     <link href="/bootstrap.min.css" rel="stylesheet" />
   </head>
   <body>
     <div class="album py-5">
       <div class="container py-4">
       <div class="mb-3">
-        <!-- Consistent navigation so the user can back out quickly. -->
+        <!-- consistent navigation so the user can back out quickly -->
         <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
 
@@ -20,12 +18,12 @@
       <p class="text-center text-muted mb-4">Remove an item from your inventory</p>
 
       <% if (typeof error !== 'undefined' && error) { %>
-        <!-- Show the server-side validation or deletion error if one exists. -->
+        <!-- show the server-side validation or deletion error if one exists -->
         <div class="alert alert-danger"><%= error %></div>
       <% } %>
 
       <form action="/delete-inventory-<%= appId %>" method="POST" class="mx-auto" style="max-width: 400px;">
-        <!-- Include the userId so the server can verify permissions. -->
+        <!-- include the userId so the server can verify permissions -->
         <input type="hidden" name="userId" value="<%= userId %>">
         <div class="mb-3">
           <label class="form-label">Inventory ID</label>
@@ -36,7 +34,7 @@
         <div class="d-flex justify-content-between">
           <a class="btn btn-secondary" href="/inventory-dashboard-<%= appId %>?userId=<%= userId %>">Back to Inventory</a>
           <div>
-            <!-- Provide a safe way to clear the form or confirm deletion. -->
+            <!-- provide a safe way to clear the form or confirm deletion -->
             <button class="btn btn-outline-secondary me-2" type="reset">Reset</button>
             <button class="btn btn-danger" type="submit">Delete Item</button>
           </div>
@@ -45,9 +43,3 @@
     </div>
   </body>
 </html>
-
-
-
-
-
-

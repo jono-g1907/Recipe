@@ -1,4 +1,4 @@
-// Shared helpers keep the form logic consistent across the application.
+// helpers keep the form logic consistent across the application
 const { sanitiseString } = require('../lib/utils');
 const {
   RECIPE_ID_REGEX,
@@ -13,8 +13,8 @@ const {
 } = require('../lib/validationConstants');
 const { toIsoDate } = require('../lib/date');
 
-// Represents the default state of a blank recipe form. Cloning this object
-// ensures we always start from the same clean slate.
+// completely blank template for inventory form
+// copy this whenever we need to render an empty form so we do not mutate the original object by accident
 const EMPTY_RECIPE_FORM_VALUES = {
   recipeId: '',
   title: '',
@@ -29,15 +29,13 @@ const EMPTY_RECIPE_FORM_VALUES = {
   instructionsText: ''
 };
 
-// Give callers a fresh copy of the default form values.
+// give callers a fresh copy of the default form values
 function getEmptyRecipeFormValues() {
   return Object.assign({}, EMPTY_RECIPE_FORM_VALUES);
 }
 
-// Select fields (dropdowns) should be treated case-insensitively so users can
-// submit values like "dinner" and still match the stored option "Dinner".
-// When the value is not found we keep the user's text so validation can
-// display a helpful message later.
+// dropdowns should be treated case insensitively so users can submit values like dinner and still match the stored option Dinner
+// When the value is not found we keep the user's text so validation can display a helpful message later
 function normaliseSelectValue(value, options) {
   const trimmed = sanitiseString(value);
   if (!trimmed) {
@@ -51,9 +49,8 @@ function normaliseSelectValue(value, options) {
   return trimmed;
 }
 
-// Prepare raw request data so it can be redisplayed in the form if validation
-// fails. We keep everything as strings because that is what HTML form inputs
-// expect when re-rendered.
+// prepare raw request data so it can be redisplayed in the form if validation fails
+// keep everything as strings because that is what HTML form inputs expect 
 function buildRecipeFormValuesFromBody(body) {
   const values = getEmptyRecipeFormValues();
   if (!body) {
@@ -73,8 +70,8 @@ function buildRecipeFormValuesFromBody(body) {
   return values;
 }
 
-// Turn a stored recipe document into form values. This is used when editing a
-// recipe so the form shows the existing data in a user-friendly format.
+// turn a stored recipe document into form valuew
+// used when editing a recipe so the form shows the existing data
 function buildRecipeFormValuesFromRecipe(recipe) {
   const values = getEmptyRecipeFormValues();
   if (!recipe) {
@@ -96,9 +93,8 @@ function buildRecipeFormValuesFromRecipe(recipe) {
 
   values.createdDate = toIsoDate(recipe.createdDate);
   
-  // Recipes store ingredients as structured objects, but the form uses a
-  // single textarea. We convert each ingredient into a pipe-delimited line
-  // so it can be re-parsed later.
+  // recipes store ingredients as structured objects, but the form uses a single textarea 
+  // convert each ingredient into a pipe-delimited line so it can be re-parsed later
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const ingredientLines = [];
   for (let i = 0; i < ingredients.length; i++) {
@@ -112,7 +108,7 @@ function buildRecipeFormValuesFromRecipe(recipe) {
   }
   values.ingredientsText = ingredientLines.join('\n');
 
-  // Clean up each instruction step so the textarea shows one step per line.
+  // clean up each instruction step so the textarea shows one step per line
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
   const instructionLines = [];
   for (let j = 0; j < instructions.length; j++) {
@@ -126,9 +122,8 @@ function buildRecipeFormValuesFromRecipe(recipe) {
   return values;
 }
 
-// Check whether the recipe object is complete and coherent. The returned
-// array contains human-readable errors that can be displayed directly in the
-// UI.
+// check whether the recipe object is complete 
+// returned array contains errors that can be displayed directly in the UI
 function collectRecipeErrors(recipe) {
   const errors = [];
 
@@ -249,9 +244,8 @@ function collectRecipeErrors(recipe) {
   return errors;
 }
 
-// Convert a submitted form back into a recipe object that the rest of the
-// application understands. We normalise each field so validation and database
-// code can rely on consistent types and formats.
+// convert a submitted form back into a recipe object 
+// normalise each field into consistent format
 function parseRecipeForm(body) {
   const recipe = {};
   const recipeIdInput = sanitiseString(body && body.recipeId);
@@ -270,14 +264,14 @@ function parseRecipeForm(body) {
   const createdInput = sanitiseString(body && body.createdDate);
   recipe.createdDate = createdInput ? new Date(createdInput) : new Date();
 
-  // Each ingredient line uses the format "name | quantity | unit".
+  // aach ingredient line uses the format name | quantity | unit
   const ingText = body && body.ingredientsText ? body.ingredientsText : '';
   const ingLines = ingText.split('\n');
   const ingredients = [];
   for (let i = 0; i < ingLines.length; i++) {
     const line = sanitiseString(ingLines[i]);
     if (!line) continue;
-    // Each line is expected to look like "name | quantity | unit", so split the chunks around the pipes.
+    // each line is expected to look like name | quantity | unit, so split the chunks around the pipes
     const parts = line.split('|');
     const name = sanitiseString(parts[0]);
     const quantityInput = sanitiseString(parts[1]);
@@ -303,7 +297,7 @@ function parseRecipeForm(body) {
   return recipe;
 }
 
-// Convert a recipe object into plain values for the front-end templates.
+// convert a recipe object into plain values for the front-end templates
 function mapRecipeForView(recipe) {
   return {
     recipeId: recipe.recipeId,

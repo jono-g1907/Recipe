@@ -1,7 +1,3 @@
-// This file re-exports the public API for our data-access layer. Each module
-// underneath `store/` focuses on one resource (users, recipes, inventory, etc)
-// and we gather their key functions here so other parts of the app can just do
-// `require('../store')`.
 const seed = require('./seed');
 const users = require('./users');
 const recipes = require('./recipes');

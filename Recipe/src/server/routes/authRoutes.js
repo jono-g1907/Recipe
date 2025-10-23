@@ -1,8 +1,8 @@
-// Custom error type we throw when a user's input does not meet validation rules.
+// custom error type thrown when a user's input does not meet validation rules
 const ValidationError = require('../../errors/ValidationError');
-// Helper that normalises unknown errors into a predictable shape.
+// helper that normalises unknown errors into a predictable shape
 const normaliseError = require('../../lib/normaliseError');
-// Form helpers keep the parsing/validation logic in one place so the route stays readable.
+// form helpers keep the parsing/validation logic in one place so the route stays readable
 const {
   parseRegistrationForm,
   collectRegistrationErrors,
@@ -10,17 +10,16 @@ const {
   parseLoginForm,
   collectLoginErrors
 } = require('../../forms/userForm');
-// Sanitising removes potentially dangerous characters from text before using it in HTML.
+// sanitising removes dangerous characters from text before using it in HTML
 const { sanitiseString } = require('../../lib/utils');
-// Predefined list of user roles we allow on the registration page.
+// predefined list of user roles allowed on the registration page
 const { ROLE_OPTIONS } = require('../../lib/validationConstants');
 
 function registerAuthRoutes(app, dependencies) {
-  // The data store is injected so we can swap in a fake version for tests.
   const store = dependencies.store;
   const appId = dependencies.appId;
 
-  // Show the registration page with empty default values.
+  // show the registration page with empty default values
   app.get('/register-' + appId, function (req, res) {
     const values = { email: '', fullname: '', role: 'chef', phone: '' };
     res.render('register-31477046.html', {
@@ -30,15 +29,15 @@ function registerAuthRoutes(app, dependencies) {
     });
   });
 
-  // Handle form submissions for new registrations.
+  // handle form submissions for new registrations
   app.post('/register-' + appId, async function (req, res, next) {
     try {
-      // Parse and validate the incoming form data.
+      // parse and validate the incoming form data
       const form = parseRegistrationForm(req.body || {});
       const errors = collectRegistrationErrors(form);
 
       if (!errors.length) {
-        // Make sure the email address is unique before creating the account.
+        // make sure the email address is unique before creating the account
         const existing = await store.getUserByEmail(form.email);
         if (existing) {
           errors.push('That email address is already registered');
@@ -46,7 +45,7 @@ function registerAuthRoutes(app, dependencies) {
       }
 
       if (errors.length) {
-        // Re-render the page with the user's inputs and a helpful error message.
+        // re-render the page with the user's inputs and a helpful error message
         const values = buildRegistrationValues(form);
         return res.status(400).render('register-31477046.html', {
           error: errors.join(' '),
@@ -55,7 +54,7 @@ function registerAuthRoutes(app, dependencies) {
         });
       }
 
-      // Persist the new user record to the data store.
+      // persist the new user record to the data store
       await store.createUser({
         email: form.email,
         password: form.password,
@@ -64,12 +63,12 @@ function registerAuthRoutes(app, dependencies) {
         phone: form.phone
       });
 
-      // Redirect to the login page so the user can sign in straight away.
+      // redirect to the login page so the user can sign in straight away
       return res.redirect(302, '/login-' + appId + '?registered=' + encodeURIComponent(form.email));
     } catch (err) {
       const normalised = normaliseError(err);
       if (normalised instanceof ValidationError) {
-        // Show any field-level validation errors triggered in the data layer.
+        // show any field-level validation errors triggered in the data layer
         const retryForm = parseRegistrationForm(req.body || {});
         const values = buildRegistrationValues(retryForm);
         const message = normalised.errors && normalised.errors.length ? normalised.errors.join(' ') : 'Registration failed';
@@ -83,7 +82,8 @@ function registerAuthRoutes(app, dependencies) {
     }
   });
 
-  // Render the login page. Depending on query params we may show success/error notices.
+  // render the login page
+  // depending on query params we may show success/error notices
   app.get('/login-' + appId, function (req, res) {
     const registered = sanitiseString(req.query && req.query.registered);
     const infoMessage = registered
@@ -101,14 +101,14 @@ function registerAuthRoutes(app, dependencies) {
     });
   });
 
-  // Handle login form submissions.
+  // handle login form submissions
   app.post('/login-' + appId, async function (req, res, next) {
     try {
       const form = parseLoginForm(req.body || {});
       const errors = collectLoginErrors(form);
 
       if (errors.length) {
-        // If the user forgot to fill out required fields, prompt them to try again.
+        // if the user forgot to fill out required fields, prompt them to try again
         return res.status(400).render('login-31477046.html', {
           message: '',
           error: errors.join(' '),
@@ -117,7 +117,7 @@ function registerAuthRoutes(app, dependencies) {
         });
       }
 
-      // Attempt to find a matching user record by email.
+      // attempt to find a matching user record by email
       const user = await store.getUserByEmail(form.email);
 
       if (!user) {
@@ -129,7 +129,7 @@ function registerAuthRoutes(app, dependencies) {
         });
       }
 
-      // Passwords are plain-text here for simplicity, so just compare them directly.
+      // passwords are plain-text, so just compare them directly
       if (user.password !== form.password) {
         return res.status(401).render('login-31477046.html', {
           message: '',
@@ -139,7 +139,7 @@ function registerAuthRoutes(app, dependencies) {
         });
       }
 
-      // Mark the user as logged in so the dashboard knows who they are.
+      // mark the user as logged in so the dashboard knows who they are
       const updated = await store.setUserLoginState(user.userId, true);
       const activeUser = updated || user;
 
@@ -149,7 +149,7 @@ function registerAuthRoutes(app, dependencies) {
     }
   });
 
-  // Logging out is triggered from a form button so we accept POST requests here.
+  // logging out is triggered from a form button so we accept POST requests here
   app.post('/logout-' + appId, async function (req, res, next) {
     try {
       const idInput = sanitiseString(req.body && req.body.userId);
@@ -159,7 +159,7 @@ function registerAuthRoutes(app, dependencies) {
         return res.redirect(302, '/login-' + appId + '?error=' + encodeURIComponent('User identifier is required to log out.'));
       }
 
-      // Look up the user so we can flip their login state back to false.
+      // look up the user so we can flip their login state back to false
       const user = await store.getUserByUserId(userId);
 
       if (!user) {

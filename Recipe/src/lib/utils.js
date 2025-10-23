@@ -1,21 +1,18 @@
-// A grab bag of tiny utilities that reduce repetition elsewhere in the codebase.
+// utilities that reduce repetition
 
-// Trim a value if it's a string; otherwise return an empty string. This keeps
-// downstream code from having to check for null or unexpected types.
+// trim a value if it's a string, otherwise return an empty string
+// this keeps from having to check for null or unexpected types
 function sanitiseString(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-// Convert anything to a number, but only return it if it's finite. Beginners
-// often forget that Number(undefined) is NaN, so this helper keeps that logic
-// in one place.
+// convert anything to a number, but only return it if it's finite
 function toFiniteNumber(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : NaN;
 }
 
-// Create a deep copy of plain objects, arrays, or Date instances so we can make
-// safe modifications without mutating the original input.
+// create a deep copy of plain objects, arrays or dates so we can make safe modifications without mutating the original input
 function clone(value) {
   if (value instanceof Date) {
     return new Date(value.getTime());

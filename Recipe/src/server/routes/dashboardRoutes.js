@@ -1,10 +1,9 @@
-// Helpers that keep authentication logic separate from the route handlers.
+// helpers to keep authentication logic separate from the route handlers
 const { buildLoginRedirectUrl, resolveActiveUser } = require('../../lib/auth');
-// Remove any unexpected characters from user-supplied text before it hits the templates.
 const { sanitiseString } = require('../../lib/utils');
-// Permission helpers make the role checks easier to read.
+// permission helpers make the role checks easier to read
 const { userCanAccessRecipes, userCanAccessInventory } = require('../../lib/permissions');
-// Collections of valid select options shared between the server and templates.
+// collections of valid select options shared between the server and templates
 const {
   MEAL_TYPE_OPTIONS,
   CUISINE_TYPE_OPTIONS,
@@ -12,33 +11,33 @@ const {
 } = require('../../lib/validationConstants');
 
 function registerDashboardRoutes(app, dependencies) {
-  // Pull the data store and appId out of the dependency object so the routes can use them.
+  // pull the data store and appId out of the dependency object so the routes can use them
   const store = dependencies.store;
   const appId = dependencies.appId;
 
-  // Visiting the bare domain just redirects people to the login page for their instance.
+  // visiting the root domain just redirects people to the login page for their instance
   app.get('/', function (req, res) {
     res.redirect(302, '/login-' + appId);
   });
 
-  // Main dashboard page shown after login.
+  // main dashboard page shown after login
   app.get('/home-' + appId, async function (req, res, next) {
     try {
-      // Confirm the user is logged in and grab their account details.
+      // confirm the user is logged in and grab their account details
       const result = await resolveActiveUser(req, store);
       if (!result.user) {
         return res.redirect(302, buildLoginRedirectUrl(appId, result.error));
       }
 
       const user = result.user;
-      // Gather stats from the store to display on the dashboard.
+      // gather stats from the store to display on the dashboard
       const stats = await store.getDashboardStats();
       const successMessage = req.query && req.query.success === '1'
         ? 'Login successful. Your account details are now loaded for new submissions.'
         : sanitiseString(req.query && req.query.successMessage);
       const errorMessage = sanitiseString(req.query && req.query.errorMessage);
 
-      // These flags help the template decide which sections to show based on the user's role.
+      // flags to help the template decide which sections to show based on the user's role
       const canManageRecipes = userCanAccessRecipes(user);
       const canManageInventory = userCanAccessInventory(user);
       const canViewAnalytics = String(user.role).toLowerCase() === 'admin';
@@ -46,7 +45,7 @@ function registerDashboardRoutes(app, dependencies) {
       let myRecipes = [];
       let recipeSuggestions = [];
       if (canManageRecipes) {
-        // Load the user's own recipes and some auto-generated suggestions at the same time.
+        // load the user's own recipes and some auto-generated suggestions at the same time
         const [mine, suggestions] = await Promise.all([
           store.getRecipesByOwner(user.userId, { limit: 5 }),
           store.getInventoryBasedSuggestions(3)
@@ -57,7 +56,7 @@ function registerDashboardRoutes(app, dependencies) {
 
       let sharedInventory = [];
       if (canManageInventory) {
-        // Inventory managers see a snapshot of recently updated items.
+        // inventory managers see a snapshot of recently updated items
         sharedInventory = await store.getSharedInventorySnapshot(5);
       }
 
@@ -86,7 +85,7 @@ function registerDashboardRoutes(app, dependencies) {
     }
   });
 
-  // "HD task 1" page shows advanced recommendations for chefs.
+  // HD task 1 page shows advanced recommendations for chefs
   app.get('/hd-task1-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['chef'] });
@@ -116,7 +115,7 @@ function registerDashboardRoutes(app, dependencies) {
     }
   });
 
-  // "HD task 2" page provides analytics reserved for admins.
+  // HD task 3 page provides analytics reserved for admins
   app.get('/hd-task2-' + appId, async function (req, res, next) {
     try {
       const result = await resolveActiveUser(req, store, { allowedRoles: ['admin'] });
@@ -133,7 +132,7 @@ function registerDashboardRoutes(app, dependencies) {
       const searchTerm = sanitiseString(query.search);
       const chefName = sanitiseString(query.chef);
 
-      // Only keep filter values that appear in our predefined lists.
+      // only keep filter values that appear in our predefined lists
       const selectedCuisine = CUISINE_TYPE_OPTIONS.indexOf(rawCuisine) !== -1 ? rawCuisine : '';
       const selectedDifficulty = DIFFICULTY_OPTIONS.indexOf(rawDifficulty) !== -1 ? rawDifficulty : '';
       const selectedMealType = MEAL_TYPE_OPTIONS.indexOf(rawMealType) !== -1 ? rawMealType : '';
@@ -141,7 +140,7 @@ function registerDashboardRoutes(app, dependencies) {
       const maxPrepRaw = parseInt(query.maxPrep, 10);
       const maxPrepMinutes = Number.isFinite(maxPrepRaw) && maxPrepRaw > 0 ? maxPrepRaw : null;
 
-      // Ask the store to build the analytics dashboard data set using the filters.
+      // ask the store to build the analytics dashboard data set using the filters
       const analytics = await store.getAdvancedAnalyticsDashboard({
         filterCuisine: selectedCuisine,
         filterDifficulty: selectedDifficulty,

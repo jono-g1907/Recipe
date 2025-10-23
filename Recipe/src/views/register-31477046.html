@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- Registration form with client-side validation helpers. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -58,7 +57,7 @@
 
     <script>
       (function () {
-        // Grab the form once so we can reuse the reference.
+        // grab the form once so we can reuse the reference
         var form = document.getElementById('registrationForm');
         if (!form) {
           return;
@@ -73,7 +72,7 @@
           return value.replace(/[\s()-]/g, '');
         }
 
-        // Accept +61 mobile/landline formats or Australian local numbers with a leading zero.
+        // accept +61 mobile/landline formats or Australian local numbers with a leading zero
         function isAustralianPhone(value) {
           var cleaned = cleanPhone(value || '');
           if (!cleaned) {
@@ -93,7 +92,7 @@
         }
 
         form.addEventListener('submit', function (event) {
-          // Collect all of the input values for validation.
+          // collect all of the input values for validationc
           var messages = [];
           var email = (form.email.value || '').trim().toLowerCase();
           var password = form.password.value || '';
@@ -102,7 +101,7 @@
           var role = form.role.value || '';
           var phone = (form.phone.value || '').trim();
 
-          // Validate each field and build an error summary. Keep messaging short and actionable.
+          // validate each field and build an error summary. keep messaging short and actionable
           if (!email) {
             messages.push('Email is required');
           } else if (!emailPattern.test(email)) {

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Form for confirming recipe deletion with a friendly client-side warning. -->
+<!-- form for confirming recipe deletion with a friendly client-side warning -->
 <html lang="en" data-bs-theme="auto">
   <head>
     <meta charset="utf-8" />
@@ -9,7 +9,6 @@
   <body>
     <div class="container py-4">
       <div class="mb-3">
-        <!-- Consistent return link so the user never feels stuck. -->
         <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
 
@@ -17,12 +16,12 @@
       <p class="text-center text-muted mb-4">Remove a recipe from your collection</p>
 
       <% if (error) { %>
-        <!-- Display any validation errors that came from the server. -->
+        <!-- display any validation errors that came from the server -->
         <div class="alert alert-danger"><%= error %></div>
       <% } %>
 
       <form action="/delete-recipe-<%= appId %>" method="POST" class="mx-auto" style="max-width: 400px;">
-        <!-- Send the current user so the backend can re-check authorization. -->
+        <!-- send the current user so the backend can re-check authorisation -->
         <input type="hidden" name="userId" value="<%= userId %>">
         <div class="mb-3">
           <label class="form-label">Recipe ID</label>
@@ -34,7 +33,7 @@
         <div class="d-flex justify-content-between">
           <a class="btn btn-secondary" href="/recipes-list-<%= appId %>?userId=<%= userId %>">Back to Recipes</a>
           <div>
-            <!-- Offer both reset and delete actions for safety. -->
+            <!-- offer both reset and delete actions for safety -->
             <button class="btn btn-outline-secondary me-2" type="reset">Reset</button>
             <button class="btn btn-danger" type="submit">Delete Recipe</button>
           </div>
@@ -42,7 +41,7 @@
       </form>
     </div>
     <script>
-      // Lightweight safeguard: ask for confirmation before deleting anything.
+      // safeguard ask for confirmation before deleting anything
       (function () {
         var form = document.querySelector('form');
         if (!form) {
@@ -64,10 +63,3 @@
     </script>
   </body>
 </html>
-
-
-
-
-
-
-

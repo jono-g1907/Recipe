@@ -1,4 +1,4 @@
-// Reuse helper functions so every form treats text and dates the same way
+// helpers keep the form logic consistent across the application
 const { sanitiseString } = require('../lib/utils');
 const {
   INVENTORY_ID_REGEX,
@@ -11,9 +11,8 @@ const {
 const { toIsoDate } = require('../lib/date');
 
 
-// A template object that represents a completely blank inventory form.
-// We copy this whenever we need to render an empty form so we do not mutate
-// the original object by accident.
+// completely blank template for inventory form
+// copy this whenever we need to render an empty form so we do not mutate the original object by accident
 const EMPTY_INVENTORY_FORM_VALUES = {
   inventoryId: '',
   userId: '',
@@ -28,22 +27,19 @@ const EMPTY_INVENTORY_FORM_VALUES = {
   createdDate: ''
 };
 
-// Returns a cloned copy of the blank form so each caller gets an independent
-// object. This prevents one caller from accidentally changing the defaults
-// for everyone else.
+// returns a cloned copy of the blank form so each caller gets an independent object
+// this prevents one caller from accidentally changing the defaults for everyone else
 function getEmptyInventoryFormValues() {
   return Object.assign({}, EMPTY_INVENTORY_FORM_VALUES);
 }
 
-// Convert the raw HTTP request body into a normalised inventory object.
-// Every field is trimmed, converted to the right data type and given a
-// sensible default so downstream code can rely on it.
+// convert the raw HTTP request body into a normalised inventory object
+// every field is trimmed, converted to the right data type and given a default
 function parseInventoryForm(body) {
   const item = {};
   item.inventoryId = (body.inventoryId || '').trim();
 
-  // Clean user input to avoid leading/trailing whitespace and enforce the
-  // uppercase convention used throughout the application.
+  // clean user input to avoid leading/trailing whitespace and enforce uppercase
   const userIdInput = sanitiseString(body && body.userId);
   item.userId = userIdInput ? userIdInput.toUpperCase() : '';
 
@@ -52,8 +48,7 @@ function parseInventoryForm(body) {
   item.unit = (body.unit || '').trim().toLowerCase();
   item.category = (body.category || '').trim();
 
-  // Dates are stored as actual Date objects so later validation can compare
-  // them using getTime rather than working with strings.
+  // dates are stored as actual date objects so later validation can compare them using getTime rather than working with strings
   item.purchaseDate = body.purchaseDate ? new Date(body.purchaseDate) : new Date();
   item.expirationDate = body.expirationDate ? new Date(body.expirationDate) : new Date();
   item.location = (body.location || '').trim();
@@ -62,9 +57,8 @@ function parseInventoryForm(body) {
   return item;
 }
 
-// Validate a parsed inventory item and return a list of friendly error
-// messages. Returning an array makes it easy for callers to display every
-// problem to the user at once.
+// validate the parsed inventory item and return a list of errors
+// returning an array makes it easy for callers to display every problem to the user at once.
 function collectInventoryErrors(item) {
   const errors = [];
   if (!item) {
@@ -72,10 +66,10 @@ function collectInventoryErrors(item) {
     return errors;
   }
 
-  // Each validation block follows the same pattern:
-  // 1. Clean up the input.
-  // 2. Check it exists.
-  // 3. Validate the format or value range.
+  // each validation block follows the same pattern:
+  // 1. clean up the input
+  // 2. check it exists
+  // 3. validate the format or value range
   const inventoryId = sanitiseString(item.inventoryId).toUpperCase();
   if (!inventoryId) {
     errors.push('Inventory ID is required.');
@@ -123,16 +117,15 @@ function collectInventoryErrors(item) {
   } else if (cost < 0.01 || cost > 999.99) {
     errors.push('Cost must be between 0.01 and 999.99.');
   } else {
-    // Ensures we do not accept values like 9.999 which the UI cannot display
-    // correctly when rounded to two decimal places.
+    // ensure we do not accept values like 9.999 which the UI cannot display correctly when rounded to two decimal places
     const cents = Math.round(cost * 100);
-    // Guard against floating point rounding problems when checking for two decimal places.
+    // guard against floating point rounding problems when checking for two decimal places
     if (Math.abs(cost * 100 - cents) > 1e-6) {
       errors.push('Cost must have no more than two decimal places.');
     }
   }
 
-  // Support both Date objects and strings by converting anything that's not already a Date.
+  // support both date objects and strings by converting anything not already a date
   const purchaseDate = item.purchaseDate instanceof Date ? item.purchaseDate : new Date(item.purchaseDate);
   if (!(purchaseDate instanceof Date) || Number.isNaN(purchaseDate.getTime())) {
     errors.push('Purchase date must be a valid date.');
@@ -140,7 +133,7 @@ function collectInventoryErrors(item) {
     errors.push('Purchase date cannot be in the future.');
   }
 
-  // Reuse the same "accept Date or string" logic for expiration checks.
+  // reuse the same accept date or string logic for expiration checks
   const expirationDate = item.expirationDate instanceof Date ? item.expirationDate : new Date(item.expirationDate);
   if (!(expirationDate instanceof Date) || Number.isNaN(expirationDate.getTime())) {
     errors.push('Expiration date must be a valid date.');
@@ -148,7 +141,7 @@ function collectInventoryErrors(item) {
     errors.push('Expiration date must be after the purchase date.');
   }
 
-  // Created date also needs to become a Date object before validation.
+  // created date also needs to become a date object before validation
   const createdDate = item.createdDate instanceof Date ? item.createdDate : new Date(item.createdDate);
   if (!(createdDate instanceof Date) || Number.isNaN(createdDate.getTime())) {
     errors.push('Created date must be a valid date.');
@@ -159,9 +152,8 @@ function collectInventoryErrors(item) {
   return errors;
 }
 
-// Prepare an inventory item for display in a form. This function ensures
-// every field is a string or number that the template can render without
-// additional checks.
+// prepare an inventory item for display in a form 
+// this ensures every field is a string or number that the template can render without additional checks
 function buildInventoryFormValuesFromItem(item) {
   const values = getEmptyInventoryFormValues();
   if (!item) {
@@ -181,14 +173,13 @@ function buildInventoryFormValuesFromItem(item) {
 
   const costNumber = Number(item.cost);
   if (Number.isFinite(costNumber)) {
-    // Round to cents and force two decimal places so the input shows a money-friendly value.
+    // round to cents and force two decimal places so the input shows a more clean value
     values.cost = (Math.round(costNumber * 100) / 100).toFixed(2);
   } else {
     values.cost = '';
   }
 
-  // Convert Date objects back into the YYYY-MM-DD format expected by
-  // `<input type="date">` fields in the browser.
+  // convert date objects back into the YYYY-MM-DD format expected by browser
   values.purchaseDate = toIsoDate(item.purchaseDate);
   values.expirationDate = toIsoDate(item.expirationDate);
   values.createdDate = toIsoDate(item.createdDate);
@@ -196,13 +187,13 @@ function buildInventoryFormValuesFromItem(item) {
   return values;
 }
 
-// Prepares inventory data with helper fields (like expiry status) for rendering templates.
+// prepares inventory data with helper fields (like expiry status) for rendering templates
 function mapInventoryForView(item) {
   const now = new Date();
   const expiration = item.expirationDate instanceof Date ? item.expirationDate : new Date(item.expirationDate);
   let daysLeft = null;
   if (expiration && !Number.isNaN(expiration.getTime())) {
-    // Convert the millisecond difference into whole days remaining until the item expires.
+    // convert the millisecond difference into whole days remaining until the item expires
     const diff = expiration.getTime() - now.getTime();
     daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
   }

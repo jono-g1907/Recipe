@@ -1,18 +1,14 @@
-// The analytics store groups together all of the more complex reporting logic.
-// Most functions assemble MongoDB aggregation pipelines so we add plenty of
-// comments to document the intent behind each stage.
+// analytics store groups together all of complex reporting logic
 const User = require('../models/User');
 const Recipe = require('../models/Recipe');
 const InventoryItem = require('../models/InventoryItem');
 const { ensureConnection, normaliseUserId } = require('./base');
 const { calculateInventoryValue } = require('./inventory');
 
-/**
- * Collects simple counts used on the landing analytics dashboard cards.
- */
+// collects simple counts used on the landing analytics dashboard cards
 async function getDashboardStats() {
   await ensureConnection();
-  // Fetch headline numbers in parallel to keep the dashboard snappy.
+  // fetch headline numbers in parallel
   const [recipeCount, inventoryCount, userCount, cuisineInfo, inventoryValues] = await Promise.all([
     Recipe.countDocuments({}),
     InventoryItem.countDocuments({}),
@@ -21,8 +17,7 @@ async function getDashboardStats() {
     calculateInventoryValue()
   ]);
 
-  // Guard against `calculateInventoryValue` returning an empty object so our
-  // dashboard never renders `NaN`.
+  // guard against calculateInventoryValue returning an empty object so dashboard never renders NaN
   const totalValue = inventoryValues && Number.isFinite(inventoryValues.totalValue)
     ? inventoryValues.totalValue
     : 0;
@@ -35,11 +30,8 @@ async function getDashboardStats() {
     inventoryValue: totalValue
   };
 }
-/**
- * Builds a "smart" dashboard showing how well a user's inventory lines up with
- * the recipes in the system. We optionally scope everything to a single user
- * (by inventory owner) so teams can see personalised insights.
- */
+// builds a smart dashboard showing how well a user's inventory lines up with the recipes in the system
+// serve everything to a single user 
 async function getSmartRecipeDashboardData(options) {
   const opts = options || {};
   const userId = normaliseUserId(opts.userId);
@@ -64,9 +56,8 @@ async function getSmartRecipeDashboardData(options) {
         }
       };
 
-  // Pipeline #1: calculate a cookability score by comparing every recipe's
-  // ingredients with the inventory collection. Matching ingredients increase
-  // the score, missing ingredients are tracked so we can surface suggestions.
+  // pipeline 1: calculate a cookability score by comparing every recipe's ingredients with the inventory collection
+  // matching ingredients increase the score, missing ingredients are tracked so we can surface suggestions
   const cookabilityPipeline = [
     {
       $addFields: {
@@ -192,8 +183,7 @@ async function getSmartRecipeDashboardData(options) {
 
   const cookabilityResults = await Recipe.aggregate(cookabilityPipeline);
 
-  // Convert the aggregation documents into plain JS objects with predictable
-  // defaults so the UI does not have to perform defensive checks everywhere.
+  // convert the aggregation documents into plain JS objects with predictable defaults so the UI does not have to perform type checks
   const cookability = cookabilityResults.map(function (entry) {
     return {
       recipeId: entry.recipeId,
@@ -221,8 +211,7 @@ async function getSmartRecipeDashboardData(options) {
     expiringMatch.userId = userId;
   }
 
-  // Pipeline #2: find ingredients that will expire soon so we can encourage
-  // the user to cook recipes that use them.
+  // pipeline 2: find ingredients that will expire soon so we can encourage the user to cook recipes that use them
   const expiringPipeline = [
     { $match: expiringMatch },
     {
@@ -285,8 +274,7 @@ async function getSmartRecipeDashboardData(options) {
 
   const expiringSoonResults = await InventoryItem.aggregate(expiringPipeline);
 
-  // Add extra helper fields (like `daysUntil`) that are easier for the
-  // dashboard to display than raw timestamps.
+  // add extra helper fields like daysUntil that are easier for the dashboard to display than raw timestamps
   const expiringSoon = expiringSoonResults.map(function (entry) {
     const expirationDate = entry.expirationDate ? new Date(entry.expirationDate) : null;
     let daysUntil = null;
@@ -314,8 +302,7 @@ async function getSmartRecipeDashboardData(options) {
     lowStockMatch.userId = userId;
   }
 
-  // Pipeline #3: find ingredients that are almost depleted but still used in
-  // recipes so the team knows what to restock.
+  // pipeline 3: find ingredients that are almost depleted but still used in recipes so they know what to restock
   const lowStockPipeline = [
     { $match: lowStockMatch },
     {
@@ -378,7 +365,7 @@ async function getSmartRecipeDashboardData(options) {
 
   const lowStockResults = await InventoryItem.aggregate(lowStockPipeline);
 
-  // Similar shaping pass for the low stock report.
+  // similar shaping pass for the low stock report
   const lowStockSuggestions = lowStockResults.map(function (entry) {
     return {
       inventoryId: entry.inventoryId,
@@ -390,8 +377,7 @@ async function getSmartRecipeDashboardData(options) {
     };
   });
 
-  // Pipeline #4: a lighter-weight aggregation that summarises recipe trends by
-  // cuisine for dashboard charts.
+  // pipeline 4: aggregation that summarises recipe trends by cuisine
   const popularityPipeline = [
     {
       $addFields: {
@@ -423,7 +409,7 @@ async function getSmartRecipeDashboardData(options) {
     };
   });
 
-  // Highlight recently created recipes so the dashboard feels dynamic.
+  // highlight recently created recipes
   const latestRecipes = cookability
     .slice()
     .sort(function (a, b) {
@@ -433,7 +419,7 @@ async function getSmartRecipeDashboardData(options) {
     })
     .slice(0, 4);
 
-  // Reuse the cookability scores to surface top recommendations.
+  // reuse the cookability scores to surface top recommendations
   const recommendations = cookability
     .slice()
     .sort(function (a, b) {
@@ -456,19 +442,15 @@ async function getSmartRecipeDashboardData(options) {
   };
 }
 
-/**
- * Provides a deeper reporting view containing chef insights, ingredient usage
- * and seasonal trends. Everything is derived from aggregation pipelines so we
- * can render charts without extra processing on the server routes.
- */
+// provides deeper reporting view containing chef insights, ingredient usage and seasonal trends
+// everything is derived from aggregation pipelines so we can render charts without extra processing
 async function getAdvancedAnalyticsDashboard(options) {
   const opts = options || {};
   await ensureConnection();
 
   const inventoryCollectionName = InventoryItem.collection.name;
 
-  // Pipeline #1: general recipe performance metrics grouped by cuisine and
-  // difficulty.
+  // pipeline 1: general recipe performance metrics grouped by cuisine and difficulty
   const performancePipeline = [
     {
       $project: {
@@ -526,8 +508,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     }
   ];
 
-  // Pipeline #2: drill into ingredient usage and cross-reference inventory for
-  // pricing information.
+  // pipeline 2: drill into ingredient usage and cross-reference inventory for pricing information
   const ingredientPipeline = [
     { $unwind: '$ingredients' },
     {
@@ -557,8 +538,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     { $limit: 8 }
   ];
 
-  // Pipeline #3: summarise the output of each chef including their preferred
-  // cuisines and difficulty levels.
+  // pipeline 3: summarise the output of each chef including their preferred cuisines and difficulty levels
   const chefPipeline = [
     {
       $group: {
@@ -587,7 +567,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     { $sort: { totalRecipes: -1, chef: 1 } }
   ];
 
-  // Pipeline #4: count recipes per month to highlight seasonal trends.
+  // pipeline 4: count recipes per month to highlight seasonal trends
   const seasonalPipeline = [
     {
       $project: {
@@ -606,8 +586,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     { $sort: { '_id.year': 1, '_id.month': 1 } }
   ];
 
-  // Pipeline #5: estimate how expensive each recipe is using any inventory
-  // records that include pricing.
+  // pipeline 5: estimate how expensive each recipe is using any inventory records that include pricing
   const costPipeline = [
     {
       $unwind: {
@@ -697,8 +676,8 @@ async function getAdvancedAnalyticsDashboard(options) {
     { $sort: { totalCost: 1, title: 1 } }
   ];
 
-  // Execute all five pipelines in parallel; MongoDB will handle scheduling and
-  // we only wait once before shaping the combined result object.
+  // execute all five pipelines in parallel 
+  // MongoDB will handle scheduling and we only wait once before shaping the combined result object
   const [performanceData, ingredientResults, chefResults, seasonalResults, costResults] = await Promise.all([
     Recipe.aggregate(performancePipeline),
     Recipe.aggregate(ingredientPipeline),
@@ -707,12 +686,11 @@ async function getAdvancedAnalyticsDashboard(options) {
     Recipe.aggregate(costPipeline)
   ]);
 
-  // Define a custom sort order so "Easy" always appears before harder
-  // recipes regardless of alphabetical order.
+  // define a custom sort order so Easy always appears before harder recipes regardless of alphabetical order
   const difficultyOrder = { Easy: 1, Medium: 2, Hard: 3 };
   const performanceDoc = performanceData && performanceData.length ? performanceData[0] : {};
 
-  // Convert the aggregation output into tidy objects for the dashboard cards.
+  // convert the aggregation output into tidy objects for the dashboard cards
   const cuisinePerformance = Array.isArray(performanceDoc.byCuisine)
     ? performanceDoc.byCuisine.map(function (entry) {
         return {
@@ -757,8 +735,7 @@ async function getAdvancedAnalyticsDashboard(options) {
       })
     : [];
 
-  // Derive helper fields (rounded averages, joined unit strings, etc.) for the
-  // ingredient usage widget.
+  // derive helper fields (rounded averages, joined unit strings) for the ingredient usage widget
   const ingredientUsage = ingredientResults.map(function (entry) {
     return {
       ingredientName: entry._id,
@@ -772,7 +749,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     };
   });
 
-  // Shape per-chef analytics for the dashboard accordion/table.
+  // shape per-chef analytics for the dashboard table
   const chefInsights = chefResults.map(function (entry) {
     const difficulties = Array.isArray(entry.difficultyBreakdown)
       ? entry.difficultyBreakdown
@@ -802,7 +779,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     };
   });
 
-  // Translate `{ month, year }` tuples into readable labels.
+  // translate { month, year } tuples into readable labels
   const seasonalTrends = seasonalResults.map(function (entry) {
     const monthNames = [
       'January',
@@ -827,7 +804,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     };
   });
 
-  // Provide rounded totals plus coverage data for cost analysis widgets.
+  // provide rounded totals plus coverage data for cost analysis widgets
   const costReports = costResults.map(function (entry) {
     return {
       recipeId: entry._id,
@@ -839,8 +816,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     };
   });
 
-  // Reuse the "smart" dashboard logic so the advanced view can show suggested
-  // recipes that already meet a minimum pantry coverage.
+  // reuse the dashboard logic so the advanced view can show suggested recipes that already meet a minimum pantry coverage
   const coverageThreshold = Number.isFinite(opts.minCoverage) ? opts.minCoverage : 90;
   const smartData = await getSmartRecipeDashboardData({ userId: opts.inventoryUserId });
   const recommendations = Array.isArray(smartData && smartData.cookability)
@@ -863,7 +839,7 @@ async function getAdvancedAnalyticsDashboard(options) {
         })
     : [];
 
-  // Echo the filters back so the UI can display which options were applied.
+  // echo the filters back so the UI can display which options were applied
   const appliedFilters = {
     cuisine: opts.filterCuisine || '',
     difficulty: opts.filterDifficulty || '',
@@ -873,7 +849,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     chef: opts.chefName || ''
   };
 
-  // Build a dynamic Mongo query based on whichever filters were provided.
+  // build a dynamic Mongo query based on whichever filters were provided
   const recipeQuery = {};
   if (appliedFilters.cuisine) {
     recipeQuery.cuisineType = appliedFilters.cuisine;
@@ -909,7 +885,7 @@ async function getAdvancedAnalyticsDashboard(options) {
     .limit(20)
     .lean();
 
-  // Convert the lean documents into dashboard-friendly objects.
+  // convert the lean documents into dashboard display objects
   const advancedResults = filteredRecipes.map(function (recipe) {
     return {
       recipeId: recipe.recipeId,
@@ -939,8 +915,7 @@ async function getAdvancedAnalyticsDashboard(options) {
 }
 
 async function getInventoryBasedSuggestions(limit) {
-  // This helper is intentionally thin: we reuse the heavy lifting from the
-  // smart dashboard and just trim the list down to the requested size.
+  // reuse the heavy lifting from the smart dashboard and just trim the list down to the requested size
   const insights = await getSmartRecipeDashboardData({});
   const items = (insights && Array.isArray(insights.recommendations)) ? insights.recommendations : [];
   if (!Number.isFinite(limit) || limit <= 0) {

@@ -1,18 +1,15 @@
-// Inventory specific data-access helpers. These functions encapsulate the
-// Mongo queries used throughout the app so routes/controllers can stay tidy.
 const InventoryItem = require('../models/InventoryItem');
 const ValidationError = require('../errors/ValidationError');
 const { ensureConnection } = require('./base');
 const { findUserDocumentByUserId } = require('./users');
 
-// Escape any special regex characters so a search string can be safely dropped
-// into a `new RegExp()` call.
+// escape any special regex characters so a search string can be safely dropped into a new RegExp() call
 function escapeRegExp(value) {
   return String(value).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
-// Take the optional filters from the UI and turn them into a Mongo query
-// object. We only include properties that were explicitly supplied.
+// take the optional filters from the UI and turn them into a Mongo query object
+// only include properties that were explicitly supplied
 function buildInventoryQuery(filters) {
   const query = {};
 
@@ -55,8 +52,8 @@ function buildInventoryQuery(filters) {
   return query;
 }
 
-// Users can request a sort order like `-expirationDate`. This helper validates
-// the input and returns a Mongo sort object.
+// users can request a sort order like -expirationDate
+// helper validates the input and returns a Mongo sort object
 function buildInventorySort(sortKey) {
   const fallback = { createdDate: -1, inventoryId: 1 };
   if (!sortKey || typeof sortKey !== 'string') {
@@ -86,8 +83,7 @@ function buildInventorySort(sortKey) {
   return sort;
 }
 
-// Pagination helpers: convert arbitrary input into positive integers with
-// sensible defaults for our list views.
+// pagination helpers convert arbitrary input into positive integers with defaults for list views
 function normalisePage(value) {
   const parsed = parseInt(value, 10);
   if (!Number.isFinite(parsed) || parsed < 1) {
@@ -104,12 +100,8 @@ function normaliseLimit(value) {
   return Math.min(parsed, 50);
 }
 
-// Public functions ----------------------------------------------------------------
-
-/**
- * Return a paginated slice of the inventory list. Supports text search,
- * filtering, sorting and pagination for the dashboard.
- */
+// return a paginated slice of the inventory list
+// supports text search,  filtering, sorting and pagination for the dashboard
 async function listInventory(options) {
   const opts = options || {};
   await ensureConnection();
@@ -128,27 +120,22 @@ async function listInventory(options) {
   return { items, total, page, limit };
 }
 
-/**
- * Convenience wrapper used by exports or CSV features that need the latest
- * handful of items without pagination metadata.
- */
+// wrapper used by exports features that need the latest handful of items without pagination metadata.
 async function getAllInventory() {
   const result = await listInventory({ page: 1, limit: 500, sort: '-createdDate' });
   return result.items;
 }
 
-/**
- * Fetch a single item by its human-readable id (e.g. `INV-001`).
- */
+
+// fetch a single item by ID
 async function getInventoryItemById(inventoryId) {
   await ensureConnection();
   return InventoryItem.findOne({ inventoryId }).lean();
 }
 
-/**
- * Insert a new inventory record. We ensure the owning user exists and attach
- * their Mongo `_id` reference for population.
- */
+
+// insert a new inventory record
+// ensure the owning user exists and attach their Mongo_id reference for population
 async function createInventoryItem(data) {
   await ensureConnection();
   const payload = Object.assign({}, data || {});
@@ -169,11 +156,9 @@ async function createInventoryItem(data) {
   return saved.toObject();
 }
 
-/**
- * Update an existing inventory item while preventing fields like `inventoryId`
- * from being overwritten. Returns the updated document or `null` if the id is
- * invalid.
- */
+
+// update an existing inventory item while preventing fields like inventoryId from being overwritten
+// returns the updated document or null if the id is invalid
 async function updateInventoryItem(inventoryId, patch) {
   await ensureConnection();
 
@@ -198,18 +183,16 @@ async function updateInventoryItem(inventoryId, patch) {
   return InventoryItem.findOneAndUpdate({ inventoryId: normalisedId }, update, { new: true, runValidators: true }).lean();
 }
 
-/**
- * Remove a document entirely. Useful when an item is no longer tracked.
- */
+
+//remove a document entirely
 async function deleteInventoryItem(inventoryId) {
   await ensureConnection();
   return InventoryItem.deleteOne({ inventoryId });
 }
 
-/**
- * Increment or decrement the quantity. We guard against negative stock levels
- * to avoid corrupting data when diff is large.
- */
+
+// increment or decrement the quantity
+// guard against negative stock levels to avoid corrupting data when diff is large
 async function adjustInventoryQuantity(inventoryId, diff) {
   await ensureConnection();
   const doc = await InventoryItem.findOne({ inventoryId });
@@ -225,9 +208,8 @@ async function adjustInventoryQuantity(inventoryId, diff) {
   return saved.toObject();
 }
 
-/**
- * Replace the quantity with an exact amount (still disallowing negatives).
- */
+
+// replace the quantity with an exact amount (still disallowing negatives)
 async function setInventoryQuantity(inventoryId, amount) {
   await ensureConnection();
   const doc = await InventoryItem.findOne({ inventoryId });
@@ -242,10 +224,8 @@ async function setInventoryQuantity(inventoryId, amount) {
   return saved.toObject();
 }
 
-/**
- * Shortcut for `listInventory` that narrows results to items expiring before a
- * certain date.
- */
+
+// shortcut for listInventory that narrows results to items expiring before a certain date
 async function findExpiringInventory(options) {
   const opts = options || {};
   return listInventory({
@@ -260,9 +240,8 @@ async function findExpiringInventory(options) {
   });
 }
 
-/**
- * Return a plain (non-paginated) list of items below a certain threshold.
- */
+
+// return a plain list of items below a certain threshold
 async function findLowStockInventory(options) {
   const opts = options || {};
   await ensureConnection();
@@ -276,10 +255,9 @@ async function findLowStockInventory(options) {
   return InventoryItem.find(query).sort({ quantity: 1, inventoryId: 1 }).lean();
 }
 
-/**
- * Calculate the total monetary value of the inventory. When `groupBy` is
- * provided we also return a breakdown grouped by that field.
- */
+
+// calculate the total value of the inventory
+// when groupBy is provided we also return a breakdown grouped by that field
 async function calculateInventoryValue(groupBy) {
   await ensureConnection();
   const projectStage = {
@@ -334,10 +312,8 @@ async function calculateInventoryValue(groupBy) {
   return { totalValue };
 }
 
-/**
- * Used by the sharing features to expose a short read-only list of the most
- * recent items.
- */
+
+// used by the sharing features to expose a short read-only list of the most recent items
 async function getSharedInventorySnapshot(limit) {
   const result = await listInventory({ page: 1, limit: limit || 5, sort: '-createdDate' });
   return result.items;

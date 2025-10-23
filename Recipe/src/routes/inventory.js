@@ -1,10 +1,6 @@
-// Inventory routes expose CRUD actions and analytical endpoints for stock that
-// the kitchen keeps on hand. The goal of the comments in this file is to help a
-// newer developer recall *why* each helper exists and how the pieces connect.
+// iventory routes for CRUD actions and analytical endpoints for stock
 const express = require('express');
 const router = express.Router();
-
-// Shared configuration and dependencies that the routes rely on.
 const constants = require('../lib/constants');
 const APP_ID = constants.APP_ID;
 const store = require('../store');
@@ -12,8 +8,7 @@ const ValidationError = require('../errors/ValidationError');
 const navigation = require('../lib/navigation');
 const { userCanAccessInventory } = require('../lib/permissions');
 
-// Express route patterns. We keep them as constants so they can be reused in
-// tests or documentation, and so the APP_ID detail is centralised.
+// express route patterns, keep them as constants so they can be reused 
 const CREATE_PATH = '/add-inventory-' + APP_ID;
 const LIST_PATH = '/inventory-dashboard-' + APP_ID;
 const GET_ONE_PATH = '/inventory-dashboard/:inventoryId-' + APP_ID;
@@ -23,14 +18,14 @@ const EXPIRING_PATH = '/inventory/expiring-' + APP_ID;
 const LOW_STOCK_PATH = '/inventory/low-stock-' + APP_ID;
 const VALUE_PATH = '/inventory/value-' + APP_ID;
 
-// Dropdown values that are shared between validation and UI forms. Using arrays
-// helps with validation and also keeps the acceptable spellings in one spot.
+// dropdown values
+// helps with validation and also keeps spellings in one spot
 const CATEGORY_OPTIONS = ['Vegetables', 'Fruits', 'Meat', 'Dairy', 'Grains', 'Spices', 'Beverages', 'Frozen', 'Canned', 'Other'];
 const LOCATION_OPTIONS = ['Fridge', 'Freezer', 'Pantry', 'Counter', 'Cupboard'];
 const UNIT_OPTIONS = ['pieces', 'kg', 'g', 'liters', 'ml', 'cups', 'tbsp', 'tsp', 'dozen'];
 
-// Extract a user identifier from whichever part of the request provides it.
-// Having a single helper avoids duplicating the header/query/body checks.
+// extract a user identifier from whichever part of the request provides it
+// having a single helper avoids duplicating 
 function getUserIdFromRequest(req) {
   const queryId = req && req.query && req.query.userId;
   const bodyId = req && req.body && req.body.userId;
@@ -39,8 +34,7 @@ function getUserIdFromRequest(req) {
   return candidate ? String(candidate).trim().toUpperCase() : '';
 }
 
-// Look up the active user and perform the authentication/authorisation checks
-// that every inventory endpoint requires.
+// look up the active user and perform the authentication/authorisation checks that every inventory endpoint requires
 async function resolveInventoryUser(req) {
   const userId = getUserIdFromRequest(req);
   if (!userId) {
@@ -59,15 +53,14 @@ async function resolveInventoryUser(req) {
   return { user: user };
 }
 
-// Some inventory pages can respond with HTML when requested from forms. This
-// helper checks the Accept header to decide whether to show an HTML template.
+// some inventory pages can respond with HTML when requested from forms 
+// checks the Accept header to decide whether to show an HTML template
 function clientWantsHtml(req) {
   const a = req.headers && (req.headers['accept'] || '');
   return a.indexOf('text/html') !== -1;
 }
 
-// Convert raw errors (from Mongo, Mongoose, or manual throws) into
-// `ValidationError` instances that the error middleware knows how to present.
+// convert raw errors into ValidationError instances
 function normaliseError(err) {
   if (!err) return err;
 
@@ -107,8 +100,7 @@ function normaliseError(err) {
   return err;
 }
 
-// For inputs such as "fridge" vs "Fridge", this helper picks the official
-// spelling from our option lists so comparisons stay consistent.
+// picks the spelling from option lists so comparisons stay consistent
 function normaliseOption(value, options, toLower) {
   if (!value) return value;
   const trimmed = String(value).trim();
@@ -120,8 +112,7 @@ function normaliseOption(value, options, toLower) {
   return toLower ? trimmed.toLowerCase() : trimmed;
 }
 
-// Take the raw request body and coerce strings into the expected data types so
-// downstream validation logic can assume consistent shapes.
+// Take raw request body and coerce strings into the expected data types so validation logic can assume consistency
 function coerceInventoryPayload(body) {
   const out = Object.assign({}, body);
   if (out.quantity !== undefined) out.quantity = Number(out.quantity);
@@ -136,7 +127,7 @@ function coerceInventoryPayload(body) {
   return out;
 }
 
-// Gracefully handle optional query parameters that might be blank or invalid.
+// handle optional query parameters that might be blank or invalid
 function parseNumber(value) {
   if (value === undefined || value === null || value === '') {
     return null;
@@ -148,7 +139,7 @@ function parseNumber(value) {
   return parsed;
 }
 
-// Convert a value to a Date object, returning null if the conversion fails.
+// convert a value to a date object, returning null if the conversion fails
 function parseDate(value) {
   if (!value) {
     return null;
@@ -160,8 +151,7 @@ function parseDate(value) {
   return d;
 }
 
-// Build the filter object used by list endpoints. Keeping this logic in one
-// place prevents subtle differences between different list-style routes.
+// build the filter object used by list endpoints. 
 function parseListQuery(query) {
   const q = query || {};
   const filters = { page: 1, limit: 10 };
@@ -219,7 +209,7 @@ function parseListQuery(query) {
   return filters;
 }
 
-// Make sure all outgoing dates use the same ISO format for API responses.
+// make sure all outgoing dates use the same ISO format for API responses
 function toIsoString(value) {
   if (!value) {
     return null;
@@ -231,8 +221,8 @@ function toIsoString(value) {
   return d.toISOString();
 }
 
-// Calculate how many days remain until an item expires. Returns null when the
-// expiration date is missing or invalid to keep calling code simple.
+// calculate how many days remain until an item expires
+// returns null when the expiration date is missing or invalid
 function getDaysUntilExpiration(value) {
   if (!value) {
     return null;
@@ -246,7 +236,7 @@ function getDaysUntilExpiration(value) {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-// Translate the "days left" number into human-friendly labels used by the UI.
+// translate days left into labels used by UI
 function getExpiryStatus(daysLeft) {
   if (daysLeft === null) {
     return 'unknown';
@@ -260,8 +250,7 @@ function getExpiryStatus(daysLeft) {
   return 'ok';
 }
 
-// Inventory values are displayed as currency, so we round to two decimals to
-// avoid floating-point surprises in the UI.
+// inventory values are displayed as currency, so we round to two decimals
 function roundCurrency(value) {
   if (!Number.isFinite(value)) {
     return 0;
@@ -269,9 +258,7 @@ function roundCurrency(value) {
   return Math.round(value * 100) / 100;
 }
 
-// Shape the inventory document into the structure that the front-end expects
-// (e.g. ISO strings, derived values). Doing this in one place keeps responses
-// consistent across every route.
+// shape the inventory document into the structure that the front-end expects
 function formatInventoryForResponse(item) {
   if (!item) {
     return item;
@@ -304,17 +291,17 @@ function formatInventoryForResponse(item) {
 }
 
 
-// Create a new inventory record for the currently authenticated user.
+// create a new inventory record for the currently authenticated user
 router.post(CREATE_PATH, async function (req, res, next) {
   try {
-    // Validate that we have a logged-in, authorised inventory user.
+    // validate that we have a logged-in, authorised inventory user
     const resolution = await resolveInventoryUser(req);
     if (!resolution.user) {
       return res.status(resolution.status || 401).json({ error: resolution.message });
     }
 
     const activeUser = resolution.user;
-    // Prepare the payload with properly typed values before storage.
+    // prepare the payload with properly typed values before storage
     const payload = coerceInventoryPayload(req.body || {});
     if (!payload.createdDate) {
       payload.createdDate = new Date();
@@ -327,15 +314,14 @@ router.post(CREATE_PATH, async function (req, res, next) {
   }
 });
 
-// Return a paginated list of inventory items, optionally filtered by query
-// parameters (category, location, search string, etc.).
+// return a paginated list of inventory items
 router.get(LIST_PATH, async function (req, res, next) {
   try {
     const resolution = await resolveInventoryUser(req);
     if (!resolution.user) {
       return res.status(resolution.status || 401).json({ error: resolution.message });
     }
-    // Build pagination + filter options from the incoming query parameters.
+    // build pagination + filter options from the incoming query parameters
     const filters = parseListQuery(req.query);
     const result = await store.listInventory(filters);
     const items = result.items.map(formatInventoryForResponse);
@@ -345,7 +331,7 @@ router.get(LIST_PATH, async function (req, res, next) {
   }
 });
 
-// Fetch a single inventory item by its identifier.
+// fetch a single inventory item by its identifier
 router.get(GET_ONE_PATH, async function (req, res, next) {
   try {
     const resolution = await resolveInventoryUser(req);
@@ -362,7 +348,7 @@ router.get(GET_ONE_PATH, async function (req, res, next) {
   }
 });
 
-// List inventory items that are expiring before a given date.
+// list inventory items that are expiring before a given date
 router.get(EXPIRING_PATH, async function (req, res, next) {
   try {
     const resolution = await resolveInventoryUser(req);
@@ -397,7 +383,7 @@ router.get(EXPIRING_PATH, async function (req, res, next) {
   }
 });
 
-// Surface items that have quantity below the provided threshold.
+// surface items that have quantity below the provided threshold
 router.get(LOW_STOCK_PATH, async function (req, res, next) {
   try {
     const resolution = await resolveInventoryUser(req);
@@ -430,7 +416,7 @@ router.get(LOW_STOCK_PATH, async function (req, res, next) {
   }
 });
 
-// Calculate the total (and optionally grouped) value of inventory on hand.
+// calculate the total value of inventory on hand
 router.get(VALUE_PATH, async function (req, res, next) {
   try {
     const resolution = await resolveInventoryUser(req);
@@ -472,7 +458,8 @@ router.get(VALUE_PATH, async function (req, res, next) {
   }
 });
 
-// Update an inventory record. Supports quantity adjustments or a full update.
+// update an inventory record 
+// supports quantity adjustments or a full update
 router.post(UPDATE_PATH, async function (req, res, next) {
   try {
     const resolution = await resolveInventoryUser(req);
@@ -529,7 +516,7 @@ router.post(UPDATE_PATH, async function (req, res, next) {
   }
 });
 
-// Remove an inventory item completely.
+// remove an inventory item completely
 router.delete(DELETE_PATH, async function (req, res, next) {
   try {
     const resolution = await resolveInventoryUser(req);

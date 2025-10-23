@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- Executive analytics dashboard with advanced filters and summaries. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -8,7 +7,7 @@
     <link rel="stylesheet" href="/pages.css" />
   </head>
   <body class="hd-analytics-page">
-    <!-- Dark themed navigation to distinguish the analytics space. -->
+    <!-- dark themed navigation to differentiatie the analytics page -->
     <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
       <div class="container-fluid">
         <a class="navbar-brand" href="/home-<%= appId %>?userId=<%= userId %>">Recipe Hub</a>
@@ -57,7 +56,7 @@
           </ul>
         </div>
         <div class="d-flex align-items-center text-white">
-          <!-- Display key user context and role. -->
+          <!-- display key user context and role -->
           <div class="me-3 text-end">
             <div>Welcome, <%= username %></div>
             <small class="d-block">Email: <%= email %></small>
@@ -81,7 +80,7 @@
       <div class="card shadow-sm mb-4">
         <div class="card-header bg-primary text-white">Advanced Filtering</div>
         <div class="card-body">
-          <!-- Filters feed back into the same route, so we keep userId in the query. -->
+          <!-- filters feed back into the same route, so we keep userId in the query-->
           <form class="row g-3" method="get" action="/hd-task2-<%= appId %>">
             <input type="hidden" name="userId" value="<%= userId %>" />
             <div class="col-md-4 col-lg-2">
@@ -152,7 +151,7 @@
         </div>
       </div>
 
-      <!-- High level overview cards. -->
+      <!-- high level overview cards -->
       <div class="row g-4 mb-4">
         <div class="col-lg-8">
           <div class="card h-100 shadow-sm">
@@ -181,7 +180,7 @@
           <div class="card h-100 shadow-sm">
             <div class="card-header bg-info text-white">Difficulty Distribution</div>
             <div class="card-body">
-              <!-- Visualise how many recipes fall into each difficulty bucket. -->
+              <!-- visualise how many recipes fall into each difficulty bucket -->
               <% if (difficultySummary && difficultySummary.length) { %>
                 <ul class="list-group list-group-flush">
                   <% difficultySummary.forEach(function (item) { %>
@@ -202,7 +201,7 @@
       <div class="card shadow-sm mb-4">
         <div class="card-header bg-secondary text-white">High Performing Recipes</div>
         <div class="card-body">
-          <!-- Highlight the most impactful recipes in table form. -->
+          <!-- highlight the most impactful recipes in table form -->
           <% if (topRecipes && topRecipes.length) { %>
             <div class="table-responsive">
               <table class="table table-sm align-middle">
@@ -241,8 +240,7 @@
       <div class="card shadow-sm mb-4">
         <div class="card-header bg-warning">Ingredient Usage &amp; Cost Impact</div>
         <div class="card-body">
-          <!-- Aggregated ingredient metrics help with procurement decisions. -->
-          <!-- Aggregated ingredient metrics help with procurement decisions. -->
+          <!-- aggregated ingredient metrics help with procurement decisions -->
           <% if (ingredientUsage && ingredientUsage.length) { %>
             <div class="table-responsive">
               <table class="table table-striped table-sm">
@@ -276,7 +274,7 @@
         </div>
       </div>
 
-      <!-- Deep dive panels for chefs and seasonal trends. -->
+      <!-- deep dive panels for chefs and seasonal trends -->
       <div class="row g-4 mb-4">
         <div class="col-lg-6">
           <div class="card shadow-sm h-100">
@@ -391,7 +389,7 @@
       <div class="card shadow-sm mb-5">
         <div class="card-header bg-dark text-white">Filtered Recipe Results</div>
         <div class="card-body">
-          <!-- Render the recipes that meet the selected filter criteria. -->
+          <!-- render the recipes that meet the selected filter criteria -->
           <% if (filteredRecipes && filteredRecipes.length) { %>
             <div class="table-responsive">
               <table class="table table-hover table-sm">
@@ -433,4 +431,3 @@
     <script src="/bootstrap.bundle.min.js"></script>
   </body>
 </html>
-

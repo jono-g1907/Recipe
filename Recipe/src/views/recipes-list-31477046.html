@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- Tabular overview of all recipes accessible to the current user. -->
 <html lang="en" data-bs-theme="auto">
   <head>
     <meta charset="utf-8" />
@@ -10,12 +9,11 @@
   <body class="recipes-list-page">
     <div class="container">
       <div class="mb-3">
-        <!-- Keep navigation consistent with the rest of the app. -->
         <a class="btn btn-outline-primary" href="/home-<%= appId %>?userId=<%= userId %>">Return to Home</a>
       </div>
 
       <% if (typeof msg !== 'undefined' && msg) { %>
-        <!-- Success banner for CRUD operations. -->
+        <!-- success banner for CRUD operations -->
         <div class="alert alert-success mb-4"><%= msg %></div>
       <% } %>
       <h1 class="text-center mb-1">All Recipes</h1>
@@ -47,7 +45,7 @@
               </tr>
             </thead>
             <tbody>
-            <!-- Walk each recipe and prepare strings for display. -->
+            <!-- walk through each recipe and prepare strings for display -->
             <% for (let i = 0; i < recipes.length; i++) {
                  const r = recipes[i];
                  let ingLines = [];
@@ -103,9 +101,3 @@
 
   </body>
 </html>
-
-
-
-
-
-

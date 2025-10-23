@@ -115,4 +115,3 @@ module.exports = {
   DEFAULT_USER_ID,
   SECOND_USER_ID
 };
-
