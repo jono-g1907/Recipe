@@ -61,13 +61,15 @@ export class Dashboard implements OnInit, OnDestroy {
         label: 'Create Recipe',
         description: 'Add a brand new recipe to the collection.',
         link: '/add-recipe-31477046',
-        variant: 'success'
+        variant: 'success',
+        useRouter: true
       },
       {
         label: 'Inventory Dashboard',
         description: 'Review and update shared inventory items.',
         link: '/inventory-dashboard-31477046',
-        variant: 'info'
+        variant: 'info',
+        useRouter: true
       },
       {
         label: 'Sign Out',
