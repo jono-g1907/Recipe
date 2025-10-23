@@ -113,6 +113,7 @@ export class RecipeForm implements OnChanges {
     }
 
     const raw = this.form.value;
+    const createdDateInput = typeof raw.createdDate === 'string' ? raw.createdDate : this.today();
     const value: RecipeFormValue = {
       recipeId: String(raw.recipeId || '').trim().toUpperCase(),
       title: String(raw.title || '').trim(),
@@ -122,7 +123,7 @@ export class RecipeForm implements OnChanges {
       difficulty: String(raw.difficulty || '').trim(),
       prepTime: Number(raw.prepTime),
       servings: Number(raw.servings),
-      createdDate: raw.createdDate as string,
+      createdDate: this.toIsoDateString(createdDateInput),
       ingredients: this.ingredientsArray.controls.map((group) => ({
         ingredientName: String(group.value.ingredientName || '').trim(),
         quantity: Number(group.value.quantity || 0),
@@ -237,5 +238,24 @@ export class RecipeForm implements OnChanges {
       return this.today();
     }
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  
+  private toIsoDateString(value: string): string {
+    const trimmed = (value || '').trim();
+    if (trimmed) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+      if (match) {
+        const year = Number(match[1]);
+        const month = Number(match[2]) - 1;
+        const day = Number(match[3]);
+        const localDate = new Date(year, month, day);
+        return localDate.toISOString();
+      }
+      const parsed = new Date(trimmed);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+    return new Date().toISOString();
   }
 }
