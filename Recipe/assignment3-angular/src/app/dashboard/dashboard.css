@@ -1,0 +1,74 @@
+.dashboard {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.dashboard-logo {
+  width: 64px;
+  height: 64px;
+}
+
+.student-card {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
+  font-size: 1.25rem;
+}
+
+.card-recipes .icon-circle {
+  background: rgba(25, 135, 84, 0.12);
+  color: #198754;
+}
+
+.card-inventory .icon-circle {
+  background: rgba(13, 202, 240, 0.12);
+  color: #0dcaf0;
+}
+
+.card-users .icon-circle {
+  background: rgba(13, 110, 253, 0.12);
+  color: #0d6efd;
+}
+
+.card-cuisine .icon-circle {
+  background: rgba(255, 193, 7, 0.12);
+  color: #ffc107;
+}
+
+.card-value {
+  border-top: 3px solid #20c997;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-logo {
+    width: 56px;
+    height: 56px;
+  }
+}

@@ -75,7 +75,7 @@ export class Login implements OnInit {
     this.auth.login(payload).subscribe({
       next: () => {
         this.submitting = false;
-        this.router.navigate(['/logout']);
+        this.router.navigate(['/dashboard']);
       },
       error: (error: Error) => {
         this.submitting = false;
