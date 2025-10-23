@@ -1,0 +1,185 @@
+<form class="inventory-form" (ngSubmit)="submit()" [formGroup]="form" novalidate>
+  @if (errorMessage) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+  }
+
+  <div class="card mb-4">
+    <div class="card-header">Basic Information</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="inventoryId">Inventory ID</label>
+          <input
+            id="inventoryId"
+            class="form-control"
+            formControlName="inventoryId"
+            placeholder="I-00005"
+            type="text"
+            [readonly]="!!initialValue"
+            [class.is-invalid]="form.get('inventoryId')?.invalid && form.get('inventoryId')?.touched"
+          />
+          <div class="form-text">Format: I-#####</div>
+          @if (form.get('inventoryId')?.invalid && form.get('inventoryId')?.touched) {
+            <div class="invalid-feedback">Provide a valid inventory ID.</div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="ingredientName">Ingredient Name</label>
+          <input
+            id="ingredientName"
+            class="form-control"
+            formControlName="ingredientName"
+            type="text"
+            [class.is-invalid]="form.get('ingredientName')?.invalid && form.get('ingredientName')?.touched"
+          />
+          @if (form.get('ingredientName')?.invalid && form.get('ingredientName')?.touched) {
+            <div class="invalid-feedback">Ingredient name must be between 2 and 50 letters.</div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="category">Category</label>
+          <select
+            id="category"
+            class="form-select"
+            formControlName="category"
+            [class.is-invalid]="form.get('category')?.invalid && form.get('category')?.touched"
+          >
+            <option value="">-- choose --</option>
+            @for (category of categoryOptions; track trackByValue($index, category)) {
+              <option [value]="category">{{ category }}</option>
+            }
+          </select>
+          @if (form.get('category')?.invalid && form.get('category')?.touched) {
+            <div class="invalid-feedback">Select a category.</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header">Stock Details</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label" for="quantity">Quantity</label>
+          <input
+            id="quantity"
+            class="form-control"
+            formControlName="quantity"
+            type="number"
+            step="0.01"
+            min="0.01"
+            [class.is-invalid]="form.get('quantity')?.invalid && form.get('quantity')?.touched"
+          />
+          @if (form.get('quantity')?.invalid && form.get('quantity')?.touched) {
+            <div class="invalid-feedback">Quantity must be between 0.01 and 9999.</div>
+          }
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="unit">Unit</label>
+          <select
+            id="unit"
+            class="form-select"
+            formControlName="unit"
+            [class.is-invalid]="form.get('unit')?.invalid && form.get('unit')?.touched"
+          >
+            <option value="">-- choose --</option>
+            @for (unit of unitOptions; track trackByValue($index, unit)) {
+              <option [value]="unit">{{ unit }}</option>
+            }
+          </select>
+          @if (form.get('unit')?.invalid && form.get('unit')?.touched) {
+            <div class="invalid-feedback">Select a unit.</div>
+          }
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="location">Location</label>
+          <select
+            id="location"
+            class="form-select"
+            formControlName="location"
+            [class.is-invalid]="form.get('location')?.invalid && form.get('location')?.touched"
+          >
+            <option value="">-- choose --</option>
+            @for (location of locationOptions; track trackByValue($index, location)) {
+              <option [value]="location">{{ location }}</option>
+            }
+          </select>
+          @if (form.get('location')?.invalid && form.get('location')?.touched) {
+            <div class="invalid-feedback">Select a storage location.</div>
+          }
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="cost">Cost</label>
+          <input
+            id="cost"
+            class="form-control"
+            formControlName="cost"
+            type="number"
+            step="0.01"
+            min="0.01"
+            [class.is-invalid]="form.get('cost')?.invalid && form.get('cost')?.touched"
+          />
+          @if (form.get('cost')?.invalid && form.get('cost')?.touched) {
+            <div class="invalid-feedback">Cost must be between 0.01 and 999.99.</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header">Dates</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="purchaseDate">Purchase Date</label>
+          <input
+            id="purchaseDate"
+            class="form-control"
+            formControlName="purchaseDate"
+            type="date"
+            [class.is-invalid]="form.get('purchaseDate')?.invalid && form.get('purchaseDate')?.touched"
+          />
+          @if (form.get('purchaseDate')?.invalid && form.get('purchaseDate')?.touched) {
+            <div class="invalid-feedback">Provide the purchase date.</div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="expirationDate">Expiration Date</label>
+          <input
+            id="expirationDate"
+            class="form-control"
+            formControlName="expirationDate"
+            type="date"
+            [class.is-invalid]="form.get('expirationDate')?.invalid && form.get('expirationDate')?.touched"
+          />
+          @if (form.get('expirationDate')?.invalid && form.get('expirationDate')?.touched) {
+            <div class="invalid-feedback">Provide a valid expiration date.</div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="createdDate">Created Date</label>
+          <input
+            id="createdDate"
+            class="form-control"
+            formControlName="createdDate"
+            type="date"
+            [class.is-invalid]="form.get('createdDate')?.invalid && form.get('createdDate')?.touched"
+          />
+          @if (form.get('createdDate')?.invalid && form.get('createdDate')?.touched) {
+            <div class="invalid-feedback">Created date is required.</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2">
+    <button class="btn btn-outline-secondary" type="button" (click)="resetToInitial()">Reset</button>
+    <button class="btn btn-primary" type="submit" [disabled]="loading">
+      {{ loading ? 'Saving…' : submitLabel }}
+    </button>
+  </div>
+</form>

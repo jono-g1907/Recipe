@@ -1,0 +1,21 @@
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4">
+  <div>
+    <h1 class="mb-1">Add Inventory Item</h1>
+    <p class="text-muted mb-0">Capture new stock with cost and expiry tracking.</p>
+  </div>
+  <a class="btn btn-outline-secondary mt-3 mt-lg-0" routerLink="/inventory-dashboard-31477046">Back to Inventory</a>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger" role="alert">{{ error() }}</div>
+}
+@if (success()) {
+  <div class="alert alert-success" role="alert">{{ success() }}</div>
+}
+
+<app-inventory-form
+  [loading]="loading()"
+  [submitLabel]="'Create Item'"
+  [errorMessage]="''"
+  (submitted)="handleSubmit($event)"
+></app-inventory-form>

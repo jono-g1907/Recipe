@@ -1,0 +1,276 @@
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4">
+  <div>
+    <h1 class="mb-1">Inventory Dashboard</h1>
+    <p class="text-muted mb-0">Track stock levels, expiration dates, and total inventory value.</p>
+  </div>
+  <div class="d-flex gap-2 mt-3 mt-lg-0">
+    <a class="btn btn-outline-secondary" routerLink="/dashboard">Back to Dashboard</a>
+    <a class="btn btn-primary" routerLink="/add-inventory-31477046">+ Add Item</a>
+  </div>
+</div>
+
+<form class="filter-panel card mb-4" [formGroup]="filtersForm" (ngSubmit)="applyFilters()">
+  <div class="card-header">Filter & Sort</div>
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label" for="search">Search</label>
+        <input id="search" class="form-control" formControlName="q" placeholder="Search by ingredient or ID" type="text" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label" for="category">Category</label>
+        <select id="category" class="form-select" formControlName="category">
+          <option value="">All</option>
+          @for (category of categoryOptions; track $index) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label" for="location">Location</label>
+        <select id="location" class="form-select" formControlName="location">
+          <option value="">All</option>
+          @for (location of locationOptions; track $index) {
+            <option [value]="location">{{ location }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label" for="unit">Unit</label>
+        <select id="unit" class="form-select" formControlName="unit">
+          <option value="">All</option>
+          @for (unit of unitOptions; track $index) {
+            <option [value]="unit">{{ unit }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="sort">Sort</label>
+        <select id="sort" class="form-select" formControlName="sort">
+          <option value="-expirationDate">Expiring Soon</option>
+          <option value="expirationDate">Expiration (Oldest first)</option>
+          <option value="-quantity">Quantity (High to Low)</option>
+          <option value="quantity">Quantity (Low to High)</option>
+          <option value="ingredientName">Ingredient (A-Z)</option>
+          <option value="-createdDate">Recently Added</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row g-3 align-items-end mt-1">
+      <div class="col-md-3">
+        <label class="form-label" for="expiringBy">Expiring By</label>
+        <input id="expiringBy" class="form-control" formControlName="expiringBy" type="date" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="lowStockBelow">Low Stock Below</label>
+        <input
+          id="lowStockBelow"
+          class="form-control"
+          formControlName="lowStockBelow"
+          type="number"
+          min="0"
+          step="0.5"
+        />
+        <div class="form-text">Highlight items at or below this quantity.</div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="groupBy">Value Breakdown</label>
+        <select id="groupBy" class="form-select" formControlName="groupBy">
+          <option value="none">Total Only</option>
+          <option value="category">By Category</option>
+          <option value="location">By Location</option>
+        </select>
+      </div>
+      <div class="col-md-3 text-md-end">
+        <div class="d-flex gap-2 justify-content-md-end mt-3 mt-md-0">
+          <button class="btn btn-outline-secondary" type="button" (click)="resetFilters()">Reset</button>
+          <button class="btn btn-primary" type="submit">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h5">Inventory Value</h2>
+        <p class="display-6 mb-2">{{ valueTotal() | currency }}</p>
+        @if (valueGroup()) {
+          <div class="small text-muted mb-2">Grouped by {{ valueGroup() }}</div>
+        }
+        @if (valueBreakdown().length) {
+          <ul class="list-unstyled mb-0 small">
+            @for (row of valueBreakdown(); track $index) {
+              <li class="d-flex justify-content-between border-bottom py-1">
+                <span>{{ row.group }}</span>
+                <span>{{ row.totalValue | currency }} ({{ row.itemCount }} items)</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="text-muted small mb-0">No breakdown available for the selected grouping.</p>
+        }
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h5">Low Stock Watch</h2>
+        @if (lowStockItems.length) {
+          <ul class="list-group list-group-flush">
+            @for (item of lowStockItems; track trackByInventoryId($index, item)) {
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>{{ item.ingredientName }}</strong>
+                  <span class="text-muted small d-block">{{ item.inventoryId }} • {{ item.location }}</span>
+                </div>
+                <span class="badge rounded-pill text-bg-warning">
+                  {{ item.quantity || 0 }} {{ item.unit }}
+                </span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="text-muted mb-0">No items are at or below {{ lowStockLimit() }} {{ lowStockLimit() === 1 ? 'unit' : 'units' }}.</p>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger" role="alert">{{ error() }}</div>
+}
+
+@if (loading()) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+    <p class="mt-3 mb-0 text-muted">Loading inventory...</p>
+  </div>
+} @else {
+  @if (items().length === 0) {
+    <div class="alert alert-info" role="alert">No inventory items match the selected filters.</div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Inventory ID</th>
+            <th scope="col">Ingredient</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Location</th>
+            <th scope="col">Expiration</th>
+            <th scope="col">Cost</th>
+            <th scope="col">Inventory Value</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track trackByInventoryId($index, item)) {
+            <tr [ngClass]="{
+              'inventory-row-expired': item.expirationStatus === 'expired',
+              'inventory-row-soon': item.expirationStatus === 'soon',
+              'inventory-row-low': (item.quantity || 0) <= lowStockLimit()
+            }">
+              <td class="fw-semibold">{{ item.inventoryId }}</td>
+              <td>
+                <div>{{ item.ingredientName }}</div>
+                <div class="text-muted small">{{ item.category }}</div>
+              </td>
+              <td>
+                <strong>{{ item.quantity || 0 }}</strong>
+                <span class="text-muted ms-1">{{ item.unit }}</span>
+              </td>
+              <td>{{ item.location }}</td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'text-bg-danger': item.expirationStatus === 'expired',
+                  'text-bg-warning': item.expirationStatus === 'soon',
+                  'text-bg-success': item.expirationStatus === 'ok',
+                  'text-bg-secondary': item.expirationStatus === 'unknown'
+                }">
+                  @if (item.daysUntilExpiration === null) {
+                    Unknown
+                  } @else if (item.daysUntilExpiration < 0) {
+                    Expired {{ item.daysUntilExpiration * -1 }}d ago
+                  } @else {
+                    {{ item.daysUntilExpiration }}d left
+                  }
+                </span>
+                <div class="text-muted small">{{ item.expirationDate | date:'mediumDate' }}</div>
+              </td>
+              <td>{{ item.cost | currency }}</td>
+              <td>{{ item.inventoryValue | currency }}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm" role="group">
+                  <a class="btn btn-outline-primary" [routerLink]="['/inventory-dashboard', item.inventoryId, 'update-31477046']">
+                    Edit
+                  </a>
+                  <button class="btn btn-outline-danger" type="button" (click)="openDeleteModal(item)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Inventory pagination">
+      <span class="text-muted small">
+        Page {{ pagination().page }} of
+        {{ totalPages() }} •
+        {{ pagination().total }} items total
+      </span>
+      <div class="btn-group" role="group">
+        <button
+          class="btn btn-outline-secondary"
+          type="button"
+          (click)="goToPage(pagination().page - 1)"
+          [disabled]="pagination().page <= 1"
+        >
+          Previous
+        </button>
+        <button
+          class="btn btn-outline-secondary"
+          type="button"
+          (click)="goToPage(pagination().page + 1)"
+          [disabled]="pagination().page >= totalPages()"
+        >
+          Next
+        </button>
+      </div>
+    </nav>
+  }
+}
+
+@if (deleteTarget()) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Delete Inventory Item</h5>
+          <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeDeleteModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Are you sure you want to delete
+            <strong>{{ deleteTarget()?.ingredientName }}</strong>
+            ({{ deleteTarget()?.inventoryId }})?
+          </p>
+          @if (deleteError()) {
+            <div class="alert alert-danger" role="alert">{{ deleteError() }}</div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" type="button" (click)="closeDeleteModal()">Cancel</button>
+          <button class="btn btn-danger" type="button" (click)="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
