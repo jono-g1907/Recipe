@@ -1,1 +1,23 @@
-<p>logout works!</p>
+<div class="auth-wrapper text-center">
+  <h1 class="mb-3">Logout</h1>
+  <p class="mb-4">Manage your session securely.</p>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+  <div class="card shadow-sm p-4" *ngIf="user; else notLoggedIn">
+    <h2 class="h5 mb-3">Signed in as</h2>
+    <p class="mb-1"><strong>{{ user.fullname }}</strong></p>
+    <p class="text-muted mb-4">{{ user.email }}</p>
+    <button class="btn btn-outline-danger w-100" type="button" (click)="onLogout()" [disabled]="submitting">
+      {{ submitting ? 'Logging out…' : 'Logout' }}
+    </button>
+  </div>
+
+  <ng-template #notLoggedIn>
+    <div class="card shadow-sm p-4">
+      <p class="mb-3">You are not logged in. Please return to the login page.</p>
+      <a class="btn btn-primary" routerLink="/login">Go to Login</a>
+    </div>
+  </ng-template>
+</div>

@@ -1,1 +1,51 @@
-<p>login works!</p>
+<div class="auth-wrapper">
+  <h1 class="text-center mb-3">Login</h1>
+  <p class="text-center mb-4">Access your Recipe &amp; Inventory Management account</p>
+
+  <div *ngIf="infoMessage" class="alert alert-info">{{ infoMessage }}</div>
+  <div *ngIf="serverError" class="alert alert-danger">{{ serverError }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+  <form class="card shadow-sm p-4" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <div class="mb-3">
+      <label class="form-label" for="loginEmail">Email Address:</label>
+      <input
+        class="form-control"
+        id="loginEmail"
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+        required
+      />
+      <div class="form-text text-danger" *ngIf="submitted && email?.hasError('required')">
+        Email or password is required
+      </div>
+      <div class="form-text text-danger" *ngIf="submitted && !email?.hasError('required') && email?.hasError('pattern')">
+        Enter a valid email address
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="loginPassword">Password:</label>
+      <input
+        class="form-control"
+        id="loginPassword"
+        type="password"
+        formControlName="password"
+        autocomplete="current-password"
+        required
+      />
+      <div class="form-text text-danger" *ngIf="submitted && password?.hasError('required')">
+        Email or password is required
+      </div>
+    </div>
+
+    <button class="btn btn-secondary w-100" type="submit" [disabled]="submitting">
+      {{ submitting ? 'Logging in…' : 'Login' }}
+    </button>
+  </form>
+
+  <p class="mt-4 text-center">
+    Don't have an account? <a routerLink="/register">Sign up here</a>.
+  </p>
+</div>

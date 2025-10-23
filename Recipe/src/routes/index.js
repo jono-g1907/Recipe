@@ -6,7 +6,9 @@ const router = express.Router();
 
 const recipesRouter = require('./recipes');
 const inventoryRouter = require('./inventory');
+const authRouter = require('./auth');
 
+router.use(authRouter);
 router.use(recipesRouter);
 router.use(inventoryRouter);
 
