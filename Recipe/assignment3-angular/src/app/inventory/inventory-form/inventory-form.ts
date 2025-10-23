@@ -141,37 +141,68 @@ export class InventoryForm implements OnChanges {
 
   private today(): string {
     const now = new Date();
-    return this.toInputDate(now.toISOString());
+    return this.formatDateInput(now);
   }
 
   private toInputDate(value: string | null | undefined): string {
     if (!value) {
       return '';
     }
-    const d = new Date(value);
-    if (isNaN(d.getTime())) {
+    const parsed = this.parseDateValue(value);
+    if (!parsed) {
       return '';
     }
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return this.formatDateInput(parsed);
   }
 
   private toIsoDate(value: unknown): string {
-    if (!value) {
-      return new Date().toISOString();
+    const parsed = this.parseDateValue(value);
+    if (!parsed) {
+      return this.todayIso();
     }
+    return parsed.toISOString();
+  }
+
+  private parseDateValue(value: unknown): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : new Date(value.getTime());
+    }
+
     if (typeof value === 'string') {
       const trimmed = value.trim();
       if (!trimmed) {
-        return new Date().toISOString();
+        return null;
       }
-      const d = new Date(trimmed);
-      if (!isNaN(d.getTime())) {
-        return d.toISOString();
+
+      // when the browser sends YYYY-MM-DD we need to interpret it in the local timezone
+      const simpleDateMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (simpleDateMatch) {
+        const year = Number(simpleDateMatch[1]);
+        const month = Number(simpleDateMatch[2]);
+        const day = Number(simpleDateMatch[3]);
+        const localDate = new Date(year, month - 1, day);
+        return isNaN(localDate.getTime()) ? null : localDate;
       }
+
+      const parsed = new Date(trimmed);
+      return isNaN(parsed.getTime()) ? null : parsed;
     }
-    if (value instanceof Date) {
-      return value.toISOString();
-    }
+
+    return null;
+  }
+
+  private formatDateInput(value: Date): string {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private todayIso(): string {
     return new Date().toISOString();
   }
 }
