@@ -1,0 +1,11 @@
+:host {
+  display: block;
+}
+
+.card-header {
+  font-weight: 600;
+}
+
+ol {
+  margin-bottom: 0;
+}
