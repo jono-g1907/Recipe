@@ -1,0 +1,205 @@
+<form class="recipe-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (errorMessage) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+  }
+
+  <div class="card mb-4">
+    <div class="card-header">Basic Information</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="recipe-title">Recipe Title</label>
+          <input id="recipe-title" type="text" class="form-control" formControlName="title" placeholder="Overnight Oats" />
+          @if (form.get('title')?.invalid && form.get('title')?.touched) {
+            <div class="invalid-feedback d-block">Title is required (3-100 characters).</div>
+          }
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="recipe-id">Recipe ID</label>
+          <input id="recipe-id" type="text" class="form-control" formControlName="recipeId" placeholder="R-00005" />
+          <div class="form-text">Format: R-#####</div>
+          @if (form.get('recipeId')?.invalid && form.get('recipeId')?.touched) {
+            <div class="invalid-feedback d-block">A recipe ID like R-00001 is required.</div>
+          }
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="recipe-chef">Chef</label>
+          <input id="recipe-chef" type="text" class="form-control" formControlName="chef" placeholder="Your name" />
+          @if (form.get('chef')?.invalid && form.get('chef')?.touched) {
+            <div class="invalid-feedback d-block">Chef name must be 2-50 characters.</div>
+          }
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-4">
+          <label class="form-label" for="recipe-meal">Meal Type</label>
+          <select id="recipe-meal" class="form-select" formControlName="mealType">
+            <option value="">-- choose --</option>
+            @for (option of mealTypes; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+          @if (form.get('mealType')?.invalid && form.get('mealType')?.touched) {
+            <div class="invalid-feedback d-block">Choose a meal type.</div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="recipe-cuisine">Cuisine Type</label>
+          <select id="recipe-cuisine" class="form-select" formControlName="cuisineType">
+            <option value="">-- choose --</option>
+            @for (option of cuisineTypes; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+          @if (form.get('cuisineType')?.invalid && form.get('cuisineType')?.touched) {
+            <div class="invalid-feedback d-block">Choose a cuisine type.</div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="recipe-difficulty">Difficulty</label>
+          <select id="recipe-difficulty" class="form-select" formControlName="difficulty">
+            <option value="">-- choose --</option>
+            @for (option of difficultyOptions; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+          @if (form.get('difficulty')?.invalid && form.get('difficulty')?.touched) {
+            <div class="invalid-feedback d-block">Choose a difficulty level.</div>
+          }
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-4">
+          <label class="form-label" for="recipe-prep">Prep Time (mins)</label>
+          <input id="recipe-prep" type="number" class="form-control" formControlName="prepTime" min="1" max="480" />
+          @if (form.get('prepTime')?.invalid && form.get('prepTime')?.touched) {
+            <div class="invalid-feedback d-block">Provide a prep time between 1 and 480 minutes.</div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="recipe-servings">Servings</label>
+          <input id="recipe-servings" type="number" class="form-control" formControlName="servings" min="1" max="20" />
+          @if (form.get('servings')?.invalid && form.get('servings')?.touched) {
+            <div class="invalid-feedback d-block">Servings must be between 1 and 20.</div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="recipe-created">Created Date</label>
+          <input id="recipe-created" type="date" class="form-control" formControlName="createdDate" />
+          @if (form.get('createdDate')?.invalid && form.get('createdDate')?.touched) {
+            <div class="invalid-feedback d-block">Created date is required.</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Ingredients</span>
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addIngredient()">Add Ingredient</button>
+    </div>
+    <div class="card-body">
+      @for (ingredient of ingredientsArray.controls; track trackByIndex($index); let i = $index) {
+        <div class="ingredient-entry border rounded p-3 mb-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+              <label class="form-label" [attr.for]="'ingredient-name-' + i">Name</label>
+              <input
+                class="form-control"
+                [id]="'ingredient-name-' + i"
+                type="text"
+                [formControl]="ingredient.controls.ingredientName"
+                placeholder="Rolled Oats"
+              />
+              @if (ingredient.controls.ingredientName.invalid && ingredient.controls.ingredientName.touched) {
+                <div class="invalid-feedback d-block">Ingredient name must be 2-50 characters.</div>
+              }
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" [attr.for]="'ingredient-qty-' + i">Quantity</label>
+              <input
+                class="form-control"
+                [id]="'ingredient-qty-' + i"
+                type="number"
+                step="0.01"
+                min="0"
+                [formControl]="ingredient.controls.quantity"
+              />
+              @if (ingredient.controls.quantity.invalid && ingredient.controls.quantity.touched) {
+                <div class="invalid-feedback d-block">Quantity must be greater than 0.</div>
+              }
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" [attr.for]="'ingredient-unit-' + i">Unit</label>
+              <select class="form-select" [id]="'ingredient-unit-' + i" [formControl]="ingredient.controls.unit">
+                <option value="">-- choose --</option>
+                @for (unit of unitOptions; track unit) {
+                  <option [value]="unit">{{ unit }}</option>
+                }
+              </select>
+              @if (ingredient.controls.unit.invalid && ingredient.controls.unit.touched) {
+                <div class="invalid-feedback d-block">Choose a unit.</div>
+              }
+            </div>
+            <div class="col-md-1 text-end">
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                (click)="removeIngredient(i)"
+                [disabled]="ingredientsArray.length === 1"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Instructions</span>
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addInstruction()">Add Step</button>
+    </div>
+    <div class="card-body">
+      @for (instruction of instructionsArray.controls; track trackByIndex($index); let i = $index) {
+        <div class="mb-3">
+          <label class="form-label" [attr.for]="'instruction-' + i">Step {{ i + 1 }}</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            [id]="'instruction-' + i"
+            [formControl]="instruction"
+            placeholder="Describe the step"
+          ></textarea>
+          @if (instruction.invalid && instruction.touched) {
+            <div class="invalid-feedback d-block">Each step must be between 10 and 500 characters.</div>
+          }
+          <div class="text-end">
+            <button
+              type="button"
+              class="btn btn-outline-danger btn-sm mt-2"
+              (click)="removeInstruction(i)"
+              [disabled]="instructionsArray.length === 1"
+            >
+              Remove Step
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2">
+    <button type="submit" class="btn btn-primary" [disabled]="loading">
+      @if (loading) {
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      }
+      {{ submitLabel }}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,11 @@
+.recipe-form .card-header {
+  font-weight: 600;
+}
+
+.recipe-form .ingredient-entry {
+  background-color: #f8f9fa;
+}
+
+.recipe-form .btn-outline-danger {
+  min-width: 90px;
+}
