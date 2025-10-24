@@ -1,0 +1,7 @@
+.not-found {
+  min-height: 40vh;
+}
+
+.not-found .container {
+  max-width: 540px;
+}

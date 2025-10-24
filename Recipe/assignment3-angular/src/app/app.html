@@ -3,6 +3,12 @@
 
   <main class="flex-grow-1 py-5">
     <div class="container">
+      @if (navigationError()) {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ navigationError() }}
+          <button type="button" class="btn-close" aria-label="Close" (click)="dismissNavigationError()"></button>
+        </div>
+      }
       <router-outlet></router-outlet>
     </div>
   </main>
