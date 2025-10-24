@@ -29,6 +29,7 @@ export class Login implements OnInit {
   serverError = '';
   infoMessage = '';
   successMessage = '';
+  private returnUrl = '/dashboard';
 
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
@@ -37,6 +38,7 @@ export class Login implements OnInit {
       const success = params.get('success');
       const error = params.get('error');
       const email = params.get('email');
+      const redirect = params.get('returnUrl');
 
       this.infoMessage = info || '';
       this.successMessage = success || '';
@@ -47,6 +49,10 @@ export class Login implements OnInit {
         this.form.patchValue({ email: registeredEmail });
       } else if (email) {
         this.form.patchValue({ email });
+      }
+
+      if (redirect) {
+        this.returnUrl = redirect;
       }
     });
   }
@@ -75,7 +81,7 @@ export class Login implements OnInit {
     this.auth.login(payload).subscribe({
       next: () => {
         this.submitting = false;
-        this.router.navigate(['/dashboard']);
+        this.router.navigateByUrl(this.returnUrl || '/dashboard');
       },
       error: (error: Error) => {
         this.submitting = false;
