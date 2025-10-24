@@ -2,8 +2,8 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { RouterOutlet } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Auth, AuthUser } from './auth/auth';
-import { HeaderComponent } from './layout/header.component';
-import { FooterComponent } from './layout/footer.component';
+import { HeaderComponent } from './layout/header';
+import { FooterComponent } from './layout/footer';
 
 @Component({
   selector: 'app-root',

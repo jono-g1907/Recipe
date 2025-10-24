@@ -7,8 +7,8 @@ import { AuthUser } from '../auth/auth';
   selector: 'app-header',
   standalone: true,
   imports: [RouterLink, RouterLinkActive, SlicePipe, UpperCasePipe],
-  templateUrl: './header.component.html',
-  styleUrl: './header.component.css'
+  templateUrl: './header.html',
+  styleUrl: './header.css'
 })
 export class HeaderComponent {
   @Input() appTitle = '';

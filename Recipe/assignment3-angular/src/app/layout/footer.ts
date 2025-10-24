@@ -3,8 +3,8 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-footer',
   standalone: true,
-  templateUrl: './footer.component.html',
-  styleUrl: './footer.component.css'
+  templateUrl: './footer.html',
+  styleUrl: './footer.css'
 })
 export class FooterComponent {
   @Input() appTitle = '';
