@@ -155,8 +155,12 @@
             type="date"
             [class.is-invalid]="form.get('expirationDate')?.invalid && form.get('expirationDate')?.touched"
           />
-          @if (form.get('expirationDate')?.invalid && form.get('expirationDate')?.touched) {
-            <div class="invalid-feedback">Provide a valid expiration date.</div>
+          @if (form.get('expirationDate')?.touched) {
+            @if (form.get('expirationDate')?.errors?.['afterPurchase']) {
+              <div class="invalid-feedback">Expiration date must be after the purchase date.</div>
+            } @else if (form.get('expirationDate')?.invalid) {
+              <div class="invalid-feedback">Provide a valid expiration date.</div>
+            }
           }
         </div>
         <div class="col-md-4">

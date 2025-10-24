@@ -78,6 +78,8 @@ export class InventoryForm implements OnChanges {
   }
 
   submit(): void {
+    this.validateDateRange();
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -90,11 +92,11 @@ export class InventoryForm implements OnChanges {
       quantity: Number(raw.quantity || 0),
       unit: String(raw.unit || '').trim(),
       category: String(raw.category || '').trim(),
-      purchaseDate: this.toIsoDate(raw.purchaseDate),
-      expirationDate: this.toIsoDate(raw.expirationDate),
+      purchaseDate: this.toDateOnlyIso(raw.purchaseDate),
+      expirationDate: this.toDateOnlyIso(raw.expirationDate),
       location: String(raw.location || '').trim(),
       cost: Number(raw.cost || 0),
-      createdDate: this.toIsoDate(raw.createdDate)
+      createdDate: this.toDateOnlyIso(raw.createdDate)
     };
 
     this.submitted.emit(value);
@@ -155,12 +157,12 @@ export class InventoryForm implements OnChanges {
     return this.formatDateInput(parsed);
   }
 
-  private toIsoDate(value: unknown): string {
+  private toDateOnlyIso(value: unknown): string {
     const parsed = this.parseDateValue(value);
     if (!parsed) {
-      return this.todayIso();
+      return this.todayIsoDate();
     }
-    return parsed.toISOString();
+    return this.formatDateInput(parsed);
   }
 
   private parseDateValue(value: unknown): Date | null {
@@ -202,7 +204,43 @@ export class InventoryForm implements OnChanges {
     return `${year}-${month}-${day}`;
   }
 
-  private todayIso(): string {
-    return new Date().toISOString();
+  private todayIsoDate(): string {
+    return this.formatDateInput(new Date());
+  }
+
+  private validateDateRange(): void {
+    const purchase = this.parseDateValue(this.form.get('purchaseDate')?.value);
+    const expiration = this.parseDateValue(this.form.get('expirationDate')?.value);
+
+    this.setControlError('expirationDate', 'afterPurchase', false);
+
+    if (!purchase || !expiration) {
+      return;
+    }
+
+    if (expiration.getTime() <= purchase.getTime()) {
+      this.setControlError('expirationDate', 'afterPurchase', true);
+      this.form.get('expirationDate')?.markAsTouched();
+    }
+  }
+
+  private setControlError(controlName: string, errorKey: string, enabled: boolean): void {
+    const control = this.form.get(controlName);
+    if (!control) {
+      return;
+    }
+
+    const currentErrors = control.errors || {};
+    if (enabled) {
+      if (!currentErrors[errorKey]) {
+        control.setErrors({ ...currentErrors, [errorKey]: true });
+      }
+      return;
+    }
+
+    if (currentErrors[errorKey]) {
+      const { [errorKey]: _removed, ...remaining } = currentErrors;
+      control.setErrors(Object.keys(remaining).length ? remaining : null);
+    }
   }
 }
