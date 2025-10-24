@@ -1,29 +1,5 @@
-<div class="min-vh-100 d-flex flex-column">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-      <a class="navbar-brand" routerLink="/dashboard">Recipe Hub</a>
-      <div class="navbar-nav ms-auto align-items-center">
-        @if (currentUser()) {
-          <span class="navbar-text text-white small me-3">Hi, {{ currentUser()?.fullname }}</span>
-        }
-        @if (currentUser()) {
-          <a class="nav-link" routerLink="/recipes-list-31477046" routerLinkActive="active">Recipes</a>
-        }
-        @if (currentUser()) {
-          <a class="nav-link" routerLink="/inventory-dashboard-31477046" routerLinkActive="active">Inventory</a>
-        }
-        @if (!currentUser()) {
-          <a class="nav-link" routerLink="/register" routerLinkActive="active">Register</a>
-        }
-        @if (!currentUser()) {
-          <a class="nav-link" routerLink="/login" routerLinkActive="active">Login</a>
-        }
-        @if (currentUser()) {
-          <a class="nav-link" routerLink="/logout" routerLinkActive="active">Logout</a>
-        }
-      </div>
-    </div>
-  </nav>
+<div class="min-vh-100 d-flex flex-column bg-light">
+  <app-header [appTitle]="title()" [user]="currentUser()"></app-header>
 
   <main class="flex-grow-1 py-5">
     <div class="container">
@@ -31,9 +7,5 @@
     </div>
   </main>
 
-  <footer class="bg-white py-3 border-top">
-    <div class="container text-center">
-      <small class="text-muted">&copy; {{ title() | titlecase }} 2025</small>
-    </div>
-  </footer>
+  <app-footer [appTitle]="title()"></app-footer>
 </div>

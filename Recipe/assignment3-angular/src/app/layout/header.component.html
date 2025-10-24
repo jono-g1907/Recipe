@@ -1,0 +1,71 @@
+<header class="bg-primary text-white shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" routerLink="/dashboard" (click)="closeOverlays()">
+        <span class="brand-logo rounded-circle bg-white text-primary fw-bold d-inline-flex justify-content-center align-items-center">
+          {{ appTitle | slice:0:1 | uppercase }}
+        </span>
+        <span class="fw-semibold">{{ appTitle }}</span>
+      </a>
+
+      <button
+        type="button"
+        class="navbar-toggler"
+        (click)="toggleNavigation()"
+        aria-label="Toggle navigation"
+        aria-expanded="{{ isNavOpen() }}"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" [class.show]="isNavOpen()">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" (click)="closeOverlays()">Dashboard</a>
+          </li>
+          @if (user) {
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/recipes-list-31477046" routerLinkActive="active" (click)="closeOverlays()">Recipes</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/inventory-dashboard-31477046" routerLinkActive="active" (click)="closeOverlays()">Inventory</a>
+            </li>
+          }
+          @if (!user) {
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/register" routerLinkActive="active" (click)="closeOverlays()">Register</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/login" routerLinkActive="active" (click)="closeOverlays()">Login</a>
+            </li>
+          }
+        </ul>
+
+        @if (user) {
+          <div class="user-menu position-relative ms-lg-3 mt-3 mt-lg-0">
+            <button
+              type="button"
+              class="btn btn-outline-light d-flex align-items-center gap-2"
+              (click)="toggleUserMenu()"
+              aria-expanded="{{ isMenuOpen() }}"
+            >
+              <span class="avatar bg-white text-primary fw-bold">{{ userInitials() }}</span>
+              <span class="small text-start">
+                <span class="d-block">{{ user.fullname }}</span>
+                <span class="text-white-50 d-block">Account</span>
+              </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow" [class.show]="isMenuOpen()">
+              <a class="dropdown-item" routerLink="/profile" (click)="closeOverlays()">Profile</a>
+              <a class="dropdown-item" routerLink="/logout" (click)="closeOverlays()">Logout</a>
+            </div>
+          </div>
+        } @else {
+          <div class="d-lg-none border-top border-light mt-3 pt-3">
+            <p class="text-white-50 mb-2 small">Welcome! Please sign in or create an account to access all features.</p>
+          </div>
+        }
+      </div>
+    </div>
+  </nav>
+</header>
