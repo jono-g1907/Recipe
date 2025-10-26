@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Combined Builder Options",
+  "type": "object",
+  "properties": {
+    "frontendTarget": {
+      "type": "string",
+      "description": "Angular target to run for the frontend (for example 'assignment3-angular:serve')."
+    },
+    "backendCommand": {
+      "type": "string",
+      "description": "Command used to start the backend server."
+    }
+  },
+  "required": ["frontendTarget"],
+  "additionalProperties": false
+}

@@ -11,6 +11,24 @@
       "prefix": "app",
       "architect": {
         "build": {
+          "builder": "./tools/builders:combined",
+          "options": {
+            "frontendTarget": "assignment3-angular:serve",
+            "backendCommand": "node ../src/server.js"
+          },
+          "configurations": {
+            "development": {
+              "frontendTarget": "assignment3-angular:serve",
+              "backendCommand": "node ../src/server.js"
+            },
+            "production": {
+              "frontendTarget": "assignment3-angular:browser:production",
+              "backendCommand": ""
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "browser": {
           "builder": "@angular/build:application",
           "options": {
             "browser": "src/main.ts",
@@ -64,10 +82,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "assignment3-angular:build:production"
+              "buildTarget": "assignment3-angular:browser:production"
             },
             "development": {
-              "buildTarget": "assignment3-angular:build:development"
+              "buildTarget": "assignment3-angular:browser:development"
             }
           },
           "defaultConfiguration": "development"

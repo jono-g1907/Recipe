@@ -1,6 +1,7 @@
 {
   "name": "assignment3-angular",
   "version": "0.0.0",
+  "builders": "./tools/builders/builders.json",
   "scripts": {
     "ng": "ng",
     "start": "ng serve -- proxy-config proxy.conf.json",
