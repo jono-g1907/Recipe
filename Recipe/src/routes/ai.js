@@ -15,8 +15,8 @@ function buildPrompt(ingredients) {
   ].join('\n');
 }
 
-async function callOpenAI(prompt) {
-  const apiKey = process.env.OPENAI_API_KEY;
+async function callGemini(prompt) {
+  const apiKey = process.env.GOOGLE_API_KEY;
 
   if (!apiKey) {
     return {
@@ -37,21 +37,33 @@ async function callOpenAI(prompt) {
     throw new Error('Fetch API is not available in this environment.');
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are a nutritionist that only replies with valid JSON.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.3
-    })
-  });
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: [
+                  'You are a nutritionist that only replies with valid JSON.',
+                  prompt
+                ].join('\n\n')
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.3
+        }
+      })
+    }
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -59,8 +71,16 @@ async function callOpenAI(prompt) {
   }
 
   const payload = await response.json();
-  const message = payload && payload.choices && payload.choices[0] && payload.choices[0].message;
-  const content = message && message.content ? message.content.trim() : '';
+  const content =
+    payload &&
+    Array.isArray(payload.candidates) &&
+    payload.candidates[0] &&
+    payload.candidates[0].content &&
+    Array.isArray(payload.candidates[0].content.parts) &&
+    payload.candidates[0].content.parts[0] &&
+    typeof payload.candidates[0].content.parts[0].text === 'string'
+      ? payload.candidates[0].content.parts[0].text.trim()
+      : '';
 
   if (!content) {
     throw new Error('AI response was empty.');
@@ -100,7 +120,7 @@ router.post('/ai/analyze-31477046', async (req, res, next) => {
     }
 
     const prompt = buildPrompt(ingredients);
-    const analysis = await callOpenAI(prompt);
+    const analysis = await callGemini(prompt);
 
     res.json({ analysis });
   } catch (error) {
