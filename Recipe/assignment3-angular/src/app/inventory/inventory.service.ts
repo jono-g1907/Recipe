@@ -40,7 +40,7 @@ export interface InventoryFilters {
 export class InventoryService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(Auth);
-  private readonly apiBase = '/api';
+  private readonly apiBase = 'http://localhost:8080/api';
 
   private readonly loadingSignal = signal(false);
   readonly loading = computed(() => this.loadingSignal());
