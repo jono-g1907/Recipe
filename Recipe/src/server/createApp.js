@@ -72,11 +72,7 @@ function createApp(dependencies) {
 
   if (hasAngularBuild) {
     app.use(express.static(angularDistPath));
-    app.get('*', function (req, res, next) {
-      if (req.path.startsWith('/api')) {
-        return next();
-      }
-
+    app.get(/^\/(?!api\/).*/, (_req, res) => {
       res.sendFile(path.join(angularDistPath, 'index.html'));
     });
   }
