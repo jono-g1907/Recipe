@@ -7,7 +7,9 @@ header {
 .brand-logo {
   width: 36px;
   height: 36px;
-  font-size: 1rem;
+  border-radius: 50%;
+  display: block;
+  object-fit: cover;
 }
 
 .navbar-nav .nav-link {

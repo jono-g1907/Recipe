@@ -1,18 +1,19 @@
 import { Component, Input, computed, signal } from '@angular/core';
-import { SlicePipe, UpperCasePipe } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthUser } from '../auth/auth';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, SlicePipe, UpperCasePipe],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './header.html',
   styleUrl: './header.css'
 })
 export class HeaderComponent {
   @Input() appTitle = '';
   @Input() user: AuthUser | null = null;
+
+  readonly logoUrl = 'icons/icon-72x72.png';
 
   protected readonly isNavOpen = signal(false);
   protected readonly isMenuOpen = signal(false);
