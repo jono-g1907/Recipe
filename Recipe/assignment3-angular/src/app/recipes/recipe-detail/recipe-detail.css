@@ -9,3 +9,13 @@
 ol {
   margin-bottom: 0;
 }
+
+.ai-health-card .list-group-item {
+  border: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ai-health-card .list-group-item + .list-group-item {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
