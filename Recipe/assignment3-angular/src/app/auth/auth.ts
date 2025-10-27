@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, map, tap, throwError } from 'rxjs';
+import { apiBaseUrl } from '../shared/api-base';
 
 export interface AuthUser {
   userId: string;
@@ -35,7 +36,7 @@ interface AuthResponse {
   providedIn: 'root'
 })
 export class Auth {
-  private readonly apiBase = '/api/auth';
+  private readonly apiBase = `${apiBaseUrl()}/auth`;
   private readonly storageKey = 'recipe-hub-auth-user';
   private readonly currentUserSubject = new BehaviorSubject<AuthUser | null>(this.loadUser());
   readonly currentUser$ = this.currentUserSubject.asObservable();

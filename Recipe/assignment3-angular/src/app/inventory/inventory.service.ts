@@ -7,6 +7,7 @@ import {
   InventoryListResponse,
   InventoryValueResponse
 } from './inventory.model';
+import { apiBaseUrl } from '../shared/api-base';
 
 export interface InventoryPayload {
   inventoryId: string;
@@ -40,7 +41,7 @@ export interface InventoryFilters {
 export class InventoryService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(Auth);
-  private readonly apiBase = '/api';
+  private readonly apiBase = apiBaseUrl();
 
   private readonly loadingSignal = signal(false);
   readonly loading = computed(() => this.loadingSignal());

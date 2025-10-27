@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, shareReplay, switchMap, timer } from 'rxjs';
+import { apiBaseUrl } from '../shared/api-base';
 
 export interface DashboardStats {
   recipeCount: number;
@@ -21,7 +22,8 @@ interface DashboardStatsResponse {
 })
 export class DashboardService {
   private readonly http = inject(HttpClient);
-  private readonly statsUrl = '/api/dashboard-stats-31477046';
+  private readonly apiBase = apiBaseUrl();
+  private readonly statsUrl = `${this.apiBase}/dashboard-stats-31477046`;
 
   private readonly refreshInterval = 30000; // 30 seconds
 

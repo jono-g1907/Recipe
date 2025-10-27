@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Observable, catchError, finalize, map, throwError } from 'rxjs';
 import { Auth } from '../auth/auth';
 import { Recipe, RecipeListResponse } from './recipe.model';
+import { apiBaseUrl } from '../shared/api-base';
 
 export interface RecipePayload {
   recipeId: string;
@@ -29,7 +30,7 @@ export interface RecipePayload {
 export class RecipeService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(Auth);
-  private readonly apiBase = '/api';
+  private readonly apiBase = apiBaseUrl();
 
   private readonly loadingSignal = signal(false);
   readonly loading = computed(() => this.loadingSignal());
