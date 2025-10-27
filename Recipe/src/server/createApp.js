@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const constants = require('../lib/constants');
@@ -15,8 +16,15 @@ function createApp(dependencies) {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  const allowedOrigins = ['http://localhost:4200', 'http://localhost:8080'];
+
   app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:4200');
+    const origin = req.headers.origin;
+
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+    }
+
     res.header(
       'Access-Control-Allow-Methods',
       'GET,POST,PUT,PATCH,DELETE,OPTIONS'
@@ -48,11 +56,31 @@ function createApp(dependencies) {
 
   app.use(express.static(path.join(__dirname, '../images')));
   app.use(express.static(path.join(__dirname, '../css')));
-  app.use(express.static(path.join(__dirname, '../views'), { index: false }));
 
-  registerPageRoutes(app, { store: store, appId: appId });
+  const angularDistPath = path.join(
+    __dirname,
+    '../../assignment3-angular/dist/assignment3-angular/browser'
+  );
+  const hasAngularBuild = fs.existsSync(angularDistPath);
+
+  if (!hasAngularBuild) {
+    app.use(express.static(path.join(__dirname, '../views'), { index: false }));
+    registerPageRoutes(app, { store: store, appId: appId });
+  }
 
   app.use('/api', apiRouter);
+
+  if (hasAngularBuild) {
+    app.use(express.static(angularDistPath));
+    app.get('*', function (req, res, next) {
+      if (req.path.startsWith('/api')) {
+        return next();
+      }
+
+      res.sendFile(path.join(angularDistPath, 'index.html'));
+    });
+  }
+
   app.use(notFound);
   app.use(errorHandler);
 
