@@ -21,7 +21,7 @@ interface DashboardStatsResponse {
 })
 export class DashboardService {
   private readonly http = inject(HttpClient);
-  private readonly statsUrl = 'http://localhost:8080/api/dashboard-stats-31477046';
+  private readonly statsUrl = '/api/dashboard-stats-31477046';
 
   private readonly refreshInterval = 30000; // 30 seconds
 
