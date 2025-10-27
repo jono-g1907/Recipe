@@ -51,7 +51,16 @@ function createApp(dependencies) {
   app.use(express.static(path.join(__dirname, '../css')));
   app.use(express.static(path.join(__dirname, '../views'), { index: false }));
 
-  registerPageRoutes(app, { store: store, appId: appId });
+  const angularDistPath = path.join(
+    __dirname,
+    '../../assignment3-angular/dist/assignment3-angular/browser'
+  );
+
+  const hasAngularBuild = fs.existsSync(angularDistPath);
+
+  if (!hasAngularBuild) {
+    registerPageRoutes(app, { store: store, appId: appId });
+  }
 
   const angularDistPath = path.join(
     __dirname,
@@ -67,6 +76,18 @@ function createApp(dependencies) {
   }
 
   app.use('/api', apiRouter);
+
+  if (hasAngularBuild) {
+    app.use(express.static(angularDistPath));
+
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api')) {
+        return next();
+      }
+
+      res.sendFile(path.join(angularDistPath, 'index.html'));
+    });
+  }
   app.use(notFound);
   app.use(errorHandler);
 
