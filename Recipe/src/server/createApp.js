@@ -61,7 +61,7 @@ function createApp(dependencies) {
   if (fs.existsSync(angularDistPath)) {
     app.use('/app', express.static(angularDistPath));
 
-    app.get(['/app', '/app/*'], (req, res) => {
+    app.get(['/app', '/app/'], (req, res) => {
       res.sendFile(path.join(angularDistPath, 'index.html'));
     });
   }
