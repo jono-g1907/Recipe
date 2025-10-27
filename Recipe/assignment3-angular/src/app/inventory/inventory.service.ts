@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, catchError, finalize, map, throwError } from 'rxjs';
 import { Auth } from '../auth/auth';
-import { API_BASE_URL } from '../shared/api-config';
+import { getApiBaseUrl } from '../shared/api-config';
 import {
   InventoryItem,
   InventoryListResponse,
@@ -41,7 +41,10 @@ export interface InventoryFilters {
 export class InventoryService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(Auth);
-  private readonly apiBase = API_BASE_URL;
+
+  private buildUrl(path: string): string {
+    return `${getApiBaseUrl()}${path}`;
+  }
 
   private readonly loadingSignal = signal(false);
   readonly loading = computed(() => this.loadingSignal());
@@ -49,7 +52,7 @@ export class InventoryService {
   list(filters: InventoryFilters = {}): Observable<InventoryListResponse> {
     const params = this.buildParams(filters);
     return this.http
-      .get<InventoryListResponse>(`${this.apiBase}/inventory-dashboard-31477046`, {
+      .get<InventoryListResponse>(this.buildUrl('/inventory-dashboard-31477046'), {
         headers: this.buildHeaders(),
         params
       })
@@ -58,7 +61,9 @@ export class InventoryService {
 
   get(inventoryId: string): Observable<InventoryItem> {
     return this.http
-      .get<{ item: InventoryItem }>(`${this.apiBase}/inventory-dashboard/${inventoryId}-31477046`, {
+      .get<{ item: InventoryItem }>(
+        this.buildUrl(`/inventory-dashboard/${inventoryId}-31477046`),
+        {
         headers: this.buildHeaders()
       })
       .pipe(
@@ -70,7 +75,7 @@ export class InventoryService {
   create(payload: InventoryPayload): Observable<InventoryItem> {
     this.loadingSignal.set(true);
     return this.http
-      .post<{ item: InventoryItem }>(`${this.apiBase}/add-inventory-31477046`, payload, {
+      .post<{ item: InventoryItem }>(this.buildUrl('/add-inventory-31477046'), payload, {
         headers: this.buildHeaders()
       })
       .pipe(
@@ -84,7 +89,7 @@ export class InventoryService {
     this.loadingSignal.set(true);
     return this.http
       .post<{ item: InventoryItem }>(
-        `${this.apiBase}/inventory-dashboard/${inventoryId}/update-31477046`,
+        this.buildUrl(`/inventory-dashboard/${inventoryId}/update-31477046`),
         payload,
         {
           headers: this.buildHeaders()
@@ -99,7 +104,7 @@ export class InventoryService {
 
   delete(inventoryId: string): Observable<void> {
     return this.http
-      .delete<void>(`${this.apiBase}/inventory-dashboard/${inventoryId}-31477046`, {
+      .delete<void>(this.buildUrl(`/inventory-dashboard/${inventoryId}-31477046`), {
         headers: this.buildHeaders()
       })
       .pipe(catchError((error) => this.handleError(error)));
@@ -111,7 +116,7 @@ export class InventoryService {
       params = params.set('groupBy', groupBy);
     }
     return this.http
-      .get<InventoryValueResponse>(`${this.apiBase}/inventory/value-31477046`, {
+      .get<InventoryValueResponse>(this.buildUrl('/inventory/value-31477046'), {
         headers: this.buildHeaders(),
         params
       })

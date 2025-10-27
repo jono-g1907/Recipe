@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, map, tap, throwError } from 'rxjs';
-import { AUTH_BASE_URL } from '../shared/api-config';
+import { getAuthBaseUrl } from '../shared/api-config';
 
 export interface AuthUser {
   userId: string;
@@ -36,7 +36,6 @@ interface AuthResponse {
   providedIn: 'root'
 })
 export class Auth {
-  private readonly apiBase = AUTH_BASE_URL;
   private readonly storageKey = 'recipe-hub-auth-user';
   private readonly currentUserSubject = new BehaviorSubject<AuthUser | null>(this.loadUser());
   readonly currentUser$ = this.currentUserSubject.asObservable();
@@ -48,8 +47,10 @@ export class Auth {
   }
 
   register(payload: RegisterPayload): Observable<AuthUser> {
+    const url = `${getAuthBaseUrl()}/register-31477046`;
+
     return this.http
-      .post<AuthResponse>(`${this.apiBase}/register-31477046`, payload)
+      .post<AuthResponse>(url, payload)
       .pipe(
         map((response) => this.handleAuthResponse(response)),
         catchError((error) => this.handleError(error))
@@ -57,8 +58,10 @@ export class Auth {
   }
 
   login(payload: LoginPayload): Observable<AuthUser> {
+    const url = `${getAuthBaseUrl()}/login-31477046`;
+
     return this.http
-      .post<AuthResponse>(`${this.apiBase}/login-31477046`, payload)
+      .post<AuthResponse>(url, payload)
       .pipe(
         map((response) => this.handleAuthResponse(response)),
         tap((user) => this.saveUser(user)),
@@ -67,8 +70,10 @@ export class Auth {
   }
 
   logout(userId: string): Observable<string> {
+    const url = `${getAuthBaseUrl()}/logout-31477046`;
+
     return this.http
-      .post<AuthResponse>(`${this.apiBase}/logout-31477046`, { userId })
+      .post<AuthResponse>(url, { userId })
       .pipe(
         tap(() => this.clearUser()),
         map((response) => response.message || 'You have been logged out.'),

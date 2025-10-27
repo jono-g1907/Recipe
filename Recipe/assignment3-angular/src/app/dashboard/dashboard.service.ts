@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, shareReplay, switchMap, timer } from 'rxjs';
-import { DASHBOARD_STATS_URL } from '../shared/api-config';
+import { getDashboardStatsUrl } from '../shared/api-config';
 
 export interface DashboardStats {
   recipeCount: number;
@@ -22,7 +22,6 @@ interface DashboardStatsResponse {
 })
 export class DashboardService {
   private readonly http = inject(HttpClient);
-  private readonly statsUrl = DASHBOARD_STATS_URL;
 
   private readonly refreshInterval = 30000; // 30 seconds
 
@@ -32,7 +31,9 @@ export class DashboardService {
   );
 
   private fetchStats(): Observable<DashboardStats> {
-    return this.http.get<DashboardStatsResponse>(this.statsUrl).pipe(
+    const url = getDashboardStatsUrl();
+
+    return this.http.get<DashboardStatsResponse>(url).pipe(
       map((response) => {
         if (!response.success || !response.stats) {
           throw new Error(response.message || 'Unable to load dashboard statistics.');

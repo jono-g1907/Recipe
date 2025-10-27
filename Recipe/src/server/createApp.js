@@ -20,9 +20,26 @@ function createApp(dependencies) {
 
   app.use((req, res, next) => {
     const origin = req.headers.origin;
+    let allowOrigin = '';
 
-    if (origin && allowedOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin);
+    if (origin) {
+      if (allowedOrigins.includes(origin)) {
+        allowOrigin = origin;
+      } else if (req.headers.host) {
+        try {
+          const originUrl = new URL(origin);
+
+          if (originUrl.host === req.headers.host) {
+            allowOrigin = origin;
+          }
+        } catch (err) {
+          allowOrigin = '';
+        }
+      }
+    }
+
+    if (allowOrigin) {
+      res.header('Access-Control-Allow-Origin', allowOrigin);
     }
 
     res.header(

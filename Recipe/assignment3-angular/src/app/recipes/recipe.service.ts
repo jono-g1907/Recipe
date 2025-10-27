@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Observable, catchError, finalize, map, throwError } from 'rxjs';
 import { Auth } from '../auth/auth';
 import { Recipe, RecipeListResponse } from './recipe.model';
-import { API_BASE_URL } from '../shared/api-config';
+import { getApiBaseUrl } from '../shared/api-config';
 
 export interface RecipePayload {
   recipeId: string;
@@ -30,7 +30,9 @@ export interface RecipePayload {
 export class RecipeService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(Auth);
-  private readonly apiBase = API_BASE_URL;
+  private buildUrl(path: string): string {
+    return `${getApiBaseUrl()}${path}`;
+  }
 
   private readonly loadingSignal = signal(false);
   readonly loading = computed(() => this.loadingSignal());
@@ -38,7 +40,7 @@ export class RecipeService {
   list(scope: 'mine' | 'all' = 'mine'): Observable<Recipe[]> {
     const params = scope === 'mine' ? '?scope=mine' : '';
     return this.http
-      .get<RecipeListResponse>(`${this.apiBase}/recipes-list-31477046${params}`, {
+      .get<RecipeListResponse>(this.buildUrl(`/recipes-list-31477046${params}`), {
         headers: this.buildHeaders()
       })
       .pipe(
@@ -49,7 +51,7 @@ export class RecipeService {
 
   get(recipeId: string): Observable<Recipe> {
     return this.http
-      .get<{ recipe: Recipe }>(`${this.apiBase}/recipes/${recipeId}-31477046`, {
+      .get<{ recipe: Recipe }>(this.buildUrl(`/recipes/${recipeId}-31477046`), {
         headers: this.buildHeaders()
       })
       .pipe(
@@ -61,7 +63,7 @@ export class RecipeService {
   create(payload: RecipePayload): Observable<Recipe> {
     this.loadingSignal.set(true);
     return this.http
-      .post<{ recipe: Recipe }>(`${this.apiBase}/add-recipe-31477046`, payload, {
+      .post<{ recipe: Recipe }>(this.buildUrl('/add-recipe-31477046'), payload, {
         headers: this.buildHeaders()
       })
       .pipe(
@@ -74,7 +76,10 @@ export class RecipeService {
   update(recipeId: string, payload: Partial<RecipePayload>): Observable<Recipe> {
     this.loadingSignal.set(true);
     return this.http
-      .post<{ recipe: Recipe }>(`${this.apiBase}/recipes/${recipeId}/update-31477046`, payload, {
+      .post<{ recipe: Recipe }>(
+        this.buildUrl(`/recipes/${recipeId}/update-31477046`),
+        payload,
+        {
         headers: this.buildHeaders()
       })
       .pipe(
@@ -86,7 +91,7 @@ export class RecipeService {
 
   delete(recipeId: string): Observable<void> {
     return this.http
-      .delete<void>(`${this.apiBase}/recipes/${recipeId}-31477046`, {
+      .delete<void>(this.buildUrl(`/recipes/${recipeId}-31477046`), {
         headers: this.buildHeaders()
       })
       .pipe(catchError((error) => this.handleError(error)));
