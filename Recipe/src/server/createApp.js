@@ -1,6 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const { loadEnv } = require('../lib/loadEnv');
+
+loadEnv();
+
 const constants = require('../lib/constants');
 const apiRouter = require('../routes');
 const notFound = require('../middleware/notFound');
