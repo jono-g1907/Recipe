@@ -2,9 +2,11 @@
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center gap-2" routerLink="/dashboard" (click)="closeOverlays()">
-        <span class="brand-logo rounded-circle bg-white text-primary fw-bold d-inline-flex justify-content-center align-items-center">
-          {{ appTitle | slice:0:1 | uppercase }}
-        </span>
+        <img
+          [src]="logoUrl"
+          [attr.alt]="appTitle ? appTitle + ' logo' : 'Application logo'"
+          class="brand-logo"
+        />
         <span class="fw-semibold">{{ appTitle }}</span>
       </a>
 

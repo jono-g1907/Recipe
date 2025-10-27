@@ -1,12 +1,9 @@
 <section class="dashboard" *ngIf="user(); else guestView">
   <div class="row align-items-center mb-4">
     <div class="col-md-8">
-      <div class="d-flex align-items-center">
-        <img [src]="logoUrl" alt="Recipe Hub Custom Logo" class="dashboard-logo me-3" />
-        <div>
-          <h1 class="h3 mb-1">{{ welcomeMessage() }}</h1>
-          <p class="text-muted mb-0">Logged in as <strong>{{ user()?.fullname }}</strong> ({{ user()?.email }})</p>
-        </div>
+      <div>
+        <h1 class="h3 mb-1">{{ welcomeMessage() }}</h1>
+        <p class="text-muted mb-0">Logged in as <strong>{{ user()?.fullname }}</strong> ({{ user()?.email }})</p>
       </div>
     </div>
     <div class="col-md-4 text-md-end mt-3 mt-md-0">
