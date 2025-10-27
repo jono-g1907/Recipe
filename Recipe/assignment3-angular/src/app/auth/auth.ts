@@ -35,7 +35,7 @@ interface AuthResponse {
   providedIn: 'root'
 })
 export class Auth {
-  private readonly apiBase = '/api/auth';
+  private readonly apiBase = 'http://localhost:8080/api/auth';
   private readonly storageKey = 'recipe-hub-auth-user';
   private readonly currentUserSubject = new BehaviorSubject<AuthUser | null>(this.loadUser());
   readonly currentUser$ = this.currentUserSubject.asObservable();
