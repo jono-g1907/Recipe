@@ -1,12 +1,15 @@
+<!-- T2 Show the full dashboard layout only when someone is logged in; otherwise fall back to the guest view. -->
 <section class="dashboard" *ngIf="user(); else guestView">
   <div class="row align-items-center mb-4">
     <div class="col-md-8">
+      <!-- T2 Friendly greeting and account details reassure the user that the dashboard is tailored to them. -->
       <div>
         <h1 class="h3 mb-1">{{ welcomeMessage() }}</h1>
         <p class="text-muted mb-0">Logged in as <strong>{{ user()?.fullname }}</strong> ({{ user()?.email }})</p>
       </div>
     </div>
     <div class="col-md-4 text-md-end mt-3 mt-md-0">
+      <!-- T2 Course submission badge displays personal student details for quick identification. -->
       <div class="student-card p-3 rounded shadow-sm">
         <p class="fw-semibold mb-1">Student: {{ studentName }}</p>
         <p class="text-muted mb-0">ID: {{ studentId }}</p>
@@ -14,6 +17,7 @@
     </div>
   </div>
 
+  <!-- T2 Statistics grid listens to live data so numbers refresh automatically as the service updates. -->
   <div class="row g-3 mb-4" *ngIf="stats$ | async as stats">
     <div class="col-12 col-md-6 col-lg-3" *ngFor="let card of [
       { title: 'Total Recipes', value: stats.recipeCount, icon: '🍽️', variant: 'recipes' },
@@ -21,6 +25,7 @@
       { title: 'Registered Users', value: stats.userCount, icon: '👥', variant: 'users' },
       { title: 'Cuisine Variety', value: stats.cuisineCount, icon: '🌍', variant: 'cuisine' }
     ]">
+      <!-- T2 Each statistic card combines iconography and labels to make the key numbers easy to digest. -->
       <div class="card shadow-sm h-100 border-0" [ngClass]="'card-' + card.variant">
         <div class="card-body">
           <div class="d-flex align-items-center">
@@ -35,6 +40,7 @@
     </div>
 
     <div class="col-12 col-md-6 col-lg-3">
+      <!-- T2 Inventory value card highlights the monetary worth of supplies using a currency-friendly pipe. -->
       <div class="card shadow-sm h-100 border-0 card-value">
         <div class="card-body">
           <p class="text-uppercase small mb-1">Inventory Value</p>
@@ -49,6 +55,7 @@
     <div class="col-12 col-lg-6">
       <div class="card h-100 shadow-sm">
         <div class="card-body">
+          <!-- T2 Quick actions offer one-click routes to the most popular tasks on the platform. -->
           <h2 class="h5 card-title">Quick Actions</h2>
           <p class="text-muted">Shortcuts to help you get things done faster.</p>
           <div class="list-group list-group-flush">
@@ -74,6 +81,7 @@
     <div class="col-12 col-lg-6">
       <div class="card h-100 shadow-sm">
         <div class="card-body">
+          <!-- T2 System health list reassures users that background services and refresh cycles are running smoothly. -->
           <h2 class="h5 card-title">System Health</h2>
           <p class="text-muted">Recipe Hub keeps data fresh every 30 seconds. Latest update reflects the information above.</p>
           <ul class="list-unstyled mb-0">
@@ -96,9 +104,11 @@
   </div>
 </section>
 
+<!-- T2 Guest view presents a welcoming fallback when no user is signed in. -->
 <ng-template #guestView>
   <div class="card shadow-sm">
     <div class="card-body text-center">
+      <!-- T2 Custom logo and friendly message encourage visitors to sign in and unlock the dashboard. -->
       <img [src]="logoUrl" alt="Recipe Hub Custom Logo" class="dashboard-logo mb-3" />
       <h2 class="h4">Welcome to Recipe Hub</h2>
       <p class="text-muted">Please log in to see your personalized dashboard.</p>
