@@ -1,11 +1,15 @@
 <div class="auth-wrapper">
+  <!-- T1 Shared wrapper keeps the registration panel centered with consistent spacing. -->
   <h1 class="text-center mb-3">Register</h1>
   <p class="text-center mb-4">Create your Recipe &amp; Inventory Management account</p>
 
+  <!-- T1 Displays any API error message, such as an email already in use. -->
   <div *ngIf="serverError" class="alert alert-danger">{{ serverError }}</div>
 
+  <!-- T1 Reactive form hooks fields to the register.ts validators and handles messages. -->
   <form class="card shadow-sm p-4" [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
     <div class="mb-3">
+      <!-- T1 Email input enforces the pattern and shows prompts for invalid entries. -->
       <label class="form-label" for="email">Email Address:</label>
       <input
         class="form-control"
@@ -23,6 +27,7 @@
     </div>
 
     <div class="mb-3">
+      <!-- T1 Password field reuses the strong policy: upper, lower, number, and special character. -->
       <label class="form-label" for="password">Password</label>
       <input
         class="form-control"
@@ -43,6 +48,7 @@
     </div>
 
     <div class="mb-3">
+      <!-- T1 Confirm password pairs with the validator to ensure both entries match. -->
       <label class="form-label" for="confirmPassword">Confirm password</label>
       <input
         class="form-control"
@@ -65,6 +71,7 @@
     </div>
 
     <div class="mb-3">
+      <!-- T1 Full name accepts letters, spaces, hyphens, and apostrophes per server rules. -->
       <label class="form-label" for="fullname">Full Name:</label>
       <input
         class="form-control"
@@ -80,6 +87,7 @@
     </div>
 
     <div class="mb-3">
+      <!-- T1 Role selection sets permissions up front and displays options in Title Case. -->
       <label class="form-label" for="role">Role</label>
       <select class="form-select" id="role" formControlName="role" required>
         <option value="">Select a role</option>
@@ -89,6 +97,7 @@
     </div>
 
     <div class="mb-4">
+      <!-- T1 Phone number validator checks Australian formats while allowing common variants. -->
       <label class="form-label" for="phone">Phone Number:</label>
       <input
         class="form-control"
@@ -106,10 +115,12 @@
       </div>
     </div>
 
+    <!-- T1 Submit button shows progress text to discourage double submissions. -->
     <button class="btn btn-primary w-100" type="submit" [disabled]="submitting">
       {{ submitting ? 'Creating Account…' : 'Create Account' }}
     </button>
   </form>
 
+  <!-- T1 Friendly reminder for returning users to jump straight to login. -->
   <p class="mt-4 text-center">Already have an account? <a routerLink="/login">Login here</a></p>
 </div>

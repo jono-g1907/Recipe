@@ -1,13 +1,17 @@
 <div class="auth-wrapper">
+  <!-- T1 Keeps the login card centered and styled like the other auth pages. -->
   <h1 class="text-center mb-3">Login</h1>
   <p class="text-center mb-4">Access your Recipe &amp; Inventory Management account</p>
 
+  <!-- T1 Status alerts explain what happened before, like registration or a failed login. -->
   <div *ngIf="infoMessage" class="alert alert-info">{{ infoMessage }}</div>
   <div *ngIf="serverError" class="alert alert-danger">{{ serverError }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
+  <!-- T1 `formGroup` links the fields to the reactive form so submit can talk to the API. -->
   <form class="card shadow-sm p-4" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
     <div class="mb-3">
+      <!-- T1 Email field shows instant hints for missing or badly formatted addresses. -->
       <label class="form-label" for="loginEmail">Email Address:</label>
       <input
         class="form-control"
@@ -40,11 +44,13 @@
       </div>
     </div>
 
+    <!-- T1 Submit button swaps text to show when the login request is in progress. -->
     <button class="btn btn-secondary w-100" type="submit" [disabled]="submitting">
       {{ submitting ? 'Logging in…' : 'Login' }}
     </button>
   </form>
 
+  <!-- T1 Reminder for visitors without an account, using routerLink for in-app navigation. -->
   <p class="mt-4 text-center">
     Don't have an account? <a routerLink="/register">Sign up here</a>.
   </p>

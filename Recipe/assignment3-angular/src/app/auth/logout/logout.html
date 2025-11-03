@@ -1,20 +1,25 @@
 <div class="auth-wrapper text-center">
+  <!-- T1 Centered container reused across auth pages to keep the layout familiar. -->
   <h1 class="mb-3">Logout</h1>
   <p class="mb-4">Manage your session securely.</p>
 
+  <!-- T1 Alerts show whether the logout request succeeded or ran into a problem. -->
   <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
+  <!-- T1 When signed in we show user details and a single clear logout button. -->
   <div class="card shadow-sm p-4" *ngIf="user; else notLoggedIn">
     <h2 class="h5 mb-3">Signed in as</h2>
     <p class="mb-1"><strong>{{ user.fullname }}</strong></p>
     <p class="text-muted mb-4">{{ user.email }}</p>
+    <!-- T1 Button disables during the request to prevent accidental double-clicks. -->
     <button class="btn btn-outline-danger w-100" type="button" (click)="onLogout()" [disabled]="submitting">
       {{ submitting ? 'Logging out…' : 'Logout' }}
     </button>
   </div>
 
   <ng-template #notLoggedIn>
+    <!-- T1 Fallback card for visitors without a session, guiding them back to login. -->
     <div class="card shadow-sm p-4">
       <p class="mb-3">You are not logged in. Please return to the login page.</p>
       <a class="btn btn-primary" routerLink="/login">Go to Login</a>
