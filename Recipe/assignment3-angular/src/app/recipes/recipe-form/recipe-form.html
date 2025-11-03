@@ -1,8 +1,10 @@
+<!-- T3 Wrap the entire recipe editor in a reactive Angular form. -->
 <form class="recipe-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
   @if (errorMessage) {
     <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
   }
 
+  <!-- T3 Collect the recipe's headline details like title and metadata. -->
   <div class="card mb-4">
     <div class="card-header">Basic Information</div>
     <div class="card-body">
@@ -96,6 +98,7 @@
     </div>
   </div>
 
+  <!-- T3 Manage the ingredient list with controls for name, quantity, and units. -->
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
       <span>Ingredients</span>
@@ -160,6 +163,7 @@
     </div>
   </div>
 
+  <!-- T3 Capture each cooking step so the instructions stay organized. -->
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
       <span>Instructions</span>
@@ -194,6 +198,7 @@
     </div>
   </div>
 
+  <!-- T3 Provide action buttons that reflect loading status and submit the form. -->
   <div class="d-flex justify-content-end gap-2">
     <button type="submit" class="btn btn-primary" [disabled]="loading">
       @if (loading) {
