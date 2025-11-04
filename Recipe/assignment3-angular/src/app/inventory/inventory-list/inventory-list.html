@@ -1,3 +1,4 @@
+<!-- T4 Header summarises the page purpose and offers quick navigation actions. -->
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4">
   <div>
     <h1 class="mb-1">Inventory Dashboard</h1>
@@ -9,6 +10,7 @@
   </div>
 </div>
 
+<!-- T4 Filter panel lets users refine results before triggering a fresh API call. -->
 <form class="filter-panel card mb-4" [formGroup]="filtersForm" (ngSubmit)="applyFilters()">
   <div class="card-header">Filter & Sort</div>
   <div class="card-body">
@@ -92,6 +94,7 @@
   </div>
 </form>
 
+<!-- T4 Summary cards show inventory value insights and low stock alerts at a glance. -->
 <div class="row g-3 mb-4">
   <div class="col-lg-6">
     <div class="card h-100">
@@ -142,10 +145,12 @@
   </div>
 </div>
 
+<!-- T4 Error notice keeps the user informed when an API request fails. -->
 @if (error()) {
   <div class="alert alert-danger" role="alert">{{ error() }}</div>
 }
 
+<!-- T4 Loading indicator reassures the user while data refreshes. -->
 @if (loading()) {
   <div class="text-center py-5">
     <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
@@ -155,6 +160,7 @@
   @if (items().length === 0) {
     <div class="alert alert-info" role="alert">No inventory items match the selected filters.</div>
   } @else {
+    <!-- T4 Responsive table lists each inventory item with status highlights and actions. -->
     <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead class="table-light">
@@ -219,6 +225,7 @@
       </table>
     </div>
 
+    <!-- T4 Pagination controls move between pages without losing filter selections. -->
     <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Inventory pagination">
       <span class="text-muted small">
         Page {{ pagination().page }} of
@@ -247,6 +254,7 @@
   }
 }
 
+<!-- T4 Modal confirms deletions so items are not removed by accident. -->
 @if (deleteTarget()) {
   <div class="modal-backdrop fade show"></div>
   <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">

@@ -6,6 +6,8 @@ import { Auth } from '../../auth/auth';
 import { InventoryItem, InventoryValueBreakdown } from '../inventory.model';
 import { InventoryFilters, InventoryService } from '../inventory.service';
 
+// T4 This component orchestrates the full inventory dashboard with filters, alerts, and table actions.
+
 interface PaginationState {
   page: number;
   total: number;
@@ -26,6 +28,7 @@ export class InventoryList implements OnInit {
 
   readonly currentUser = computed(() => this.auth.currentUser);
 
+  // T4 Reactive form captures the advanced filtering and sorting options shown above the list.
   readonly filtersForm = this.fb.group({
     q: [''],
     category: [''],
@@ -47,6 +50,7 @@ export class InventoryList implements OnInit {
   readonly valueGroup = signal<'category' | 'location' | null>(null);
   readonly deleteTarget = signal<InventoryItem | null>(null);
 
+  // T4 Option lists feed dropdowns so users can filter by consistent categories, locations, and units.
   readonly categoryOptions = [
     'Vegetables',
     'Fruits',
@@ -68,14 +72,17 @@ export class InventoryList implements OnInit {
       this.error.set('Log in with an authorised account to view inventory.');
       return;
     }
+    // T4 Initial load fetches the first page and kicks off value calculations right away.
     this.loadInventory(1);
   }
 
   applyFilters(): void {
+    // T4 Submitting the filter form reloads page one using the chosen search and sort controls.
     this.loadInventory(1);
   }
 
   resetFilters(): void {
+    // T4 Reset puts the controls back to defaults before refetching the inventory dataset.
     this.filtersForm.reset({
       q: '',
       category: '',
@@ -101,6 +108,7 @@ export class InventoryList implements OnInit {
   }
 
   openDeleteModal(item: InventoryItem): void {
+    // T4 Selecting delete opens a confirmation modal anchored to the chosen inventory record.
     this.deleteTarget.set(item);
     this.deleteError.set('');
   }
@@ -115,6 +123,7 @@ export class InventoryList implements OnInit {
     if (!target) {
       return;
     }
+    // T4 Confirming delete calls the API and updates the list without forcing a full reload.
     this.deleteError.set('');
     this.inventoryService.delete(target.inventoryId).subscribe({
       next: () => {
@@ -138,6 +147,7 @@ export class InventoryList implements OnInit {
 
   get lowStockItems(): InventoryItem[] {
     const limit = this.lowStockLimit();
+    // T4 Low stock panel highlights items below the chosen threshold for quick restock decisions.
     return this.items().filter((item) => (item.quantity || 0) <= limit);
   }
 
@@ -159,6 +169,7 @@ export class InventoryList implements OnInit {
 
     const filters = this.buildFilters(page);
 
+    // T4 Loading state powers the spinner while the inventory table waits for fresh data.
     this.loading.set(true);
     this.error.set('');
 
@@ -181,6 +192,7 @@ export class InventoryList implements OnInit {
     const groupSetting = this.filtersForm.value.groupBy;
     const groupBy = groupSetting === 'category' || groupSetting === 'location' ? groupSetting : undefined;
 
+    // T4 After items load we request the aggregated value to fill the summary cards.
     this.inventoryService.value(groupBy).subscribe({
       next: (value) => {
         this.valueTotal.set(value.totalValue || 0);
@@ -203,6 +215,7 @@ export class InventoryList implements OnInit {
       sort: raw.sort || undefined
     };
 
+    // T4 Each optional filter only gets sent when the user picks something, keeping URLs clean.
     if (raw.q) {
       filters.q = raw.q.trim();
     }

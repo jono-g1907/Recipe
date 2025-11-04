@@ -1,9 +1,11 @@
+<!-- T4 Form wraps all fields so submit triggers validation and emits values. -->
 <form class="inventory-form" (ngSubmit)="submit()" [formGroup]="form" novalidate>
   @if (errorMessage) {
     <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
   }
 
   <div class="card mb-4">
+    <!-- T4 Basic info captures the unique ID, name, and category for each ingredient. -->
     <div class="card-header">Basic Information</div>
     <div class="card-body">
       <div class="row g-3">
@@ -58,6 +60,7 @@
   </div>
 
   <div class="card mb-4">
+    <!-- T4 Stock section collects quantity, units, location, and cost for inventory value math. -->
     <div class="card-header">Stock Details</div>
     <div class="card-body">
       <div class="row g-3">
@@ -130,6 +133,7 @@
   </div>
 
   <div class="card mb-4">
+    <!-- T4 Date inputs track purchase, expiration, and record creation for alerts. -->
     <div class="card-header">Dates</div>
     <div class="card-body">
       <div class="row g-3">
@@ -180,6 +184,7 @@
     </div>
   </div>
 
+  <!-- T4 Action buttons let users reset or submit their inventory changes. -->
   <div class="d-flex justify-content-end gap-2">
     <button class="btn btn-outline-secondary" type="button" (click)="resetToInitial()">Reset</button>
     <button class="btn btn-primary" type="submit" [disabled]="loading">
