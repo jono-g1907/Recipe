@@ -20,6 +20,7 @@ export class RecipeDetail implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly recipeService = inject(RecipeService);
   private readonly auth = inject(Auth);
+  // HD1 Connects this detail screen to the AI nutrition helper so we can request health feedback.
   private readonly recipeHealthService = inject(RecipeHealthService);
   private readonly appIdSuffix = '-31477046';
 
@@ -81,21 +82,25 @@ export class RecipeDetail implements OnInit, OnDestroy {
   }
 
   // T3 Send the recipe ingredients to the health service to generate AI nutrition tips.
+  // HD1 Triggers the AI review when the chef taps the Analyze button.
   analyzeHealth(recipe: Recipe | null): void {
     if (!recipe) {
       return;
     }
 
+    // HD1 Collects each ingredient in a friendly format that the AI prompt understands.
     const ingredients = (recipe.ingredients || []).map((item) => ({
       ingredientName: item.ingredientName,
       quantity: item.quantity,
       unit: item.unit
     }));
 
+    // HD1 Shows a loading spinner and clears any earlier AI messages before asking for a new analysis.
     this.analyzing.set(true);
     this.analysisError.set('');
     this.analysis.set(null);
 
+    // HD1 Sends the prepared ingredient list to the health service and stores the AI response for display.
     this.recipeHealthService.analyze(ingredients).subscribe({
       next: (analysis) => {
         this.analysis.set(analysis);
