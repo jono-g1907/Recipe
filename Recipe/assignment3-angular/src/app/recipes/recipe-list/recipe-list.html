@@ -1,3 +1,4 @@
+<!-- T3 Introduce the page so users know this view manages their recipe library. -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
   <div>
     <h1 class="mb-1">Recipe Library</h1>
@@ -6,6 +7,7 @@
   <a class="btn btn-primary mt-3 mt-md-0" routerLink="/add-recipe-31477046">+ Add Recipe</a>
 </div>
 
+<!-- T3 Offer quick filters for personal or global recipes along with navigation. -->
 <div class="d-flex flex-wrap gap-2 mb-3">
   <button
     class="btn"
@@ -26,10 +28,12 @@
   <a class="btn btn-outline-secondary ms-auto" routerLink="/dashboard">Back to Dashboard</a>
 </div>
 
+<!-- T3 Show friendly messages if loading fails or no one is logged in. -->
 @if (error()) {
   <div class="alert alert-danger" role="alert">{{ error() }}</div>
 }
 
+<!-- T3 Swap in a spinner while the app waits for the recipe list. -->
 @if (loading()) {
   <div class="text-center py-5">
     <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
@@ -39,6 +43,7 @@
   @if (recipes().length === 0) {
     <div class="alert alert-info" role="alert">No recipes found for this view.</div>
   } @else {
+    <!-- T3 Display the recipe collection in a sortable-looking data table. -->
     <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead class="table-light">
@@ -84,6 +89,7 @@
   }
 }
 
+<!-- T3 Present a confirmation modal before removing a recipe from the system. -->
 @if (selectedRecipe()) {
   <div class="modal-backdrop fade show"></div>
   <div class="modal fade show d-block" tabindex="-1" role="dialog">

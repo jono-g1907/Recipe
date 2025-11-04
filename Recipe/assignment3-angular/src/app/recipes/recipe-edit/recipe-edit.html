@@ -1,3 +1,4 @@
+<!-- T3 Introduce the edit view and keep navigation within easy reach. -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
   <div>
     <h1 class="mb-1">Edit Recipe</h1>
@@ -9,10 +10,12 @@
   </div>
 </div>
 
+<!-- T3 Confirm to the chef that their updates were saved successfully. -->
 @if (success()) {
   <div class="alert alert-success" role="alert">{{ success() }}</div>
 }
 
+<!-- T3 Handle loading and error states before showing the edit form. -->
 @if (!recipe()) {
   @if (error()) {
     <div class="alert alert-danger" role="alert">{{ error() }}</div>
@@ -20,6 +23,7 @@
     <div class="alert alert-info" role="alert">Loading recipe information...</div>
   }
 } @else {
+  <!-- T3 Share the same dynamic recipe form used for creation to avoid duplication. -->
   <app-recipe-form
     [initialRecipe]="recipe()"
     [submitLabel]="'Save Changes'"

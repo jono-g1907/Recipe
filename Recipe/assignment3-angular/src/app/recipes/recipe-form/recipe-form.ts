@@ -1,3 +1,4 @@
+// T3 Import Angular form helpers to power the reusable recipe form component.
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -37,17 +38,20 @@ interface IngredientForm {
 export class RecipeForm implements OnChanges {
   private readonly fb = inject(FormBuilder);
 
+  // T3 Allow parent components to prefill data, customize labels, and react to submit events.
   @Input() initialRecipe: Recipe | null = null;
   @Input() submitLabel = 'Save Recipe';
   @Input() loading = false;
   @Input() errorMessage = '';
   @Output() submitted = new EventEmitter<RecipeFormValue>();
 
+  // T3 Provide dropdown choices to keep form options consistent across the app.
   readonly mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
   readonly cuisineTypes = ['Italian', 'Asian', 'Mexican', 'American', 'French', 'Indian', 'Mediterranean', 'Other'];
   readonly difficultyOptions = ['Easy', 'Medium', 'Hard'];
   readonly unitOptions = ['pieces', 'kg', 'g', 'liters', 'ml', 'cups', 'tbsp', 'tsp', 'dozen'];
 
+  // T3 Build the entire recipe form with validation so users get instant feedback.
   readonly form: FormGroup = this.fb.group({
     recipeId: this.fb.control('', {
       validators: [Validators.required, Validators.pattern(/^R-\d{5}$/)]
@@ -73,11 +77,13 @@ export class RecipeForm implements OnChanges {
   });
 
   ngOnChanges(changes: SimpleChanges): void {
+    // T3 Whenever a new recipe is provided, populate the form with its details.
     if (changes['initialRecipe']) {
       this.populateForm(this.initialRecipe);
     }
   }
 
+  // T3 Helper getters keep the template cleaner when looping over dynamic controls.
   get ingredientsArray(): FormArray<FormGroup<IngredientForm>> {
     return this.form.get('ingredients') as FormArray<FormGroup<IngredientForm>>;
   }
@@ -87,6 +93,7 @@ export class RecipeForm implements OnChanges {
   }
 
   addIngredient(): void {
+    // T3 Let chefs add as many ingredients as needed with consistent validation.
     this.ingredientsArray.push(this.buildIngredientGroup());
   }
 
@@ -97,6 +104,7 @@ export class RecipeForm implements OnChanges {
   }
 
   addInstruction(): void {
+    // T3 Support multiple step-by-step instructions for clear cooking guidance.
     this.instructionsArray.push(this.buildInstructionControl());
   }
 
@@ -107,6 +115,7 @@ export class RecipeForm implements OnChanges {
   }
 
   submit(): void {
+    // T3 Validate the form, sanitize the values, and emit them to parent components.
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -142,6 +151,7 @@ export class RecipeForm implements OnChanges {
   }
 
   private populateForm(recipe: Recipe | null): void {
+    // T3 Reset to defaults when creating or fill in existing fields when editing.
     if (!recipe) {
       this.resetForm();
       return;
@@ -164,6 +174,7 @@ export class RecipeForm implements OnChanges {
   }
 
   private resetForm(): void {
+    // T3 Clear the form and ensure at least one ingredient and instruction are present.
     this.form.reset({
       recipeId: '',
       title: '',
@@ -180,6 +191,7 @@ export class RecipeForm implements OnChanges {
   }
 
   private setIngredients(ingredients: Recipe['ingredients']): void {
+    // T3 Recreate the ingredient controls from saved data so users can tweak them.
     this.ingredientsArray.clear();
     if (!ingredients || !ingredients.length) {
       this.ingredientsArray.push(this.buildIngredientGroup());
@@ -191,6 +203,7 @@ export class RecipeForm implements OnChanges {
   }
 
   private setInstructions(instructions: string[]): void {
+    // T3 Load each instruction step or provide a blank one if none exist yet.
     this.instructionsArray.clear();
     if (!instructions || !instructions.length) {
       this.instructionsArray.push(this.buildInstructionControl());
@@ -202,6 +215,7 @@ export class RecipeForm implements OnChanges {
   }
 
   private buildIngredientGroup(initial?: RecipeIngredient): FormGroup<IngredientForm> {
+    // T3 Create ingredient controls with validation to capture names, quantities, and units.
     return this.fb.group({
       ingredientName: this.fb.control(initial?.ingredientName || '', {
         nonNullable: true,
@@ -218,6 +232,7 @@ export class RecipeForm implements OnChanges {
   }
 
   private buildInstructionControl(value = ''): FormControl<string> {
+    // T3 Ensure each instruction step is descriptive enough to follow easily.
     return this.fb.control(value, {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(10), Validators.maxLength(500)]
@@ -225,11 +240,13 @@ export class RecipeForm implements OnChanges {
   }
 
   private today(): string {
+    // T3 Provide a default date string formatted for HTML date inputs.
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }
 
   private toInputDate(value: string): string {
+    // T3 Convert stored ISO dates into the browser-friendly YYYY-MM-DD format.
     if (!value) {
       return this.today();
     }
@@ -239,8 +256,9 @@ export class RecipeForm implements OnChanges {
     }
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
-  
+
   private toIsoDateString(value: string): string {
+    // T3 Normalize date input back into ISO format so the API receives consistent values.
     const trimmed = (value || '').trim();
     if (trimmed) {
       const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);

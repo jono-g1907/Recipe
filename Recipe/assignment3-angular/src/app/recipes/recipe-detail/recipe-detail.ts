@@ -1,3 +1,4 @@
+// T3 Pull in Angular utilities plus the recipe and health services for the detail screen.
 import { DatePipe, NgClass } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -24,7 +25,9 @@ export class RecipeDetail implements OnInit, OnDestroy {
 
   private subscription?: Subscription;
 
+  // T3 Watch the logged-in user to unlock editing controls for the recipe owner.
   readonly currentUser = computed(() => this.auth.currentUser);
+  // T3 Manage recipe data, loading states, and AI health insights for the template.
   readonly recipe = signal<Recipe | null>(null);
   readonly loading = signal(true);
   readonly error = signal('');
@@ -33,6 +36,7 @@ export class RecipeDetail implements OnInit, OnDestroy {
   readonly analysisError = signal('');
 
   ngOnInit(): void {
+    // T3 React to route changes so deep links and refreshes still load the correct recipe.
     this.subscription = this.route.paramMap.subscribe((params) => {
       const recipeKey = params.get('recipeKey') ?? params.get('recipeId');
       const recipeId = this.extractRecipeId(recipeKey);
@@ -46,9 +50,11 @@ export class RecipeDetail implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // T3 Prevent memory leaks by cleaning up the route subscription.
     this.subscription?.unsubscribe();
   }
 
+  // T3 Load the recipe details and reset health analysis whenever a new ID is requested.
   private fetchRecipe(recipeId: string): void {
     this.loading.set(true);
     this.error.set('');
@@ -69,10 +75,12 @@ export class RecipeDetail implements OnInit, OnDestroy {
     });
   }
 
+  // T3 Navigate the user to the edit form while preserving the unique recipe identifier.
   goToEdit(recipe: Recipe): void {
     this.router.navigate(['/recipes', recipe.recipeId, 'update-31477046']);
   }
 
+  // T3 Send the recipe ingredients to the health service to generate AI nutrition tips.
   analyzeHealth(recipe: Recipe | null): void {
     if (!recipe) {
       return;
@@ -99,6 +107,7 @@ export class RecipeDetail implements OnInit, OnDestroy {
       }
     });
   }
+  // T3 Normalize incoming route IDs by trimming suffixes and ensuring uppercase matches the API.
   private extractRecipeId(raw: string | null): string | null {
     if (!raw) {
       return null;

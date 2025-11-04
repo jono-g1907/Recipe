@@ -1,3 +1,4 @@
+// T3 Import Angular helpers, HTTP tools, and data models used for every recipe request.
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, catchError, finalize, map, throwError } from 'rxjs';
@@ -32,9 +33,11 @@ export class RecipeService {
   private readonly auth = inject(Auth);
   private readonly apiBase = API_BASE_URL;
 
+  // T3 Track whether the app is waiting on the API so buttons and loaders can react instantly.
   private readonly loadingSignal = signal(false);
   readonly loading = computed(() => this.loadingSignal());
 
+  // T3 Load every recipe for the chosen scope, handling owner-only and global views.
   list(scope: 'mine' | 'all' = 'mine'): Observable<Recipe[]> {
     const params = scope === 'mine' ? '?scope=mine' : '';
     return this.http
@@ -47,6 +50,7 @@ export class RecipeService {
       );
   }
 
+  // T3 Fetch the full details for one recipe so detail and edit screens can fill in content.
   get(recipeId: string): Observable<Recipe> {
     return this.http
       .get<{ recipe: Recipe }>(`${this.apiBase}/recipes/${recipeId}-31477046`, {
@@ -58,6 +62,7 @@ export class RecipeService {
       );
   }
 
+  // T3 Send the new recipe form data to the backend and report loading and errors to the UI.
   create(payload: RecipePayload): Observable<Recipe> {
     this.loadingSignal.set(true);
     return this.http
@@ -71,6 +76,7 @@ export class RecipeService {
       );
   }
 
+  // T3 Update an existing recipe while reusing the loading indicator so the submit button is disabled.
   update(recipeId: string, payload: Partial<RecipePayload>): Observable<Recipe> {
     this.loadingSignal.set(true);
     return this.http
@@ -84,6 +90,7 @@ export class RecipeService {
       );
   }
 
+  // T3 Remove a recipe permanently when the user confirms deletion in the list view.
   delete(recipeId: string): Observable<void> {
     return this.http
       .delete<void>(`${this.apiBase}/recipes/${recipeId}-31477046`, {
@@ -92,6 +99,7 @@ export class RecipeService {
       .pipe(catchError((error) => this.handleError(error)));
   }
 
+  // T3 Attach the logged-in chef's ID so the backend knows which recipes belong to them.
   private buildHeaders(): HttpHeaders {
     const headers: Record<string, string> = {};
     const user = this.auth.currentUser;
@@ -101,6 +109,7 @@ export class RecipeService {
     return new HttpHeaders(headers);
   }
 
+  // T3 Convert backend error shapes into friendly messages the interface can show to the user.
   private handleError(error: HttpErrorResponse) {
     const serverError = error.error as {
       error?: unknown;

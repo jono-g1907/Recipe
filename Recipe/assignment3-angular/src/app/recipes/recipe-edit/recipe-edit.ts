@@ -1,3 +1,4 @@
+// T3 Import the Angular tools, shared form, and services needed to edit recipes.
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -21,6 +22,7 @@ export class RecipeEdit implements OnInit, OnDestroy {
 
   private subscription?: Subscription;
 
+  // T3 Mirror the create flow by exposing loading status, user, and recipe data.
   readonly loading = this.recipeService.loading;
   readonly currentUser = computed(() => this.auth.currentUser);
   readonly recipe = signal<Recipe | null>(null);
@@ -28,6 +30,7 @@ export class RecipeEdit implements OnInit, OnDestroy {
   readonly success = signal('');
 
   ngOnInit(): void {
+    // T3 Read the recipe ID from the URL so refreshes and deep links keep working.
     this.subscription = this.route.paramMap.subscribe((params) => {
       const recipeId = params.get('recipeId');
       if (!recipeId) {
@@ -39,9 +42,11 @@ export class RecipeEdit implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // T3 Clean up the route listener when the component is destroyed.
     this.subscription?.unsubscribe();
   }
 
+  // T3 Validate permissions, merge form values, and send the update request.
   handleSubmit(value: RecipeFormValue): void {
     const current = this.recipe();
     const user = this.auth.currentUser;
@@ -69,6 +74,7 @@ export class RecipeEdit implements OnInit, OnDestroy {
     });
   }
 
+  // T3 Fetch the recipe so the form fields are pre-filled with existing data.
   private fetchRecipe(recipeId: string): void {
     this.error.set('');
     this.recipeService.get(recipeId).subscribe({
@@ -81,6 +87,7 @@ export class RecipeEdit implements OnInit, OnDestroy {
     });
   }
 
+  // T3 Provide a shortcut back to the detail page after saving changes.
   goToDetails(): void {
     const recipe = this.recipe();
     if (recipe) {
