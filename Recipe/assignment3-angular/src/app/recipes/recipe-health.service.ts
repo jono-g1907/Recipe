@@ -23,6 +23,7 @@ export class RecipeHealthService {
   private readonly auth = inject(Auth);
   private readonly apiBase = API_BASE_URL;
 
+  // HD1 Posts the chef's ingredient list to our backend endpoint that talks with the AI nutrition model.
   analyze(ingredients: unknown[]): Observable<RecipeHealthAnalysis> {
     return this.http
       .post<RecipeHealthResponse>(`${this.apiBase}/ai/analyze-31477046`, { ingredients }, {
@@ -34,6 +35,7 @@ export class RecipeHealthService {
       );
   }
 
+  // HD1 Adds the signed-in cook's ID so the backend can personalize or secure the AI request.
   private buildHeaders(): HttpHeaders {
     const headers: Record<string, string> = {};
     const user = this.auth.currentUser;
@@ -43,6 +45,7 @@ export class RecipeHealthService {
     return new HttpHeaders(headers);
   }
 
+  // HD1 Converts low-level server errors into a friendly AI analysis message for the interface.
   private handleError(error: HttpErrorResponse) {
     const serverError = error.error as { message?: string } | undefined;
     const message = serverError?.message || 'Unable to analyze recipe health right now.';
