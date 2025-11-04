@@ -1,3 +1,4 @@
+// T5 Core Angular imports let the root component manage app lifecycle, navigation, and reactive data.
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, NavigationError, Router, RouterOutlet } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -17,6 +18,7 @@ export class App implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly subscriptions = new Subscription();
 
+  // T5 The title signal feeds both the header and footer to keep the branding consistent everywhere.
   protected readonly title = signal('Recipe Hub');
   private readonly userSignal = signal<AuthUser | null>(this.auth.currentUser);
   protected readonly navigationError = signal('');

@@ -1,15 +1,21 @@
+<!-- T5 This header wraps the top bar so visitors always see navigation options on every page. -->
 <header class="bg-primary text-white shadow-sm">
+  <!-- T5 The nav element uses Bootstrap classes to stay responsive across phones, tablets, and desktops. -->
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
+      <!-- T5 The logo link brings users home and closes open menus to keep the experience tidy. -->
       <a class="navbar-brand d-flex align-items-center gap-2" routerLink="/dashboard" (click)="closeOverlays()">
+        <!-- T5 Binding the logo lets the image adapt if the app branding changes later. -->
         <img
           [src]="logoUrl"
           [attr.alt]="appTitle ? appTitle + ' logo' : 'Application logo'"
           class="brand-logo"
         />
+        <!-- T5 Showing the title beside the logo reinforces the application's identity for users. -->
         <span class="fw-semibold">{{ appTitle }}</span>
       </a>
 
+      <!-- T5 The toggler button opens and closes the menu on compact screens with a single tap. -->
       <button
         type="button"
         class="navbar-toggler"
@@ -20,11 +26,15 @@
         <span class="navbar-toggler-icon"></span>
       </button>
 
+      <!-- T5 The collapsible wrapper keeps the menu accessible on small screens while staying tidy on larger ones. -->
       <div class="collapse navbar-collapse" [class.show]="isNavOpen()">
+        <!-- T5 This list groups the primary pages so visitors can jump straight to their goals. -->
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
           <li class="nav-item">
+            <!-- T5 The Dashboard link highlights when active, guiding users on where they are. -->
             <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" (click)="closeOverlays()">Dashboard</a>
           </li>
+          <!-- T5 Extra recipe and inventory links appear once someone signs in so they can manage content. -->
           @if (user) {
             <li class="nav-item">
               <a class="nav-link" routerLink="/recipes-list-31477046" routerLinkActive="active" (click)="closeOverlays()">Recipes</a>
@@ -33,6 +43,7 @@
               <a class="nav-link" routerLink="/inventory-dashboard-31477046" routerLinkActive="active" (click)="closeOverlays()">Inventory</a>
             </li>
           }
+          <!-- T5 Visitors who are not signed in are nudged toward creating an account or logging in. -->
           @if (!user) {
             <li class="nav-item">
               <a class="nav-link" routerLink="/register" routerLinkActive="active" (click)="closeOverlays()">Register</a>
@@ -43,8 +54,10 @@
           }
         </ul>
 
+        <!-- T5 Logged-in visitors see a personal menu so they can reach profile actions quickly. -->
         @if (user) {
           <div class="user-menu position-relative ms-lg-3 mt-3 mt-lg-0">
+            <!-- T5 This button opens a mini account menu while showing the person's initials as a quick visual cue. -->
             <button
               type="button"
               class="btn btn-outline-light d-flex align-items-center gap-2"
@@ -57,12 +70,14 @@
                 <span class="text-white-50 d-block">Account</span>
               </span>
             </button>
+            <!-- T5 The dropdown appears beside the button so actions like Profile and Logout are one tap away. -->
             <div class="dropdown-menu dropdown-menu-end shadow" [class.show]="isMenuOpen()">
               <a class="dropdown-item" routerLink="/profile" (click)="closeOverlays()">Profile</a>
               <a class="dropdown-item" routerLink="/logout" (click)="closeOverlays()">Logout</a>
             </div>
           </div>
         } @else {
+          <!-- T5 Guests see a friendly prompt encouraging them to sign in so they know what to do next. -->
           <div class="d-lg-none border-top border-light mt-3 pt-3">
             <p class="text-white-50 mb-2 small">Welcome! Please sign in or create an account to access all features.</p>
           </div>

@@ -1,4 +1,6 @@
+<!-- T5 The shell div stretches the page so the header, content, and footer stay aligned on tall screens. -->
 <div class="min-vh-100 d-flex flex-column bg-light">
+  <!-- T5 The header component receives the title and user to show the right navigation options. -->
   <app-header [appTitle]="title()" [user]="currentUser()"></app-header>
 
   <main class="flex-grow-1 py-5">
@@ -13,5 +15,6 @@
     </div>
   </main>
 
+  <!-- T5 The footer mirrors the header branding to neatly bookend every screen. -->
   <app-footer [appTitle]="title()"></app-footer>
 </div>
