@@ -1,9 +1,11 @@
+/* T5 Keeping the header sticky makes navigation stay visible while scrolling long pages. */
 header {
   position: sticky;
   top: 0;
   z-index: 1030;
 }
 
+/* T5 A round logo with fixed sizing keeps branding crisp on all devices. */
 .brand-logo {
   width: 36px;
   height: 36px;
@@ -12,6 +14,7 @@ header {
   object-fit: cover;
 }
 
+/* T5 Slightly bolder links make the navigation easier to scan at a glance. */
 .navbar-nav .nav-link {
   font-weight: 500;
 }
@@ -21,6 +24,7 @@ header {
   color: #fff;
 }
 
+/* T5 The avatar badge stays circular and centered so user initials look polished. */
 .user-menu .avatar {
   width: 32px;
   height: 32px;
@@ -31,20 +35,24 @@ header {
   justify-content: center;
 }
 
+/* T5 Dropdown width and spacing keep menu items readable without overwhelming the header. */
 .dropdown-menu {
   min-width: 12rem;
   margin-top: 0.5rem;
 }
 
 @media (max-width: 991.98px) {
+  /* T5 Tighter padding prevents mobile navigation from feeling cramped on small screens. */
   .navbar-nav .nav-link {
     padding: 0.5rem 0;
   }
 
+  /* T5 The user menu stretches to full width on phones for comfortable tapping. */
   .user-menu {
     width: 100%;
   }
 
+  /* T5 Mobile dropdowns become static blocks so account actions remain easy to reach. */
   .user-menu .dropdown-menu {
     position: static;
     float: none;
