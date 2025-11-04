@@ -4,8 +4,7 @@ import { CanActivateChildFn, CanActivateFn, Router, RouterStateSnapshot, UrlTree
 import { Auth } from './auth';
 
 function redirectToLogin(state: RouterStateSnapshot, router: Router): UrlTree {
-  // T1 Builds a link to the login page and includes the original destination so we
-  // T1 can send the user right back after successful authentication.
+  // T6 We craft a link to the login screen and remember where the user wanted to go.
   return router.createUrlTree(['/login'], {
     queryParams: {
       message: 'Please log in to continue.',
@@ -15,8 +14,7 @@ function redirectToLogin(state: RouterStateSnapshot, router: Router): UrlTree {
 }
 
 function isAuthenticated(auth: Auth): boolean {
-  // T1 The backend sets `isLoggedIn` on the user object. Converting it to a boolean
-  // T1 keeps the guard logic simple and readable.
+  // T6 Turning the stored `isLoggedIn` flag into a simple true/false keeps checks clear.
   const user = auth.currentUser;
   return Boolean(user && user.isLoggedIn);
 }
@@ -26,15 +24,15 @@ export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   if (isAuthenticated(auth)) {
-    // T1 Already logged in—allow the router to continue to the requested page.
+    // T6 When someone is already signed in, we simply let them reach the page they chose.
     return true;
   }
 
-  // T1 Not authenticated—redirect to the login screen with context.
+  // T6 If no session exists, we guide them to login and include a helpful message.
   return redirectToLogin(state, router);
 };
 
 export const authChildGuard: CanActivateChildFn = (route, state) => {
-  // T1 Child routes share the same protection rules, so we reuse the main guard.
+  // T6 Nested pages reuse the same guard so every dashboard view stays protected.
   return authGuard(route, state);
 };
