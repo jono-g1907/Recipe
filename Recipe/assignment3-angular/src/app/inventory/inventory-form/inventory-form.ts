@@ -17,6 +17,8 @@ import {
 import { InventoryItem } from '../inventory.model';
 import { InventoryPayload } from '../inventory.service';
 
+// T4 Shared form component handles validation for both create and edit screens.
+
 export type InventoryFormValue = Omit<InventoryPayload, 'userId'>;
 
 @Component({
@@ -35,6 +37,7 @@ export class InventoryForm implements OnChanges {
   @Input() errorMessage = '';
   @Output() submitted = new EventEmitter<InventoryFormValue>();
 
+  // T4 These option arrays populate the dropdowns with consistent measurement choices.
   readonly unitOptions = ['pieces', 'kg', 'g', 'liters', 'ml', 'cups', 'tbsp', 'tsp', 'dozen'];
   readonly categoryOptions = [
     'Vegetables',
@@ -50,6 +53,7 @@ export class InventoryForm implements OnChanges {
   ];
   readonly locationOptions = ['Fridge', 'Freezer', 'Pantry', 'Counter', 'Cupboard'];
 
+  // T4 FormBuilder defines validation rules to keep inventory data clean before submission.
   readonly form: FormGroup = this.fb.group({
     inventoryId: this.fb.control('', {
       validators: [Validators.required, Validators.pattern(/^I-\d{5}$/)]
@@ -73,14 +77,17 @@ export class InventoryForm implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['initialValue']) {
+      // T4 Whenever we receive new item data, populate the form for editing.
       this.populateForm(this.initialValue);
     }
   }
 
   submit(): void {
+    // T4 Before sending values we confirm the expiration date falls after purchase.
     this.validateDateRange();
 
     if (this.form.invalid) {
+      // T4 Marking all fields touched exposes validation hints for the user.
       this.form.markAllAsTouched();
       return;
     }
@@ -107,6 +114,7 @@ export class InventoryForm implements OnChanges {
   }
 
   resetToInitial(): void {
+    // T4 Reset button restores the form to the original record or blank template.
     this.populateForm(this.initialValue);
   }
 
@@ -128,6 +136,7 @@ export class InventoryForm implements OnChanges {
     }
 
     this.form.patchValue({
+      // T4 Patching copies server values into controls so edits start with accurate data.
       inventoryId: item.inventoryId,
       ingredientName: item.ingredientName,
       quantity: item.quantity,
@@ -219,6 +228,7 @@ export class InventoryForm implements OnChanges {
     }
 
     if (expiration.getTime() <= purchase.getTime()) {
+      // T4 Custom error flag surfaces a helpful message when dates are invalid.
       this.setControlError('expirationDate', 'afterPurchase', true);
       this.form.get('expirationDate')?.markAsTouched();
     }

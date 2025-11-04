@@ -6,6 +6,8 @@ import { InventoryItem } from '../inventory.model';
 import { InventoryForm, InventoryFormValue } from '../inventory-form/inventory-form';
 import { InventoryPayload, InventoryService } from '../inventory.service';
 
+// T4 Edit view retrieves an existing item and lets users update it via the shared form.
+
 @Component({
   selector: 'app-inventory-edit',
   standalone: true,
@@ -28,6 +30,7 @@ export class InventoryEdit implements OnInit, OnDestroy {
   readonly success = signal('');
 
   ngOnInit(): void {
+    // T4 Listen to route params so refreshing or deep links load the correct inventory record.
     this.subscription = this.route.paramMap.subscribe((params) => {
       const inventoryId = params.get('inventoryId');
       if (!inventoryId) {
@@ -50,6 +53,7 @@ export class InventoryEdit implements OnInit, OnDestroy {
       return;
     }
 
+    // T4 We send only changed values plus the user ID to the update endpoint.
     const payload: Partial<InventoryPayload> = {
       ...value,
       userId: user.userId
@@ -58,6 +62,7 @@ export class InventoryEdit implements OnInit, OnDestroy {
     this.error.set('');
     this.success.set('');
 
+    // T4 Successful updates refresh the displayed item and show a confirmation message.
     this.inventoryService.update(current.inventoryId, payload).subscribe({
       next: (item) => {
         this.item.set(item);
@@ -75,6 +80,7 @@ export class InventoryEdit implements OnInit, OnDestroy {
 
   private fetchInventory(inventoryId: string): void {
     this.error.set('');
+    // T4 Fetch call populates the edit form so users see current quantities and dates.
     this.inventoryService.get(inventoryId).subscribe({
       next: (item) => {
         this.item.set(item);

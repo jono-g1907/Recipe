@@ -5,6 +5,8 @@ import { Auth } from '../../auth/auth';
 import { InventoryForm, InventoryFormValue } from '../inventory-form/inventory-form';
 import { InventoryPayload, InventoryService } from '../inventory.service';
 
+// T4 Create screen wires the shared form to the POST endpoint for new stock entries.
+
 @Component({
   selector: 'app-inventory-create',
   standalone: true,
@@ -30,6 +32,7 @@ export class InventoryCreate {
       return;
     }
 
+    // T4 Payload merges form values with the authenticated user ID required by the API.
     const payload: InventoryPayload = {
       ...value,
       userId: user.userId
@@ -38,6 +41,7 @@ export class InventoryCreate {
     this.error.set('');
     this.success.set('');
 
+    // T4 On success we display feedback then redirect back to the dashboard list.
     this.inventoryService.create(payload).subscribe({
       next: () => {
         this.success.set('Inventory item added successfully.');

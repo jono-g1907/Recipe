@@ -1,3 +1,4 @@
+<!-- T4 Header explains the page goal and links back to the dashboard list. -->
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4">
   <div>
     <h1 class="mb-1">Add Inventory Item</h1>
@@ -6,6 +7,7 @@
   <a class="btn btn-outline-secondary mt-3 mt-lg-0" routerLink="/inventory-dashboard-31477046">Back to Inventory</a>
 </div>
 
+<!-- T4 Alerts inform the user whether the create call failed or succeeded. -->
 @if (error()) {
   <div class="alert alert-danger" role="alert">{{ error() }}</div>
 }
@@ -13,6 +15,7 @@
   <div class="alert alert-success" role="alert">{{ success() }}</div>
 }
 
+<!-- T4 Shared form component handles the input fields and emits submission events. -->
 <app-inventory-form
   [loading]="loading()"
   [submitLabel]="'Create Item'"

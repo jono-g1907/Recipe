@@ -9,6 +9,8 @@ import {
   InventoryValueResponse
 } from './inventory.model';
 
+// T4 This service centralises every inventory API request so components reuse a single data source.
+
 export interface InventoryPayload {
   inventoryId: string;
   userId: string;
@@ -46,6 +48,7 @@ export class InventoryService {
   private readonly loadingSignal = signal(false);
   readonly loading = computed(() => this.loadingSignal());
 
+  // T4 Listing inventory supports filters and drives the dashboard table and alerts.
   list(filters: InventoryFilters = {}): Observable<InventoryListResponse> {
     const params = this.buildParams(filters);
     return this.http
@@ -56,6 +59,7 @@ export class InventoryService {
       .pipe(catchError((error) => this.handleError(error)));
   }
 
+  // T4 Fetching a single item powers the edit form with pre-filled data from the API.
   get(inventoryId: string): Observable<InventoryItem> {
     return this.http
       .get<{ item: InventoryItem }>(`${this.apiBase}/inventory-dashboard/${inventoryId}-31477046`, {
@@ -67,6 +71,7 @@ export class InventoryService {
       );
   }
 
+  // T4 Creating inventory sends new stock details to the backend while showing a loading spinner.
   create(payload: InventoryPayload): Observable<InventoryItem> {
     this.loadingSignal.set(true);
     return this.http
@@ -80,6 +85,7 @@ export class InventoryService {
       );
   }
 
+  // T4 Updating inventory reuses the same endpoint wrapper so edits stay consistent across the app.
   update(inventoryId: string, payload: Partial<InventoryPayload>): Observable<InventoryItem> {
     this.loadingSignal.set(true);
     return this.http
@@ -97,6 +103,7 @@ export class InventoryService {
       );
   }
 
+  // T4 Deleting inventory removes records and the list component listens for the completion.
   delete(inventoryId: string): Observable<void> {
     return this.http
       .delete<void>(`${this.apiBase}/inventory-dashboard/${inventoryId}-31477046`, {
@@ -105,6 +112,7 @@ export class InventoryService {
       .pipe(catchError((error) => this.handleError(error)));
   }
 
+  // T4 Value reports calculate total and grouped costs to guide purchasing decisions.
   value(groupBy?: 'category' | 'location'): Observable<InventoryValueResponse> {
     let params = new HttpParams();
     if (groupBy) {
@@ -118,6 +126,7 @@ export class InventoryService {
       .pipe(catchError((error) => this.handleError(error)));
   }
 
+  // T4 Query parameters mirror the filter form so every user selection hits the API correctly.
   private buildParams(filters: InventoryFilters): HttpParams {
     let params = new HttpParams();
 
@@ -152,6 +161,7 @@ export class InventoryService {
     return params;
   }
 
+  // T4 Authorisation headers attach the signed-in user ID required by the backend service.
   private buildHeaders(): HttpHeaders {
     const headers: Record<string, string> = {};
     const user = this.auth.currentUser;
@@ -161,6 +171,7 @@ export class InventoryService {
     return new HttpHeaders(headers);
   }
 
+  // T4 Error handling translates backend responses into friendly, readable feedback messages.
   private handleError(error: HttpErrorResponse) {
     const serverError = error.error as { error?: unknown; message?: unknown; details?: unknown };
     const defaultMessage = 'Inventory request failed. Please try again.';
